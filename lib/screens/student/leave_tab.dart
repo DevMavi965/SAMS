@@ -93,7 +93,7 @@ class _LeaveTabState extends State<LeaveTab> {
         fromDate: DateFormat('dd-MMM-yyyy').format(from_Date!),
         tillDate: DateFormat('dd-MMM-yyyy').format(till_Date!),
         status: "pending",
-        appliedDate: DateFormat('dd-MMM-yyyy').format(DateTime.now()), std_name:widget.student.name, std_id: widget.student.id,
+        appliedDate: DateFormat('dd-MMM-yyyy').format(DateTime.now()), std_name:widget.student.name, std_id: widget.student.id.toString(),
       );
       setState(() {
         widget.leaveApplications.add(newLeaveApplication);

@@ -17,7 +17,7 @@ class FacDeshboard extends StatefulWidget {
 }
 
 class _FacDeshboardState extends State<FacDeshboard> {
-  int current=0;
+  int current=3;
   Lecturer lecturer=
   Lecturer(E_id: "DS13A2", name: "Maliha Shaik", deprt:"Computer Science", designation: "Prof",
       status: "active", email:"profmshaik@gmail.com", phone: "+923456785321",
@@ -63,6 +63,7 @@ class _FacDeshboardState extends State<FacDeshboard> {
               });
               print("tapped$v");
             },
+            type: BottomNavigationBarType.fixed,
             items: [
               for(int i=0;i<menus.length;i++)
                 BottomNavigationBarItem(

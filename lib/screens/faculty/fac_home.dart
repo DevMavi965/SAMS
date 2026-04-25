@@ -17,7 +17,7 @@ class FacHomeTab extends StatefulWidget {
 class _FacHomeTabState extends State<FacHomeTab> {
   List<Lecture> lectures=[
     Lecture(
-        course: Course(name: "DSA", lecturer:"Dr Abdulallah", room:"13C", time: DateTime.now(), status: "upcoming"),
+        course: Course(name: "DSA", lecturer:"Dr Abdullah", room:"13C", time: DateTime.now(), status: "upcoming"),
         total_std:50,
         absent_std:2,
         late_std: 2,

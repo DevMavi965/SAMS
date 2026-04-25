@@ -1,6 +1,6 @@
 class LeaveApplication{
   String std_name;
-  int std_id;
+  String std_id;
   String type ;//academic,personal,medical,emergency
   String appliedDate,fromDate,tillDate,reason;
   String status;//pending,approved,rejected

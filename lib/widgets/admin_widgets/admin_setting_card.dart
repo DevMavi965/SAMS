@@ -1,20 +1,22 @@
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:provider/provider.dart';
+import 'package:smas3/models/admin_model.dart';
 import 'package:smas3/models/fac_model.dart';
 import 'package:smas3/models/student_model.dart';
 
 import '../../providers/theme_Provider.dart' show ThemeProvider;
-class FacSettingCard extends StatefulWidget {
-  final Lecturer lecturer;
-  const FacSettingCard({super.key, required this.lecturer});
+class AdminSettingCard extends StatefulWidget {
+  final Admin admin;
+  const AdminSettingCard({super.key, required this.admin});
 
   @override
-  State<FacSettingCard> createState() => _FacSettingCardState();
+  State<AdminSettingCard> createState() => _AdminSettingCardState();
 }
 
-class _FacSettingCardState extends State<FacSettingCard> {
+class _AdminSettingCardState extends State<AdminSettingCard> {
   bool notif_on = false,_theme = false;
   @override
   Widget build(BuildContext context) {
@@ -38,44 +40,6 @@ class _FacSettingCardState extends State<FacSettingCard> {
           width: 0.2,
         ),
         children: [
-          //profile
-          TableRow(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child:
-                  InkWell(
-                    onTap: (){
-                      print("updated profile");
-                    },
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 45,
-                          height: 45,
-                          decoration: BoxDecoration(
-                            color: Colors.green.shade50,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(Icons.person_2_outlined,size: 25,color: Theme.of(context).primaryColor,),
-                        ),
-                        SizedBox(width: 10,),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text("Edit Profile",),
-                            Text("update your personal information",style: TextStyle(color: Colors.grey)),
-                          ],
-                        ),
-                        Spacer(),
-
-                        Icon(Icons.navigate_next,size: 20,color: Colors.grey,)
-                      ],
-                    ),
-                  ),
-                )
-              ]
-          ),
           //push notification
           TableRow(
               children: [
@@ -181,42 +145,6 @@ class _FacSettingCardState extends State<FacSettingCard> {
                 )
               ]
           ),
-          //bio metric setting
-          TableRow(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: InkWell(
-                    onTap: (){
-                      print("updated biometric: ${widget.lecturer.name}");
-                    },
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 45,
-                          height: 45,
-                          decoration: BoxDecoration(
-                            color: Colors.green.shade50,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(PhosphorIconsBold.shieldCheck,size: 25,color: Theme.of(context).primaryColor,),
-                        ),
-                        SizedBox(width: 10,),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text("Biometric Settings",),
-                            Text("configure fingerprint & face id",style: TextStyle(color: Colors.grey),),
-                          ],
-                        ),
-                        Spacer(),
-                        Icon(Icons.navigate_next,size: 20,color: Colors.grey,)
-                      ],
-                    ),
-                  ),
-                )
-              ]
-          )
         ],
       ),
     );

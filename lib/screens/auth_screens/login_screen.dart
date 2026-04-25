@@ -203,10 +203,10 @@ class _LoginScreenState extends State<LoginScreen> {
                                     builder: (context)=>
                                         StudentDeshboard(
                                         student:Student(
-                                            id: 120,
+                                            id: "120",
                                             name: "Muawiya Sultan",
                                             deprt: "Information Technology",
-                                            semester: "7th",
+                                            semester: 7,
                                             email: emailController.text,
                                             password: passwordController.text
                                         ) )

@@ -8,7 +8,7 @@ import 'package:smas3/screens/admin/admin_deshboard.dart';
 import 'package:smas3/models/admin_model.dart';
 import 'package:smas3/screens/student/stdudent_deshboard.dart';
 
-class MyRouter {
+class RouteHelper {
   static String home = "/";
   static String stdDashboard = "/stddeshboard";
   static String login = "/login";
@@ -39,10 +39,10 @@ class MyRouter {
 
       case "/stddeshboard":
     final student= Student(
-        id: 1204,
+        id: "1204",
         name: "Ameer",
         deprt: "Information Technology",
-        semester: "7th",
+        semester: 7,
         email: "ameermuawiya472@gmail.com",
         password: "password34",
     );

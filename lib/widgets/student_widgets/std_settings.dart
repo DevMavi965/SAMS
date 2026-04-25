@@ -143,7 +143,7 @@ class _StdSettingsState extends State<StdSettings> {
                           color: Colors.green.shade50,
                           shape: BoxShape.circle,
                         ),
-                        child: Icon(CupertinoIcons.moon,size: 25,color: Theme.of(context).primaryColor,),
+                        child: Icon(Provider.of<ThemeProvider>(context,listen: false).isDarkMode?CupertinoIcons.moon :CupertinoIcons.sun_max_fill,size: 25,color: Theme.of(context).primaryColor,),
                       ),
                       SizedBox(width: 10,),
                       Column(

@@ -1,10 +1,10 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
-class FacHomeGrid extends StatelessWidget {
-  final int total,present,pending_classes;
+class AdminHomeGrid extends StatelessWidget {
+  final int total,noOfFaculty,noOfDeparts;
   final double avg_attendance;
-  const FacHomeGrid({super.key, required this.total, required this.present, required this.pending_classes, required this.avg_attendance});
+  const AdminHomeGrid({super.key, required this.total, required this.noOfFaculty, required this.noOfDeparts, required this.avg_attendance});
 
   @override
   Widget build(BuildContext context) {
@@ -19,50 +19,71 @@ class FacHomeGrid extends StatelessWidget {
           margin: EdgeInsets.all(10),
           padding: EdgeInsets.all(10),
           decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(10),
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(10),
 
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.people_alt_outlined,color: Colors.lightBlue,),
+              Icon(Icons.people_alt_outlined,color: Theme.of(context).primaryColor,),
               Text("$total",style: TextStyle(fontSize: 15,fontWeight: FontWeight.w500),),
               Text("Total Students",style: TextStyle(color: Colors.grey,fontSize: 12),)
             ],
           ),
         ),
-        //present today
+        //faculty
         Container(
           // width: 200,
           // height: 120,
           margin: EdgeInsets.all(10),
           padding: EdgeInsets.all(10),
           decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(10),
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(10),
 
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.check_circle_outline,color: Theme.of(context).primaryColor,),
-              Text("$present",style: TextStyle(fontSize: 15,fontWeight: FontWeight.w500),),
-              Text("Present Today",style: TextStyle(color: Colors.grey,fontSize: 12),)
+              Icon(Icons.school_outlined,color: Colors.lightBlue,),
+              Text("$noOfFaculty",style: TextStyle(fontSize: 15,fontWeight: FontWeight.w500),),
+              Text("Total Faculty",style: TextStyle(color: Colors.grey,fontSize: 12),)
             ],
           ),
         ),
-        //avg attendance
+        //departments
         Container(
           // width: 200,
           // height: 120,
           margin: EdgeInsets.all(10),
           padding: EdgeInsets.all(10),
           decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(10),
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(10),
+
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(PhosphorIconsBold.buildingApartment,color: Colors.purple,),
+              Text("$noOfDeparts",style: TextStyle(fontSize: 15,fontWeight: FontWeight.w500),),
+              Text("Total Departments",style: TextStyle(color: Colors.grey,fontSize: 12),)
+            ],
+          ),
+        ),
+        //overall attendance
+        Container(
+          // width: 200,
+          // height: 120,
+          margin: EdgeInsets.all(10),
+          padding: EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(10),
 
           ),
           child: Column(
@@ -71,31 +92,11 @@ class FacHomeGrid extends StatelessWidget {
             children: [
               Icon(PhosphorIconsBold.trendUp,color:Theme.of(context).primaryColor,),
               Text("$avg_attendance%",style: TextStyle(fontSize: 15,fontWeight: FontWeight.w500),),
-              Text("Avg Attendance",style: TextStyle(color: Colors.grey,fontSize: 12),)
+              Text("Overall Attendance",style: TextStyle(color: Colors.grey,fontSize: 12),)
             ],
           ),
         ),
-        //pending classes
-        Container(
-          // width: 200,
-          // height: 120,
-          margin: EdgeInsets.all(10),
-          padding: EdgeInsets.all(10),
-          decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(10),
-
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(CupertinoIcons.clock,color:Colors.red,),
-              Text("$pending_classes",style: TextStyle(fontSize: 15,fontWeight: FontWeight.w500),),
-              Text("Pending Classes",style: TextStyle(color: Colors.grey,fontSize: 12),)
-            ],
-          ),
-        ),
+        
 
       ],
     );

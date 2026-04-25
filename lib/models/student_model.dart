@@ -1,8 +1,8 @@
 class Student{
-   int id;
+  String id;
    String name;
    String deprt;
-   String semester;
+   int semester;
    String email;
    String password;
 

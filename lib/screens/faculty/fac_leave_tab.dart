@@ -14,8 +14,8 @@ class _FacLeaveTabState extends State<FacLeaveTab> {
   List<String> appTypes = ["pending", "reviwed"];
   int selected=0;
   List<LeaveApplication> leaveApplications = [
-    LeaveApplication(type: "medical", reason: "sick", fromDate: "10/12/2025", tillDate: "13/12/2025", status: "pending", appliedDate: "9/12/2025",std_name: "ahmed",std_id: 12234),
-    LeaveApplication(type: "emergency", reason: "sick", fromDate: "10/12/2025", tillDate: "13/12/2025", status: "approved", appliedDate: "9/12/2025",std_name: "Hafsa",std_id: 12234),
+    LeaveApplication(type: "medical", reason: "sick", fromDate: "10/12/2025", tillDate: "13/12/2025", status: "pending", appliedDate: "9/12/2025",std_name: "ahmed",std_id: "12234"),
+    LeaveApplication(type: "emergency", reason: "sick", fromDate: "10/12/2025", tillDate: "13/12/2025", status: "approved", appliedDate: "9/12/2025",std_name: "Hafsa",std_id: "12234"),
   ];
   @override
   Widget build(BuildContext context) {
@@ -103,12 +103,13 @@ class _FacLeaveTabState extends State<FacLeaveTab> {
           (leaveApplication.status=="approved"?Color.fromARGB(40, 0, 153, 136):
           Colors.brown.shade50),
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: leaveApplication.status=="rejected"?Colors.red:
-            (leaveApplication.status=="approved"?Color.fromARGB(255, 0, 153, 136):
-            Colors.brown),
-            width: 0.4,
-
+          border:Border(
+            left: BorderSide(
+              color: leaveApplication.status=="rejected"?Colors.red:
+              (leaveApplication.status=="approved"?Color.fromARGB(255, 0, 153, 136):
+              Colors.brown),
+              width: 3,
+            )
           )
       ),
       child: Padding(
