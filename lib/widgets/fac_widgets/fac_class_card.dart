@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
-import 'package:smas3/models/fac_Lecture_model.dart';
+import 'package:smas3/models/lecture.dart';
+
+import '../../models/lecture.dart' show LectureModel;
+
 class FacClassCard extends StatefulWidget {
-  final Lecture lecture;
-  const FacClassCard({super.key, required this.lecture});
+  final LectureModel lectureModel;
+  const FacClassCard({super.key, required this.lectureModel});
 
   @override
   State<FacClassCard> createState() => _FacClassCardState();
@@ -40,12 +43,12 @@ class _FacClassCardState extends State<FacClassCard> {
                 child: Icon(PhosphorIconsBold.calendarBlank,color: Theme.of(context).primaryColor,size: 25,),
               ),
             ),
-            title: Text(widget.lecture.course.name,style: TextStyle(fontSize: 14),),
-            subtitle: Text("${widget.lecture.course.time.hour}:${widget.lecture.course.time.minute} - Room ${widget.lecture.course.room}",style: TextStyle(color: Colors.grey,fontSize: 12),),
+            title: Text(widget.lectureModel.course!.name,style: TextStyle(fontSize: 14),),
+            subtitle: Text("${widget.lectureModel.start_time.hour}:${widget.lectureModel.end_time.minute} - Room ${widget.lectureModel.room}",style: TextStyle(color: Colors.grey,fontSize: 12),),
             trailing: Container(
               padding: EdgeInsets.all(3),
               decoration: BoxDecoration(
-                color: widget.lecture.status=="completed" ?Theme.of(context).primaryColor: Colors.white,
+                color: widget.lectureModel.status=="completed" ?Theme.of(context).primaryColor: Colors.white,
                   borderRadius: BorderRadius.circular(15),
                   border: Border.all(
                       width: 0.3,
@@ -54,7 +57,7 @@ class _FacClassCardState extends State<FacClassCard> {
               ),
               child: Badge(
                 backgroundColor: Colors.transparent,
-                label: Text(widget.lecture.status,style: TextStyle(color:widget.lecture.status=="completed"? Colors.white:Colors.black),),
+                label: Text(widget.lectureModel.status!,style: TextStyle(color:widget.lectureModel.status=="completed"? Colors.white:Colors.black),),
               ),
             ),
           ),
@@ -63,7 +66,7 @@ class _FacClassCardState extends State<FacClassCard> {
             children: [
               SizedBox(),
               Text("Attendance ",style: TextStyle(color: Colors.grey,fontSize: 12),),
-              Text("${widget.lecture.status=="upcoming" ?0:widget.lecture.present_std}/${widget.lecture.total_std} students",style: TextStyle(color: Colors.grey,fontSize: 12),)
+              Text("${widget.lectureModel.status=="upcoming" ?0:widget.lectureModel.present!.length}/${widget.lectureModel.students!.length} students",style: TextStyle(color: Colors.grey,fontSize: 12),)
             ],
           ),
           SizedBox(height: 10,),
@@ -77,12 +80,12 @@ class _FacClassCardState extends State<FacClassCard> {
               minHeight: 10,
               backgroundColor: Theme.of(context).primaryColor.withOpacity(0.2),
               borderRadius: BorderRadiusGeometry.circular(12),
-              value:widget.lecture.status=="upcoming" ?0: widget.lecture.present_std/widget.lecture.total_std,
+              value:widget.lectureModel.status=="upcoming" ?0: widget.lectureModel.present!.length/widget.lectureModel.students!.length,
               valueColor: AlwaysStoppedAnimation(Theme.of(context).primaryColor),
             ),
           ),
           //marked or not
-          widget.lecture.status=="completed" ?SizedBox():Padding(
+          widget.lectureModel.status=="completed" ?SizedBox():Padding(
             padding: const EdgeInsets.only(
                 left: 85,
                 top: 10

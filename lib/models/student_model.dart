@@ -1,10 +1,18 @@
 class Student{
-  String id;
+  String? id;
    String name;
-   String deprt;
+   String depart;
    int semester;
    String email;
-   String password;
+   DateTime? created_at=DateTime.now();
 
-  Student({required this.id,required this.name,required this.deprt,required this.semester,required this.email,required this.password});
+  Student({
+    this.id,
+    required this.name,
+    required this.depart,
+    required this.semester,
+    required this.email,
+    this.created_at,
+
+    });
 }

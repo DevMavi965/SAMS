@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
-import 'package:smas3/models/Lecture_model.dart';
+import 'package:smas3/models/lecture.dart';
+import 'package:smas3/models/course.dart';
 
 import '../../widgets/student_widgets/upcoming_class_card.dart';
 class Scheduletab extends StatefulWidget {
-  final List<Course> courses;
-  const Scheduletab({super.key, required this.courses});
+  final List<LectureModel> lectures;
+  const Scheduletab({super.key, required this.lectures});
 
   @override
   State<Scheduletab> createState() => _ScheduletabState();
@@ -93,9 +94,12 @@ class _ScheduletabState extends State<Scheduletab> {
               ),
               ),
             SizedBox(height: 20,),
-            for(var course in widget.courses)
-              if(course.time.weekday-1==selected)
-               UpcomingClassCard(course: course)
+            if(widget.lectures.isNotEmpty)
+              for(var lecture in widget.lectures)
+                // if(lecture.dated.weekday - 1 == selected)
+                  UpcomingClassCard(lectureModel: lecture)
+              // UpcomingClassCard(lectureModel: lecture,)
+
           ],
         ),
       ),

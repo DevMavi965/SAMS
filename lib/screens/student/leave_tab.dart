@@ -90,10 +90,10 @@ class _LeaveTabState extends State<LeaveTab> {
       LeaveApplication newLeaveApplication = LeaveApplication(
         type: selectedType,
         reason: reasonCon.text,
-        fromDate: DateFormat('dd-MMM-yyyy').format(from_Date!),
-        tillDate: DateFormat('dd-MMM-yyyy').format(till_Date!),
+        fromDate: from_Date!,
+        tillDate: till_Date!,
         status: "pending",
-        appliedDate: DateFormat('dd-MMM-yyyy').format(DateTime.now()), std_name:widget.student.name, std_id: widget.student.id.toString(),
+        appliedDate:DateTime.now(), std_name:widget.student.name, std_id: widget.student.id.toString(),
       );
       setState(() {
         widget.leaveApplications.add(newLeaveApplication);

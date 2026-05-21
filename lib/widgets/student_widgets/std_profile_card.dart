@@ -89,7 +89,7 @@ class _StdProfileCardState extends State<StdProfileCard> {
                   ),
                   onPressed: () {
 
-                  }, child: Text(widget.student.deprt,style: TextStyle(fontSize: 11,color: Colors.white),)),
+                  }, child: Text(widget.student.depart,style: TextStyle(fontSize: 11,color: Colors.white),)),
               SizedBox(width: 20,),
               OutlinedButton(
                   style: ButtonStyle(

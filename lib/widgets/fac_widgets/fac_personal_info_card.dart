@@ -111,7 +111,7 @@ class _FacPersonalInfoCardState extends State<FacPersonalInfoCard> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text("Employee ID",style: TextStyle(color: Colors.grey),),
-                          Text(widget.lecturer.E_id),
+                          Text(widget.lecturer.id!),
                         ],
                       )
                     ],
@@ -140,7 +140,7 @@ class _FacPersonalInfoCardState extends State<FacPersonalInfoCard> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text("Courses Teaching",style: TextStyle(color: Colors.grey),),
-                          Text("${widget.lecturer.courses.length} Active Courses"),
+                          Text("${widget.lecturer.courses!.length} Active Courses"),
                         ],
                       )
                     ],

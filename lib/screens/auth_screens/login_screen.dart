@@ -1,7 +1,13 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:smas3/models/admin_model.dart';
 import 'package:smas3/models/student_model.dart';
+import 'package:smas3/screens/faculty/fac_deshboard.dart';
 import 'package:smas3/screens/student/stdudent_deshboard.dart';
+
+import '../admin/admin_deshboard.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -12,23 +18,57 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   String selectedRole = "Student";
-  String selectedMethod = "Email";
-  bool rememberMe = false;
-  bool obscure = true;
-
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+  String selectedMethod = "Email";
+  final roles = ["Student", "Faculty", "Admin"];
+  final methods = ["Biometric", "Email"];
+  bool rememberMe = false;
+  bool obscure = true;
+  bool loading=false;
+  loginWithEmail()async{
+    setState(() {
+      loading=true;
+    });
+    try{
+      final authUser=await FirebaseAuth.instance.createUserWithEmailAndPassword(email: emailController.text.trim(), password: passwordController.text.trim());
+        Navigator.push(context, MaterialPageRoute(builder: (context)=>StudentDeshboard(
+          student: Student(id: "3456789", name: "Muawiya Sultan", depart:"CS", semester: 3, email: authUser.user!.email!,
+              ),)));
+
+
+        // if(selectedRole=="Student"){
+        //   Navigator.push(context, MaterialPageRoute(builder: (context)=>StudentDeshboard(
+        //     student: Student(id: authUser.user!.uid, name: "Muawiya Sultan", deprt:"CS", semester: 3, email: authUser.user!.email!,
+        //         password: "5566f66f"),)));
+        // }else if(selectedRole=="Faculty"){
+        //   Navigator.push(context, MaterialPageRoute(builder: (context)=>FacDeshboard()));
+        // }else if(selectedRole=="Admin"){
+        //   Navigator.push(context, MaterialPageRoute(builder: (context)=>AdminDeshboard(admin: Admin(name: authUser.user!.displayName!, email: authUser.user!.email!, institute: "FAST", role: "admin", status: "active"),)));
+        // }else{
+        //   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("plz select valid role")));
+        // }
+
+    }catch(e){
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+    }finally{
+      setState(() {
+        loading=false;
+      });
+    }
+  }
+
+  
   final formKey = GlobalKey<FormState>();
 
   @override
   Widget build(BuildContext context) {
-    final roles = ["Student", "Faculty", "Admin"];
-    final methods = ["Biometric", "Email"];
+
 
     return Scaffold(
       backgroundColor:Colors.white,
       // const Color(0xFFF1FAF5),
-      body: Center(
+      body:loading?Center(child: CircularProgressIndicator()): Center(
         child: SingleChildScrollView(
           child: Form(
             key: formKey,
@@ -171,18 +211,18 @@ class _LoginScreenState extends State<LoginScreen> {
 
                         // Remember Me + Forgot Password
                         Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Row(
-                              children: [
-                                Checkbox(
-                                  value: rememberMe,
-                                  onChanged: (val) =>
-                                      setState(() => rememberMe = val!),
-                                ),
-                                 Text("Remember me",style: TextStyle(fontSize: 12),),
-                              ],
-                            ),
+                            // Row(
+                            //   children: [
+                            //     Checkbox(
+                            //       value: rememberMe,
+                            //       onChanged: (val) =>
+                            //           setState(() => rememberMe = val!),
+                            //     ),
+                            //      // Text("Remember me",style: TextStyle(fontSize: 12),),
+                            //   ],
+                            // ),
                             TextButton(
                               onPressed: () {},
                               child: const Text("Forgot password?",style: TextStyle(fontSize: 12,color: Color.fromARGB(230, 0, 152,120)),),
@@ -197,21 +237,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           child: ElevatedButton.icon(
                             onPressed: () {
 //main button
-                              if(formKey.currentState!.validate() && selectedRole=="Student"){
-                                Navigator.push(context,
-                                    MaterialPageRoute(
-                                    builder: (context)=>
-                                        StudentDeshboard(
-                                        student:Student(
-                                            id: "120",
-                                            name: "Muawiya Sultan",
-                                            deprt: "Information Technology",
-                                            semester: 7,
-                                            email: emailController.text,
-                                            password: passwordController.text
-                                        ) )
-                                    )
-                                );
+                              if(formKey.currentState!.validate()){
+                               loginWithEmail();
                               }else{
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(content: Text("plz select valid role"),)
@@ -276,6 +303,20 @@ class _LoginScreenState extends State<LoginScreen> {
                     style: TextStyle(color: Color.fromARGB(255, 0, 152,124)),
                   ),
                 ),
+                SizedBox(height: 15,),
+                InkWell(
+                  onTap: (){
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("using google"),));
+                  },
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Image.asset("assets/icons/google.png",width: 25,height: 25,),
+                      SizedBox(width: 10,),
+                      Text("Continue with google",style: TextStyle(color: Colors.black,fontWeight: FontWeight.w400),),
+                    ],
+                  ),
+                )
               ],
             ),
           ),

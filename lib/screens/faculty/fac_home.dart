@@ -1,9 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
-import 'package:smas3/models/Lecture_model.dart';
-import 'package:smas3/models/fac_Lecture_model.dart';
 import 'package:smas3/models/fac_model.dart';
+import 'package:smas3/models/lecture.dart';
 import 'package:smas3/widgets/fac_widgets/fac_class_card.dart';
 import 'package:smas3/widgets/fac_widgets/fac_home_grid.dart';
 class FacHomeTab extends StatefulWidget {
@@ -15,28 +14,17 @@ class FacHomeTab extends StatefulWidget {
 }
 
 class _FacHomeTabState extends State<FacHomeTab> {
-  List<Lecture> lectures=[
-    Lecture(
-        course: Course(name: "DSA", lecturer:"Dr Abdullah", room:"13C", time: DateTime.now(), status: "upcoming"),
-        total_std:50,
-        absent_std:2,
-        late_std: 2,
-        present_std: 48,
-        status: "upcoming"),
-    Lecture(
-        course: Course(name: "DSA", lecturer:"Mrs Aina", room:"13C", time: DateTime.now(), status: "upcoming"),
-        total_std:50,
-        absent_std:2,
-        late_std: 2,
-        present_std: 48,
-        status: "upcoming"),
-    Lecture(
-        course: Course(name: "DSA", lecturer:"Dr Asif", room:"13C", time: DateTime.now(), status: "upcoming"),
-        total_std:50,
-        absent_std:2,
-        late_std: 2,
-        present_std: 48,
-        status: "completed"),
+  List<LectureModel> lectures=[
+    LectureModel(dated: DateTime.now(), start_time: TimeOfDay.now(), end_time: TimeOfDay.now(), students: ["57kVzKCGMPKznustLOH1","57kVzKCGMPKznustLOH2"], present: ["57kVzKCGMPKznustLOH1"], absent: ["57kVzKCGMPKznustLOH2"], room: "room1"),
+    LectureModel(dated: DateTime.now(), start_time: TimeOfDay.now(), end_time: TimeOfDay.now(), students: ["57kVzKCGMPKznustLOH1","57kVzKCGMPKznustLOH2"], present: ["57kVzKCGMPKznustLOH1"], absent: ["57kVzKCGMPKznustLOH2"], room: "room1"),
+    LectureModel(dated: DateTime.now(), start_time: TimeOfDay.now(), end_time: TimeOfDay.now(), students: ["57kVzKCGMPKznustLOH1","57kVzKCGMPKznustLOH2"], present: ["57kVzKCGMPKznustLOH1"], absent: ["57kVzKCGMPKznustLOH2"], room: "room1"),
+    // Lecture(
+    //     course: Course(name: "DSA", lecturer:"Dr Asif", room:"13C", time: DateTime.now(), status: "upcoming"),
+    //     total_std:50,
+    //     absent_std:2,
+    //     late_std: 2,
+    //     present_std: 48,
+    //     status: "completed"),
 
   ];
   @override
@@ -73,7 +61,7 @@ class _FacHomeTabState extends State<FacHomeTab> {
         SizedBox(height: 7,),
         //classes (completed or pending)
         for(int i=0;i<lectures.length;i++)
-          FacClassCard(lecture:lectures[i]),
+          FacClassCard(lectureModel:lectures[i]),
         SizedBox(height: 15,),
         Container(
            padding: EdgeInsets.all(13),

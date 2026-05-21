@@ -1,10 +1,14 @@
 class LeaveApplication{
+  String? id;
   String std_name;
   String std_id;
   String type ;//academic,personal,medical,emergency
-  String appliedDate,fromDate,tillDate,reason;
+  DateTime appliedDate,fromDate,tillDate;
+  String reason;
   String status;//pending,approved,rejected
-  LeaveApplication({
+  String? approvedby;
+  LeaveApplication(
+    {
     required this.appliedDate,
     required this.type,
     required this.fromDate,
@@ -13,7 +17,7 @@ class LeaveApplication{
     required this.status,
     required this.std_name,
     required this.std_id,
-
+     this.approvedby
 
 });
 }

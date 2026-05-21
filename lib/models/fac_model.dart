@@ -1,17 +1,23 @@
-import 'package:smas3/models/Lecture_model.dart';
+import 'package:smas3/models/semester.dart';
+import 'package:smas3/models/course.dart';
 
 class Lecturer{
-  String name,deprt,designation,status,email,phone,E_id;
-  List<Course> courses;
+  String name, deprt,designation,status,email,phone;
+  String? id;
+  List<String>? courses;
+  List<int>? semesters;
+  DateTime? created_at;
   Lecturer({
-    required this.E_id,
+    this.id,
     required this.name,
     required this.deprt,
     required this.designation,
     required this.status,
     required this.email,
     required this.phone,
-    required this.courses,
+    this.courses,
+    this.semesters,
+    this.created_at,
   });
 
 

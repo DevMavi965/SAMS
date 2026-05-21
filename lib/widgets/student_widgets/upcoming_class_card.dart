@@ -1,10 +1,10 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
-import 'package:smas3/models/Lecture_model.dart';
+import 'package:smas3/models/lecture.dart';
 class UpcomingClassCard extends StatelessWidget {
-  final Course course;
-  const UpcomingClassCard({super.key, required this.course});
+  final LectureModel lectureModel;
+  const UpcomingClassCard({super.key, required this.lectureModel});
 
   @override
   Widget build(BuildContext context) {
@@ -44,20 +44,20 @@ class UpcomingClassCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
                 SizedBox(height: 10,),
-                Text(course.name,style: TextStyle(fontSize: 15,fontWeight: FontWeight.w700),),
+                Text(lectureModel.course!.name,style: TextStyle(fontSize: 15,fontWeight: FontWeight.w700),),
                 SizedBox(height: 10,),
                 //lecturaer
                 Row(
                   children: [
                     Icon(Icons.person,color: Colors.grey,size: 14,),
                     SizedBox(width: 4,),
-                    Text(course.lecturer,style: TextStyle(fontSize: 13,color: Colors.grey,fontWeight: FontWeight.w600),),
+                    Text(lectureModel.course!.lecturer!,style: TextStyle(fontSize: 13,color: Colors.grey,fontWeight: FontWeight.w600),),
                   ],
                 ),
                 SizedBox(height: 10,),
-                course.status=="upcoming"?Text("upcoming",style: TextStyle(color: Colors.grey),)
-                    :(course.status=="late"?Text("late",style: TextStyle(color: Colors.grey))
-                    :(course.status=="present"?Text("present",style: TextStyle(color: Colors.grey))
+                lectureModel.status=="upcoming"?Text("upcoming",style: TextStyle(color: Colors.grey),)
+                    :(lectureModel.status=="late"?Text("late",style: TextStyle(color: Colors.grey))
+                    :(lectureModel.status=="present"?Text("present",style: TextStyle(color: Colors.grey))
                     :Text("absent",style: TextStyle(color: Colors.grey)))),
 
               ],
@@ -65,16 +65,16 @@ class UpcomingClassCard extends StatelessWidget {
             Column(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                course.status=="upcoming"?Icon(CupertinoIcons.clock,color: Colors.blue,size: 18,fontWeight: FontWeight.bold,)
-                    :(course.status=="late"?Icon(CupertinoIcons.clock,color: Colors.brown,size: 18,fontWeight: FontWeight.bold,)
-                    :(course.status=="present"?Icon(CupertinoIcons.check_mark_circled,color: Theme.of(context).primaryColor,size: 18,fontWeight: FontWeight.bold,)
+                lectureModel.status=="upcoming"?Icon(CupertinoIcons.clock,color: Colors.blue,size: 18,fontWeight: FontWeight.bold,)
+                    :(lectureModel.status=="late"?Icon(CupertinoIcons.clock,color: Colors.brown,size: 18,fontWeight: FontWeight.bold,)
+                    :(lectureModel.status=="present"?Icon(CupertinoIcons.check_mark_circled,color: Theme.of(context).primaryColor,size: 18,fontWeight: FontWeight.bold,)
                     :Icon(CupertinoIcons.xmark_circle,color: Colors.red.shade500,size: 18,fontWeight: FontWeight.bold,))),
                 SizedBox(height: 8,),
                 Row(
                   children: [
                     Icon(CupertinoIcons.clock,color: Colors.grey,size: 13,),
                     SizedBox(width: 3,),
-                    Text("${course.time.hour}:${course.time.minute}-${course.time.hour+1}:${course.time.minute}",style: TextStyle(fontSize: 13,color: Colors.grey),),
+                    Text("${lectureModel.start_time}-${lectureModel.end_time}",style: TextStyle(fontSize: 13,color: Colors.grey),),
                   ],
                 ),
                 SizedBox(height: 5,),
@@ -99,7 +99,7 @@ class UpcomingClassCard extends StatelessWidget {
                       children: [
                         Icon(CupertinoIcons.location_solid,color: Colors.grey,size: 13,),
                         SizedBox(width: 3,),
-                        Text(course.room,style: TextStyle(fontSize: 11,color: Colors.grey),),
+                        Text(lectureModel.room,style: TextStyle(fontSize: 11,color: Colors.grey),),
                       ],
                     ))
 

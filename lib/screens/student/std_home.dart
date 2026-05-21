@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
-import 'package:smas3/models/Lecture_model.dart';
 import 'package:smas3/models/announcement_model.dart';
+import 'package:smas3/models/lecture.dart';
+import 'package:smas3/models/course.dart';
 
 import '../../models/student_model.dart';
 import '../../widgets/student_widgets/Custome_line_chart.dart';
@@ -12,10 +13,10 @@ import '../../widgets/student_widgets/std_announc_card.dart';
 import '../../widgets/student_widgets/upcoming_class_card.dart';
 class StdHome extends StatelessWidget {
   final List<Announcement> announcements;
-  final List<Course> courses;
+  final List<LectureModel> lectures;
   final Student student;
   final List<String> months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-   StdHome({super.key, required this.announcements, required this.courses, required this.student});
+   StdHome({super.key, required this.announcements, required this.lectures, required this.student});
 
   @override
   Widget build(BuildContext context) {
@@ -85,9 +86,9 @@ class StdHome extends StatelessWidget {
                 ],
               ),
               //upcoming classes
-              for(var course in courses)
-                if(course.status=="upcoming")
-                  UpcomingClassCard(course: course)
+              for(var lecture in lectures)
+                if(lecture.status=="upcoming")
+                  UpcomingClassCard(lectureModel: lecture,)
             ],
           )
         ],

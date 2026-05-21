@@ -2,13 +2,14 @@ import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
-import 'package:smas3/models/Lecture_model.dart';
 import 'package:smas3/models/fac_model.dart';
 import 'package:smas3/screens/faculty/fac_home.dart';
 import 'package:smas3/screens/faculty/fac_leave_tab.dart';
 import 'package:smas3/screens/faculty/fac_mark_attendance.dart';
 import 'package:smas3/screens/faculty/fac_profile_tab.dart';
 import 'package:smas3/screens/faculty/fac_reports_tab.dart';
+
+import '../../models/course.dart';
 class FacDeshboard extends StatefulWidget {
    FacDeshboard({super.key});
 
@@ -19,13 +20,15 @@ class FacDeshboard extends StatefulWidget {
 class _FacDeshboardState extends State<FacDeshboard> {
   int current=3;
   Lecturer lecturer=
-  Lecturer(E_id: "DS13A2", name: "Maliha Shaik", deprt:"Computer Science", designation: "Prof",
-      status: "active", email:"profmshaik@gmail.com", phone: "+923456785321",
-      courses: [
-    Course(name: "Data Science", lecturer: "Maliha Shaik", room: "13A", time: DateTime.now(), status: "active"),
-        Course(name: "ML", lecturer: "Maliha Shaik", room: "13C", time: DateTime.now(), status: "active"),
-        Course(name: "DSA", lecturer: "Maliha Shaik", room: "Lab1", time: DateTime.now(), status: "active")
-  ]);
+  Lecturer(id: "6789",
+    name:"murad ali",
+    deprt: "Computer Science",
+    designation: "Assistant Professor",
+    status: "active",
+    email: "murad@gmail.com",
+    phone: "03351094534",
+    courses: ["CS703","CS704"],
+    semesters: [1,2],);
   List<String> menus=[
     "Home",
     "Mark",

@@ -1,8 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:smas3/models/Lecture_model.dart';
 import 'package:smas3/models/fac_model.dart';
 import 'package:smas3/models/student_model.dart';
+import 'package:smas3/models/course.dart';
 
 class UserMng extends StatefulWidget {
   const UserMng({super.key});
@@ -16,25 +16,31 @@ class _UserMngState extends State<UserMng> {
     "Students","Faculty"
   ];
   List<Student> students=[
-    Student(id: "2345", name: "hasan", deprt: "Computer Science", semester: 1, email: "hasan@gmail.com", password: "hasan123"),
-    Student(id: "t656", name: "noor", deprt: "Information Technology", semester: 6, email: "n00r45@gmail.com", password: "ntr623"),
-    Student(id: "7666", name: "hasan", deprt: "Computer Science", semester: 1, email: "hasan@gmail.com", password: "hasan123"),
-    Student(id: "6578", name: "noor", deprt: "Information Technology", semester: 6, email: "n00r45@gmail.com", password: "ntr623"),
-    Student(id: "9765", name: "hasan", deprt: "Computer Science", semester: 1, email: "hasan@gmail.com", password: "hasan123"),
-    Student(id: "5583", name: "noor", deprt: "Information Technology", semester: 6, email: "n00r45@gmail.com", password: "ntr623"),
+    Student(id: "2345", name: "hasan", depart: "Computer Science", semester: 1, email: "hasan@gmail.com", ),
+    Student(id: "t656", name: "noor", depart: "Information Technology", semester: 6, email: "n00r45@gmail.com", ),
+    Student(id: "7666", name: "hasan", depart: "Computer Science", semester: 1, email: "hasan@gmail.com", ),
+    Student(id: "6578", name: "noor", depart: "Information Technology", semester: 6, email: "n00r45@gmail.com", ),
+    Student(id: "9765", name: "hasan", depart: "Computer Science", semester: 1, email: "hasan@gmail.com", ),
+    Student(id: "5583", name: "noor", depart: "Information Technology", semester: 6, email: "n00r45@gmail.com",),
 
 
   ];
   List<Lecturer> lecturers=[
-    Lecturer(E_id: "4578", name:"murad ali", deprt: "Computer Science", designation: "Assistant Professor", status: "active", email: "murad@gmail.com", phone: "03351094534", courses: [
-      Course(name: "Data Science", lecturer: "murad ali", room: "133-A", time: DateTime.now(), status: "continue")
-    ]),
-    Lecturer(E_id: "6789", name:"murad ali", deprt: "Computer Science", designation: "Assistant Professor", status: "active", email: "murad@gmail.com", phone: "03351094534", courses: [
-      Course(name: "Data Science", lecturer: "murad ali", room: "133-A", time: DateTime.now(), status: "continue")
-    ]),
-    Lecturer(E_id: "9876", name:"murad ali", deprt: "Computer Science", designation: "Assistant Professor", status: "active", email: "murad@gmail.com", phone: "03351094534", courses: [
-      Course(name: "Data Science", lecturer: "murad ali", room: "133-A", time: DateTime.now(), status: "continue")
-    ]),
+    Lecturer(id: "6789",
+      name:"murad ali",
+      deprt: "Computer Science",
+      designation: "Assistant Professor",
+      status: "active",
+      email: "murad@gmail.com",
+      phone: "03351094534",
+      courses: ["CS703","CS704"],
+      semesters: [1,2],),
+    Lecturer(id: "6789", name:"murad ali", deprt: "Computer Science",
+        designation: "Assistant Professor", status: "active", email: "murad@gmail.com",
+        phone: "03351094534", courses:["CS703","CS704"]),
+    Lecturer(id: "9876", name:"murad ali", deprt: "Physics",
+        designation: "Assistant Professor", status: "active",
+        email: "murad@gmail.com", phone: "03351094534", courses: ["CS703","CS704"]),
   ];
   int selected_opt=0;
   @override
@@ -194,7 +200,7 @@ class _UserMngState extends State<UserMng> {
                           children: [
                             Badge(label: Padding(
                               padding: const EdgeInsets.all(3.0),
-                              child: Text(students[i].deprt,style: TextStyle(
+                              child: Text(students[i].depart,style: TextStyle(
                                   fontWeight: FontWeight.w800,
                                   color: Colors.black
                               ),),
@@ -213,7 +219,7 @@ class _UserMngState extends State<UserMng> {
                       children: [
                         Badge(label: Padding(
                           padding: const EdgeInsets.all(3.0),
-                          child: Text(students[i].id,style: TextStyle(color: Colors.black),),
+                          child: Text(students[i].id!,style: TextStyle(color: Colors.black),),
                         ),backgroundColor:Color(0xfff1f5f9),),
                         SizedBox(height: 10,),
                         Icon(Icons.more_vert,color: Colors.grey,),
@@ -289,7 +295,7 @@ class _UserMngState extends State<UserMng> {
                             SizedBox(width: 10,),
                             Badge(label: Padding(
                               padding: const EdgeInsets.all(3.0),
-                              child: Text("courses ${lecturers[i].courses.length}",style: TextStyle(color: Colors.black),),
+                              child: Text("courses ${lecturers[i].courses!.length}",style: TextStyle(color: Colors.black),),
                             ),backgroundColor: Color(0xfff1f5f9),),
 
                           ],
@@ -300,7 +306,7 @@ class _UserMngState extends State<UserMng> {
                       children: [
                         Badge(label: Padding(
                           padding: const EdgeInsets.all(3.0),
-                          child: Text(lecturers[i].E_id,style: TextStyle(color: Colors.black),),
+                          child: Text(lecturers[i].id!,style: TextStyle(color: Colors.black),),
                         ),backgroundColor:Color(0xfff1f5f9),),
                         SizedBox(height: 10,),
                         Icon(Icons.more_vert,color: Colors.grey,),

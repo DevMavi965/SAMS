@@ -14,8 +14,8 @@ class _FacLeaveTabState extends State<FacLeaveTab> {
   List<String> appTypes = ["pending", "reviwed"];
   int selected=0;
   List<LeaveApplication> leaveApplications = [
-    LeaveApplication(type: "medical", reason: "sick", fromDate: "10/12/2025", tillDate: "13/12/2025", status: "pending", appliedDate: "9/12/2025",std_name: "ahmed",std_id: "12234"),
-    LeaveApplication(type: "emergency", reason: "sick", fromDate: "10/12/2025", tillDate: "13/12/2025", status: "approved", appliedDate: "9/12/2025",std_name: "Hafsa",std_id: "12234"),
+    LeaveApplication(type: "medical", reason: "sick", fromDate: DateTime(2025, 12, 10), tillDate: DateTime(2025, 12, 13), status: "pending", appliedDate: DateTime(2025, 12, 10),std_name: "ahmed",std_id: "12234"),
+    LeaveApplication(type: "emergency", reason: "sick", fromDate: DateTime(2025, 12, 18), tillDate: DateTime(2025, 12, 20), status: "approved", appliedDate: DateTime(2025, 12, 15),std_name: "Hafsa",std_id: "12234"),
   ];
   @override
   Widget build(BuildContext context) {

@@ -41,10 +41,9 @@ class RouteHelper {
     final student= Student(
         id: "1204",
         name: "Ameer",
-        deprt: "Information Technology",
+        depart: "Information Technology",
         semester: 7,
         email: "ameermuawiya472@gmail.com",
-        password: "password34",
     );
         return MaterialPageRoute(
           builder: (context) => StudentDeshboard(student: student,),

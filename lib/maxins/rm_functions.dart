@@ -64,6 +64,3 @@ mixin RMFuncts{
     return '$years year${years > 1 ? 's' : ''} ago';
   }
 }
-class Reuseables with RMFuncts{
-
-}

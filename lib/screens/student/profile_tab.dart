@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
-import 'package:smas3/models/Lecture_model.dart';
 import 'package:smas3/models/student_model.dart';
 import 'package:smas3/widgets/student_widgets/personal_info.dart';
 import 'package:smas3/widgets/student_widgets/std_profile_card.dart';

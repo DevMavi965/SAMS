@@ -11,6 +11,7 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
+
   void nextScreen()async{
    await Future.delayed(Duration(seconds: 3));
     await Navigator.pushReplacementNamed(context, '/login');

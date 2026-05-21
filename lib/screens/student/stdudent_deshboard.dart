@@ -1,9 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
-import 'package:smas3/models/Lecture_model.dart';
 import 'package:smas3/models/admin_model.dart';
 import 'package:smas3/models/announcement_model.dart';
+import 'package:smas3/models/lecture.dart';
 import 'package:smas3/models/student_model.dart';
 import 'package:smas3/screens/admin/admin_deshboard.dart';
 import 'package:smas3/screens/student/alert_tab.dart';
@@ -32,35 +32,28 @@ class StudentDeshboard extends StatefulWidget {
 class _StudentDeshboardState extends State<StudentDeshboard> {
  int current=0;
   List<String> menus=["home","schedule","leave","alerts","profile"];
- List<Course> courses =[
-   Course(name: "DSA", lecturer: "prof. Aslam", room: "lab 1", time: DateTime.parse("2025-11-06T08:00:00",),status: "late"),
-   Course(name: "OS", lecturer: "Mr. Waqar", room: "Room 13", time:DateTime.parse("2025-11-06T09:00:00"),status: "absent"),
-   Course(name: "DBMS", lecturer: "Mrs. Atia", room: "lab 3", time: DateTime.parse("2025-11-06T10:30:00"),status: "present"),
-   Course(name: "CN", lecturer: "Mrs. Afia", room: "Room 10", time:DateTime.parse("2025-11-06T11:30:00"),status: "present"),
+ List<LectureModel> lectures =[
+   LectureModel(dated: DateTime.parse("2025-11-06T08:00:00"), start_time: TimeOfDay.now(), end_time: TimeOfDay.now(), students: null, present: null, absent: null, room: "16A"),
+   LectureModel(dated: DateTime.parse("2025-11-06T08:00:00"), start_time: TimeOfDay.now(), end_time: TimeOfDay.now(), students: null, present: null, absent: null, room: "16A"),
+   LectureModel(dated: DateTime.parse("2025-11-06T08:00:00"), start_time: TimeOfDay.now(), end_time: TimeOfDay.now(), students: null, present: null, absent: null, room: "16A"),
 
-   //day2
-   Course(name: "DSA", lecturer: "prof. Aslam", room: "lab 1", time: DateTime.parse("2025-11-07T08:00:00",),status: "late"),
-   Course(name: "OS", lecturer: "Mr. Waqar", room: "Room 13", time:DateTime.parse("2025-11-07T09:00:00"),status: "absent"),
-   Course(name: "DBMS", lecturer: "Mrs. Atia", room: "lab 3", time: DateTime.parse("2025-11-07T10:30:00"),status: "present"),
-   Course(name: "CN", lecturer: "Mrs. Afia", room: "Room 10", time:DateTime.parse("2025-11-07T11:30:00"),status: "present"),
 
    //day3
-   Course(name: "DSA", lecturer: "prof. Aslam", room: "lab 1", time: DateTime.parse("2025-11-10T08:00:00",),status: "upcoming"),
-   Course(name: "OS", lecturer: "Mr. Waqar", room: "Room 13", time:DateTime.parse("2025-11-10T09:00:00"),status: "upcoming"),
-   Course(name: "DBMS", lecturer: "Mrs. Atia", room: "lab 3", time: DateTime.parse("2025-11-10T10:30:00"),status: "upcoming"),
-   Course(name: "CN", lecturer: "Mrs. Afia", room: "Room 10", time:DateTime.parse("2025-11-10T11:30:00"),status: "upcoming"),
+   LectureModel(dated: DateTime.parse("2025-11-10T08:00:00"), start_time: TimeOfDay.now(), end_time: TimeOfDay.now(), students: null, present: null, absent: null, room: "16A"),
+   LectureModel(dated: DateTime.parse("2025-11-10T08:00:00"), start_time: TimeOfDay.now(), end_time: TimeOfDay.now(), students: null, present: null, absent: null, room: "16A"),
+   LectureModel(dated: DateTime.parse("2025-11-10T08:00:00"), start_time: TimeOfDay.now(), end_time: TimeOfDay.now(), students: null, present: null, absent: null, room: "16A"),
+
 
    // day4
-   Course(name: "DSA", lecturer: "prof. Aslam", room: "lab 1", time: DateTime.parse("2025-11-11T08:00:00",),status: "upcoming"),
-   Course(name: "OS", lecturer: "Mr. Waqar", room: "Room 13", time:DateTime.parse("2025-11-11T09:00:00"),status: "upcoming"),
-   Course(name: "DBMS", lecturer: "Mrs. Atia", room: "lab 3", time: DateTime.parse("2025-11-11T10:30:00"),status:"upcoming"),
-   Course(name: "CN", lecturer: "Mrs. Afia", room: "Room 10", time:DateTime.parse("2025-11-11T11:30:00"),status:"upcoming"),
+   LectureModel(dated: DateTime.parse("2025-11-11T08:00:00"), start_time: TimeOfDay.now(), end_time: TimeOfDay.now(), students: null, present: null, absent: null, room: "16A"),
+   LectureModel(dated: DateTime.parse("2025-11-11T08:00:00"), start_time: TimeOfDay.now(), end_time: TimeOfDay.now(), students: null, present: null, absent: null, room: "16A"),
+   LectureModel(dated: DateTime.parse("2025-11-11T08:00:00"), start_time: TimeOfDay.now(), end_time: TimeOfDay.now(), students: null, present: null, absent: null, room: "16A"),
 
    // day5
-   Course(name: "DSA", lecturer: "prof. Aslam", room: "lab 1", time: DateTime.parse("2025-11-12T08:00:00",),status:"upcoming"),
-   Course(name: "OS", lecturer: "Mr. Waqar", room: "Room 13", time:DateTime.parse("2025-11-12T09:00:00"),status: "upcoming"),
-   Course(name: "DBMS", lecturer: "Mrs. Atia", room: "lab 3", time: DateTime.parse("2025-11-12T10:30:00"),status: "upcoming"),
-   Course(name: "CN", lecturer: "Mrs. Afia", room: "Room 10", time:DateTime.parse("2025-11-12T11:30:00"),status: "upcoming"),
+   LectureModel(dated: DateTime.parse("2025-11-12T08:00:00"), start_time: TimeOfDay.now(), end_time: TimeOfDay.now(), students: null, present: null, absent: null, room: "16A"),
+   LectureModel(dated: DateTime.parse("2025-11-12T09:00:00"), start_time: TimeOfDay.now(), end_time: TimeOfDay.now(), students: null, present: null, absent: null, room: "16A"),
+   LectureModel(dated: DateTime.parse("2025-11-12T10:00:00"), start_time: TimeOfDay.now(), end_time: TimeOfDay.now(), students: null, present: null, absent: null, room: "16A"),
+   LectureModel(dated: DateTime.parse("2025-11-12T11:00:00"), start_time: TimeOfDay.now(), end_time: TimeOfDay.now(), students: null, present: null, absent: null, room: "16A"),
 
  ];
   List<Announcement> stud_announcements = [
@@ -76,10 +69,8 @@ class _StudentDeshboardState extends State<StudentDeshboard> {
   ];
 
  late List<LeaveApplication> leaveApplications = [
-   LeaveApplication(type: "medical", reason: "sick", fromDate: "10/12/2025",
-       tillDate: "13/12/2025", status: "pending", appliedDate: "9/12/2025",std_id:widget.student.id,std_name: widget.student.name ),
-   LeaveApplication(type: "emergency", reason: "sick", fromDate: "10/12/2025", tillDate: "13/12/2025", status: "approved",
-       appliedDate: "9/12/2025",std_id:widget.student.id,std_name: widget.student.name),
+   LeaveApplication(appliedDate:DateTime.now(), type: "academic", fromDate:DateTime.now(), tillDate: DateTime.now().add(Duration(days: 3)), reason: "reason of application", status: "pending", std_name: "arslan masoud", std_id: '505778', approvedby: null),
+
  ];
   List<In_Notification> notifications=[
     In_Notification(title: "attendance", body: "body of notification attendance ", type: "attendance", time: "10:00", is_read: false),
@@ -89,8 +80,8 @@ class _StudentDeshboardState extends State<StudentDeshboard> {
 
   ];
   late List<Widget> screens=[
-    StdHome(announcements: stud_announcements, courses: courses, student: widget.student),
-    Scheduletab(courses: courses),
+    StdHome(announcements: stud_announcements, lectures: lectures, student: widget.student),
+    Scheduletab(lectures: lectures,),
     LeaveTab(leaveApplications: leaveApplications,student: widget.student,),
     AlertTab(notifications: notifications,),
     ProfileTab(student: widget.student,)

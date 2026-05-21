@@ -256,36 +256,40 @@ List<LeaveApplication> pendingApplications(List<LeaveApplication> leaveApplicati
         padding: const EdgeInsets.all(8.0),
         child: Column(
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    Icon(leaveApplication.status=="rejected"?CupertinoIcons.xmark_circle:(leaveApplication.status=="pending"?CupertinoIcons.clock:Icons.check_circle_outline),
-                      color:leaveApplication.status=="rejected"?Colors.red:
-                      (leaveApplication.status=="approved"?Color.fromARGB(255, 0, 153, 136):
-                      Colors.brown) ,size: 25,),
-                    SizedBox(width: 12,),
-                    Text("${leaveApplication.type} Leave",style: TextStyle(fontSize: 17),),
-                  ],
-                ),
-                // SizedBox(width: 2,),
-                // SizedBox(width: 2,),
-                Badge(
-                  padding: EdgeInsets.all(5),
-                  label: Text(leaveApplication.status,style: TextStyle(color: Colors.white,fontSize: 9),),
-                  backgroundColor: leaveApplication.status=="rejected"?Colors.red:
-                  (leaveApplication.status=="approved"?Color.fromARGB(255, 0, 153, 136):
-                  Colors.brown),
+            Expanded(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Icon(leaveApplication.status=="rejected"?CupertinoIcons.xmark_circle:(leaveApplication.status=="pending"?CupertinoIcons.clock:Icons.check_circle_outline),
+                        color:leaveApplication.status=="rejected"?Colors.red:
+                        (leaveApplication.status=="approved"?Color.fromARGB(255, 0, 153, 136):
+                        Colors.brown) ,size: 25,),
+                      SizedBox(width: 12,),
+                      Text("${leaveApplication.type} Leave",style: TextStyle(fontSize: 17),),
+                    ],
+                  ),
+                  // SizedBox(width: 2,),
+                  // SizedBox(width: 2,),
+                  Badge(
+                    padding: EdgeInsets.all(5),
+                    label: Text(leaveApplication.status,style: TextStyle(color: Colors.white,fontSize: 9),),
+                    backgroundColor: leaveApplication.status=="rejected"?Colors.red:
+                    (leaveApplication.status=="approved"?Color.fromARGB(255, 0, 153, 136):
+                    Colors.brown),
 
-                )
-              ],
+                  )
+                ],
+              ),
             ),
-            Row(
-              children: [
-                SizedBox(width: 40,),
-                Text("${leaveApplication.fromDate} - ${leaveApplication.tillDate}",style: TextStyle(color: Colors.grey,fontSize: 12),),
-              ],
+            Flexible(
+              child: Row(
+                children: [
+                  SizedBox(width: 40,),
+                  Flexible(child: Text("${leaveApplication.fromDate} - ${leaveApplication.tillDate}",overflow: TextOverflow.ellipsis,style: TextStyle(color: Colors.grey,fontSize: 12),)),
+                ],
+              ),
             ),
             SizedBox(height: 10,),
             Row(
