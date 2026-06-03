@@ -7,6 +7,7 @@ import 'package:smas3/models/admin_model.dart';
 import 'package:smas3/models/student_model.dart';
 import 'package:smas3/providers/theme_Provider.dart';
 import 'package:smas3/screens/admin/admin_deshboard.dart';
+import 'package:smas3/screens/auth_screens/login_screen.dart';
 import 'package:smas3/screens/auth_screens/register_ins_admin.dart';
 import 'package:smas3/screens/faculty/fac_deshboard.dart';
 import 'package:smas3/screens/splash/splash_screen.dart';
@@ -27,20 +28,21 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MultiProvider(providers: [
-      ChangeNotifierProvider(create: (context)=>DbService()),
+      ChangeNotifierProvider(create: (context)=>DbService(context)),
       ChangeNotifierProvider(create: (context)=>ThemeProvider())
-    ],child: Consumer<ThemeProvider>(
-      builder: (context,provider,child) {
+    ],child: Consumer2<ThemeProvider,DbService>(
+      builder: (context,provider,dbsprovider,child) {
         return MaterialApp(
           debugShowCheckedModeBanner: false,
           // home: FacDeshboard(),
-          // routes: RouteHelper.myRoutes(),
-         home: RegisterInsAdmin(),
+          routes: RouteHelper.myRoutes(),
+         // home: RegisterInsAdmin(),
 
           // home: AdminDeshboard(admin: Admin(name: "Ameer Muawiya", email: "ameermuawiya34@gmail.com", institute: "SVDS", role: "Admin", status: "active")),
           // home:
-          // StudentDeshboard(student: Student(id: "120", name: "ali", depart: "physics",
-          //     semester: 5, email: "abc@.com",)),
+
+          // StudentDeshboard(student:dbsprovider.students[0],),
+          // AdminDeshboard(admin:dbsprovider.admins[0],),
           // initialRoute:"/fac_desh",
           // routes: MyRouter.myRoutes(),
           // onGenerateRoute: (RouteSettings settings){

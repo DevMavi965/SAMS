@@ -11,7 +11,8 @@ import 'package:smas3/screens/faculty/fac_reports_tab.dart';
 
 import '../../models/course.dart';
 class FacDeshboard extends StatefulWidget {
-   FacDeshboard({super.key});
+  final Lecturer lecturer;
+   FacDeshboard({super.key, required this.lecturer});
 
   @override
   State<FacDeshboard> createState() => _FacDeshboardState();

@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:smas3/models/fac_model.dart';
 import 'package:smas3/models/student_model.dart';
 import 'package:smas3/screens/auth_screens/login_screen.dart';
 import 'package:smas3/screens/faculty/fac_deshboard.dart';
@@ -34,7 +35,9 @@ class RouteHelper {
 
       case "/fac_desh":
         return MaterialPageRoute(
-          builder: (context) => FacDeshboard(),
+          builder: (context) => FacDeshboard(lecturer: Lecturer(name: 'abd', deprt: '', designation: '', status: '', email: '', phone: ''
+
+          ),),
         );
 
       case "/stddeshboard":

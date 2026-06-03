@@ -2,11 +2,16 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:provider/provider.dart';
 import 'package:smas3/models/admin_model.dart';
 import 'package:smas3/models/student_model.dart';
+import 'package:smas3/screens/auth_screens/register_ins_admin.dart';
 import 'package:smas3/screens/faculty/fac_deshboard.dart';
+import 'package:smas3/screens/ins_admin/ins_admin_dashboard.dart';
 import 'package:smas3/screens/student/stdudent_deshboard.dart';
+import 'package:smas3/services/db_service.dart';
 
+import '../../models/ins_admin.dart';
 import '../admin/admin_deshboard.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -17,55 +22,139 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  @override
+  void initState() {
+    Provider.of<DbService>(context,listen: false).getData();
+    // TODO: implement initState
+    super.initState();
+  }
   String selectedRole = "Student";
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   String selectedMethod = "Email";
-  final roles = ["Student", "Faculty", "Admin"];
+  final roles = ["Student", "Faculty", "Admin","insAdmin"];
   final methods = ["Biometric", "Email"];
   bool rememberMe = false;
   bool obscure = true;
   bool loading=false;
-  loginWithEmail()async{
+  final eauth=FirebaseAuth.instance;
+   loginWithStdEmail()async{
+     setState(() {
+       loading=true;
+     });
+     try{
+       final cu=await eauth.signInWithEmailAndPassword(email: emailController.text.trim(),
+           password: passwordController.text.trim()).then((v){
+         if(eauth.currentUser!=null){
+           Student student=Provider.of<DbService>(context,listen: false).students.firstWhere((element) => element.id==eauth.currentUser!.uid);
+           print(student.name);
+           Navigator.push(context, MaterialPageRoute(builder: (_)=>StudentDeshboard(student: student)));
+         }else{
+           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("invalid email or password"),));
+         }
+       });
+     }catch(e){
+       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("error:$e"),));
+     }finally{
+       setState(() {
+         loading=false;
+       });
+     }
+
+   }
+  loginWithFacEmail()async{
     setState(() {
       loading=true;
     });
     try{
-      final authUser=await FirebaseAuth.instance.createUserWithEmailAndPassword(email: emailController.text.trim(), password: passwordController.text.trim());
-        Navigator.push(context, MaterialPageRoute(builder: (context)=>StudentDeshboard(
-          student: Student(id: "3456789", name: "Muawiya Sultan", depart:"CS", semester: 3, email: authUser.user!.email!,
-              ),)));
-
-
-        // if(selectedRole=="Student"){
-        //   Navigator.push(context, MaterialPageRoute(builder: (context)=>StudentDeshboard(
-        //     student: Student(id: authUser.user!.uid, name: "Muawiya Sultan", deprt:"CS", semester: 3, email: authUser.user!.email!,
-        //         password: "5566f66f"),)));
-        // }else if(selectedRole=="Faculty"){
-        //   Navigator.push(context, MaterialPageRoute(builder: (context)=>FacDeshboard()));
-        // }else if(selectedRole=="Admin"){
-        //   Navigator.push(context, MaterialPageRoute(builder: (context)=>AdminDeshboard(admin: Admin(name: authUser.user!.displayName!, email: authUser.user!.email!, institute: "FAST", role: "admin", status: "active"),)));
-        // }else{
-        //   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("plz select valid role")));
-        // }
-
+      await eauth.signInWithEmailAndPassword(email: emailController.text.trim(),
+          password: passwordController.text.trim()).then((v){
+        if(eauth.currentUser!=null){
+          InsAdmin insAdmin=Provider.of<DbService>(context,listen: false).ins_admins.firstWhere((element) => element.email==emailController.text.trim());
+          print(insAdmin.name);
+          Navigator.push(context, MaterialPageRoute(builder: (_)=>InsAdminDashboard(insAdmin: insAdmin,)));
+        }else{
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("invalid email or password"),));
+        }
+      });
     }catch(e){
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString()),));
     }finally{
       setState(() {
         loading=false;
       });
     }
+
+  }
+  loginWithAdminEmail()async{
+    setState(() {
+      loading=true;
+    });
+    try{
+      await eauth.signInWithEmailAndPassword(email: emailController.text.trim(),
+          password: passwordController.text.trim()).then((v){
+        if(eauth.currentUser!=null){
+          Admin admin=Provider.of<DbService>(context,listen: false).admins.firstWhere((element) => element.email==emailController.text.trim());
+          print(admin.name);
+          Navigator.push(context, MaterialPageRoute(builder: (_)=>AdminDeshboard(admin: admin)));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("successfully logging as admin"),backgroundColor: Theme.of(context).primaryColor,));
+        }else{
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("invalid email or password"),));
+        }
+      });
+    }catch(e){
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString()),));
+    }finally{
+      setState(() {
+        loading=false;
+      });
+    }
+
+  }
+  loginWithInsAdminEmail()async{
+     setState(() {
+       loading=true;
+     });
+     try{
+       await eauth.signInWithEmailAndPassword(email: emailController.text.trim(),
+           password: passwordController.text.trim()).then((v){
+         if(eauth.currentUser!=null){
+           InsAdmin insAdmin=Provider.of<DbService>(context,listen: false).ins_admins.firstWhere((element) => element.email==eauth.currentUser!.uid);
+           print(insAdmin.name);
+           Navigator.push(context, MaterialPageRoute(builder: (_)=>InsAdminDashboard(insAdmin: insAdmin,)));
+           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("successfully logging as institute admin"),backgroundColor: Theme.of(context).primaryColor,));
+         }else{
+           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("invalid email or password"),));
+         }
+       });
+     }catch(e){
+       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString()),));
+     }finally{
+       setState(() {
+         loading=false;
+       });
+     }
+
+   }
+  login(){
+     if(selectedRole=="Student"){
+       loginWithStdEmail();
+     }else if(selectedRole=="Faculty"){
+       loginWithFacEmail();
+     }else if(selectedRole=="Admin"){
+       loginWithAdminEmail();
+     }else if(selectedRole=="insAdmin"){
+       loginWithInsAdminEmail();
+     }
   }
 
-  
   final formKey = GlobalKey<FormState>();
 
   @override
   Widget build(BuildContext context) {
 
 
-    return Scaffold(
+    return  Scaffold(
       backgroundColor:Colors.white,
       // const Color(0xFFF1FAF5),
       body:loading?Center(child: CircularProgressIndicator()): Center(
@@ -98,7 +187,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   "Sign in to continue to AttendEase",
                   style: TextStyle(color: Colors.black54),
                 ),
-                const SizedBox(height: 25),
+                const SizedBox(height: 30),
 
                 // Card
                 Container(
@@ -107,6 +196,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: Colors.grey.shade100,
+                      width: 1,
+                    ),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.grey.withOpacity(0.2),
@@ -119,24 +212,64 @@ class _LoginScreenState extends State<LoginScreen> {
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       // Role Selector
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: roles.map((role) {
-                          final isSelected = selectedRole == role;
-                          return ChoiceChip(
-                            label: Text(role),
-                            selected: isSelected,
-                            onSelected: (_) =>
-                                setState(() => selectedRole = role),
-                            selectedColor: Theme.of(context).primaryColor,
-                            showCheckmark: false,
-                            labelStyle: TextStyle(
-                              color: isSelected ? Colors.white : Colors.black87,
-                            ),
-                          );
-                        }).toList(),
+                      Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(7),
+                          border: Border.all(
+                            color: Colors.grey,
+                            width: 1,
+                          ),
+                        ),
+                        child: Table(
+                          border: TableBorder.symmetric(
+                            inside: BorderSide(
+                              color: Colors.grey.shade500,
+                              width: 1
+                            )
+                          ),
+                          children: [
+                            TableRow(
+                              children: [
+                                for(int i=0;i<roles.length;i++)
+                                  InkWell(
+                                    onTap: (){
+                                      setState(() {
+                                        selectedRole=roles[i];
+                                      });
+                                    },
+                                    child: Container(
+                                      clipBehavior: Clip.antiAlias,
+                                      decoration: BoxDecoration(
+                                        color: selectedRole==roles[i]?Theme.of(context).primaryColor:Colors.white,
+                                        borderRadius: BorderRadius.only(
+                                          topLeft: i == 0
+                                              ? const Radius.circular(6)
+                                              : Radius.zero,
+                                          bottomLeft: i == 0
+                                              ? const Radius.circular(6)
+                                              : Radius.zero,
+
+                                          topRight: i == roles.length - 1
+                                              ? const Radius.circular(6)
+                                              : Radius.zero,
+                                          bottomRight: i == roles.length - 1
+                                              ? const Radius.circular(6)
+                                              : Radius.zero,
+                                        ),
+
+                                      ),
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(8.0),
+                                        child: Text(roles[i],textAlign: TextAlign.center,style: TextStyle(fontWeight: FontWeight.w400),),
+                                      ),
+                                    ),
+                                  )
+                              ]
+                            )
+                          ],
+                        ),
                       ),
-                      const SizedBox(height: 20),
+                       SizedBox(height: 20),
 
                       // Login Method
                       Row(
@@ -157,7 +290,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           );
                         }).toList(),
                       ),
-                      const SizedBox(height: 25),
+                      const SizedBox(height: 15),
 
                       // Email Login Fields
                       if (selectedMethod == "Email") ...[
@@ -238,7 +371,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             onPressed: () {
 //main button
                               if(formKey.currentState!.validate()){
-                               loginWithEmail();
+                               login();
                               }else{
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(content: Text("plz select valid role"),)
@@ -296,6 +429,15 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 15),
 
                 // Footer
+                selectedRole=="insAdmin"?GestureDetector(
+                  onTap: () {
+                    Navigator.push(context, MaterialPageRoute(builder: (_)=>RegisterInsAdmin()));
+                  },
+                  child: const Text(
+                    "Don't have an account? register now as institute admin",
+                    style: TextStyle(color: Color.fromARGB(255, 0, 152,124)),
+                  ),
+                ):
                 GestureDetector(
                   onTap: () {},
                   child: const Text(

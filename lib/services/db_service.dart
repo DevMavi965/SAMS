@@ -32,7 +32,11 @@ class DbService with ChangeNotifier{
   List<LeaveApplication> leaveApplications=[];
 
 bool loading=false;
+
   final dbref=FirebaseFirestore.instance.collection("SAMS").doc("SAMS_DB");
+  DbService(BuildContext context){
+    getData2();
+  }
   // adding data to db
   clearAll(){
     ins_admins.clear();
@@ -161,6 +165,20 @@ bool loading=false;
                 courses: faculty['courses']
             ));
           }
+          final adminSnap=await dbref
+              .collection("ins_admins").doc(insAdmin.id)
+              .collection("institutes").doc(ins.id)
+              .collection("admins").get();
+          for(var admin in adminSnap.docs){
+            admins.add(Admin(
+              id: admin.id,
+                name: admin['name'],
+                email: admin['email'],
+                institute: admin['institute'],
+                role: admin['role'],
+                permissions: admin['permissions'],
+                status: admin['status'],));
+          }
         }
       }
 
@@ -176,10 +194,186 @@ bool loading=false;
      notifyListeners();
     }
   }
+  //get data from db
+  getData2(){
+    try{
+      loading=true;
+      notifyListeners();
+      clearAll();
+      getInsAdmins();
+      for(var insAdmin in ins_admins){
+        getInstitutes(insAdmin.id!);
+        for(var institute in institutes){
+          getStudents(insAdmin.id!,institute.id!);
+          getFaculty(insAdmin.id!,institute.id!);
+          getAdmins(insAdmin.id!,institute.id!);
+        }
+      }
+    }catch(e){
+     debugPrint(e.toString());
+    }finally{
+      loading=false;
+      notifyListeners();
+    }
+  }
+  getInsAdmins(){
+    try{
+     dbref.collection("ins_admins").snapshots().listen((qsnapShot){
+        ins_admins.clear();
+        for(var insAdmin in qsnapShot.docs){
+          ins_admins.add(
+              InsAdmin(
+                  name: insAdmin["name"],
+                  email: insAdmin["email"],
+                  created_at: insAdmin["created_at"].toDate(),//timestamp to datetime
+                  last_login: insAdmin["last_login"].toDate(),
+                  status: insAdmin["status"]
+              ));
+        }
+      });
+
+      notifyListeners();
+      // ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("name :${ins_admins[0].name},email:${ins_admins[0].email},id:${ins_admins[0].institute_id},created_at:${ins_admins[0].created_at},last_login:${ins_admins[0].last_login} ")));
+
+    }catch(e){
+      print(e.toString());
+    }
+ }
+  getInstitutes(String insAdminId){
+    try{
+      dbref.collection("ins_admins")
+          .doc(insAdminId).collection("institutes")
+          .snapshots().listen((qsnapShot){
+        institutes.clear();
+        for(var ins in qsnapShot.docs){
+          institutes.add(
+              Institute(
+                  id: ins.id,
+                  name: ins["name"],
+                  address: ins['address'],
+                  contact: ins['contact'],
+                  logo: ins['logo'],
+                  created_at: ins['created_at'].toDate(),
+                  location: ins.get('location') )//
+          );
+        }
+      });
+
+      notifyListeners();
+      // ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("name :${ins_admins[0].name},email:${ins_admins[0].email},id:${ins_admins[0].institute_id},created_at:${ins_admins[0].created_at},last_login:${ins_admins[0].last_login} ")));
+
+    }catch(e){
+      print(e.toString());
+    }
+ }
+  getStudents(String insAdminId,String instituteId){
+    try{
+      dbref.collection("ins_admins")
+          .doc(insAdminId).collection("institutes").doc(instituteId)
+          .collection("students")
+          .snapshots().listen((qsnapShot){
+        students.clear();
+        for(var student in qsnapShot.docs){
+          students.add(Student(
+              id: student.id,
+              name: student['name'],
+              email: student['email'],
+              depart: student['depart'],
+              semester: student['semester'],
+              created_at: student['created_at'].toDate()));
+        }
+      });
+
+      notifyListeners();
+      // ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("name :${ins_admins[0].name},email:${ins_admins[0].email},id:${ins_admins[0].institute_id},created_at:${ins_admins[0].created_at},last_login:${ins_admins[0].last_login} ")));
+
+    }catch(e){
+      print(e.toString());
+    }
+ }
+  getFaculty(String insAdminId,String instituteId){
+    try{
+      dbref.collection("ins_admins")
+          .doc(insAdminId).collection("institutes").doc(instituteId)
+          .collection("faculty")
+          .snapshots().listen((qsnapShot){
+        lecturers.clear();
+        for(var faculty in qsnapShot.docs){
+          lecturers.add(Lecturer(
+              id: faculty.id,
+              name: faculty['name'],
+              email: faculty['email'],
+              deprt: faculty['depart'],
+              designation: faculty['designation'],
+              status: faculty['status'],
+              phone: faculty['phone'],
+              created_at: faculty['created_at'].toDate(),
+              semesters: faculty['semester'],
+              courses: faculty['courses']
+          ));
+        }
+      });
+
+      notifyListeners();
+      // ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("name :${ins_admins[0].name},email:${ins_admins[0].email},id:${ins_admins[0].institute_id},created_at:${ins_admins[0].created_at},last_login:${ins_admins[0].last_login} ")));
+
+    }catch(e){
+     print(e.toString());
+    }
+ }
+  getAdmins(String insAdminId,String instituteId){
+    try{
+      dbref.collection("ins_admins")
+          .doc(insAdminId).collection("institutes").doc(instituteId)
+          .collection("admins")
+          .snapshots().listen((qSnapShot){
+        admins.clear();
+        for(var admin in qSnapShot.docs){
+          admins.add(Admin(
+            id: admin.id,
+            name: admin['name'],
+            email: admin['email'],
+            institute: admin['institute'],
+            role: admin['role'],
+            permissions: admin['permissions'],
+            status: admin['status'],));
+        }
+      });
+
+      notifyListeners();
+      // ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("name :${ins_admins[0].name},email:${ins_admins[0].email},id:${ins_admins[0].institute_id},created_at:${ins_admins[0].created_at},last_login:${ins_admins[0].last_login} ")));
+
+    }catch(e){
+      print(e.toString());
+    }
+ }
+
+// getInsAdmins(BuildContext context)async{
+  //   try{
+  //     ins_admins.clear();
+  //     final insAdmins=await dbref.collection("ins_admins").get();
+  //     for(var insAdmin in insAdmins.docs){
+  //       ins_admins.add(
+  //           InsAdmin(
+  //               name: insAdmin["name"],
+  //               email: insAdmin["email"],
+  //               created_at: insAdmin["created_at"].toDate(),//timestamp to datetime
+  //               last_login: insAdmin["last_login"].toDate(),
+  //               status: insAdmin["status"]
+  //           ));
+  //     }
+  //     notifyListeners();
+  //     // ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("name :${ins_admins[0].name},email:${ins_admins[0].email},id:${ins_admins[0].institute_id},created_at:${ins_admins[0].created_at},last_login:${ins_admins[0].last_login} ")));
+  //
+  //   }catch(e){
+  //     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+  //   }
+  // }
+  // create operation
   addInsAdmin(BuildContext context,InsAdmin _insAdmin)async{
     try{
       // InsAdmin insAdmin=InsAdmin(name: "Ameer Muawiya", email: "ameermuawiya34@gmail.com", created_at: DateTime.now(), last_login: DateTime.now(), status: "active");
-      final insAdminsRef=await dbref.collection("ins_admins").add({
+      final insAdminsRef=await dbref.collection("ins_admins").doc(_insAdmin.id).set({
         "name":_insAdmin.name,
         "email":_insAdmin.email,
         "created_at":Timestamp.fromDate(_insAdmin.created_at!),//datetime to timestamp
@@ -191,27 +385,6 @@ bool loading=false;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
     }finally{
 
-    }
-  }
-  getInsAdmins(BuildContext context)async{
-    try{
-      ins_admins.clear();
-      final insAdmins=await dbref.collection("ins_admins").get();
-      for(var insAdmin in insAdmins.docs){
-        ins_admins.add(
-            InsAdmin(
-                name: insAdmin["name"],
-                email: insAdmin["email"],
-                created_at: insAdmin["created_at"].toDate(),//timestamp to datetime
-                last_login: insAdmin["last_login"].toDate(),
-                status: insAdmin["status"]
-            ));
-      }
-      notifyListeners();
-      // ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("name :${ins_admins[0].name},email:${ins_admins[0].email},id:${ins_admins[0].institute_id},created_at:${ins_admins[0].created_at},last_login:${ins_admins[0].last_login} ")));
-
-    }catch(e){
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
     }
   }
   addInstitute(BuildContext context,String insAdminId,Institute institute)async{
