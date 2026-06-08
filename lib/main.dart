@@ -4,12 +4,14 @@ import 'package:provider/provider.dart';
 import 'package:smas3/firebase_options.dart';
 import 'package:smas3/models/Routes.dart';
 import 'package:smas3/models/admin_model.dart';
+import 'package:smas3/models/ins_admin.dart';
 import 'package:smas3/models/student_model.dart';
 import 'package:smas3/providers/theme_Provider.dart';
 import 'package:smas3/screens/admin/admin_deshboard.dart';
 import 'package:smas3/screens/auth_screens/login_screen.dart';
 import 'package:smas3/screens/auth_screens/register_ins_admin.dart';
 import 'package:smas3/screens/faculty/fac_deshboard.dart';
+import 'package:smas3/screens/ins_admin/ins_admin_dashboard.dart';
 import 'package:smas3/screens/splash/splash_screen.dart';
 import 'package:smas3/screens/student/stdudent_deshboard.dart';
 import 'package:smas3/services/db_service.dart';
@@ -28,7 +30,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MultiProvider(providers: [
-      ChangeNotifierProvider(create: (context)=>DbService(context)),
+      ChangeNotifierProvider(create: (context)=>DbService()),
       ChangeNotifierProvider(create: (context)=>ThemeProvider())
     ],child: Consumer2<ThemeProvider,DbService>(
       builder: (context,provider,dbsprovider,child) {
@@ -36,6 +38,8 @@ class MyApp extends StatelessWidget {
           debugShowCheckedModeBanner: false,
           // home: FacDeshboard(),
           routes: RouteHelper.myRoutes(),
+          //JUlgUsKmHHVEqAhI7y7c0grT9yN2
+          // home: dbsprovider.loading? Scaffold(body: Center(child: CircularProgressIndicator(),),):InsAdminDashboard(insAdmin:Provider.of<DbService>(context,listen: false).ins_admins.firstWhere((element) => element.id=="PmqTC7uOWotY7KPCsw8D")),
          // home: RegisterInsAdmin(),
 
           // home: AdminDeshboard(admin: Admin(name: "Ameer Muawiya", email: "ameermuawiya34@gmail.com", institute: "SVDS", role: "Admin", status: "active")),

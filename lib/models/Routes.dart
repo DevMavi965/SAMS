@@ -35,7 +35,8 @@ class RouteHelper {
 
       case "/fac_desh":
         return MaterialPageRoute(
-          builder: (context) => FacDeshboard(lecturer: Lecturer(name: 'abd', deprt: '', designation: '', status: '', email: '', phone: ''
+          builder: (context) => FacDeshboard(lecturer: Lecturer(
+              name: 'abd', deprt: '', designation: '', status: '', email: '', phone: '', role: '', instituteId: '', insAdminId: ''
 
           ),),
         );
@@ -43,6 +44,9 @@ class RouteHelper {
       case "/stddeshboard":
     final student= Student(
         id: "1204",
+        role: "student",
+        instituteId: "34567890",
+        insAdminId: "234567890",
         name: "Ameer",
         depart: "Information Technology",
         semester: 7,

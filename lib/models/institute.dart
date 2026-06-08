@@ -5,7 +5,7 @@ class Institute {
   int contact;
   DateTime created_at;
   Map<String,dynamic> location;
-  String? id;
+  String? id,insAdminId;
   Institute({
     required this.name,
     required this.address,
@@ -13,6 +13,7 @@ class Institute {
     required this.logo,
     required this.created_at,
     required this.location,
-    this.id
+    this.id,
+    this.insAdminId
 });
 }

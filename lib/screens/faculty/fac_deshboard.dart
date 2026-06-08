@@ -22,6 +22,9 @@ class _FacDeshboardState extends State<FacDeshboard> {
   int current=3;
   Lecturer lecturer=
   Lecturer(id: "6789",
+    instituteId: "123456",
+    insAdminId: '3476987',
+    role: "faculty",
     name:"murad ali",
     deprt: "Computer Science",
     designation: "Assistant Professor",

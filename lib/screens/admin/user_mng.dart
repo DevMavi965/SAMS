@@ -16,17 +16,21 @@ class _UserMngState extends State<UserMng> {
     "Students","Faculty"
   ];
   List<Student> students=[
-    Student(id: "2345", name: "hasan", depart: "Computer Science", semester: 1, email: "hasan@gmail.com", ),
-    Student(id: "t656", name: "noor", depart: "Information Technology", semester: 6, email: "n00r45@gmail.com", ),
-    Student(id: "7666", name: "hasan", depart: "Computer Science", semester: 1, email: "hasan@gmail.com", ),
-    Student(id: "6578", name: "noor", depart: "Information Technology", semester: 6, email: "n00r45@gmail.com", ),
-    Student(id: "9765", name: "hasan", depart: "Computer Science", semester: 1, email: "hasan@gmail.com", ),
-    Student(id: "5583", name: "noor", depart: "Information Technology", semester: 6, email: "n00r45@gmail.com",),
+    Student(id: "2345", name: "hasan", depart: "Computer Science", semester: 1, email: "hasan@gmail.com", role: 'student', insAdminId: '2345678', instituteId: '234567' ),
+    Student(id: "t656", name: "noor", depart: "Information Technology", semester: 6, email: "n00r45@gmail.com", role: 'student', insAdminId: '23465345', instituteId: '23467' ),
+    Student(id: "7666", name: "hasan", depart: "Computer Science", semester: 1, email: "hasan@gmail.com", role: 'student',insAdminId: '2345678', instituteId: '234567' ),
+    Student(id: "2345", name: "hasan", depart: "Computer Science", semester: 1, email: "hasan@gmail.com", role: 'student', insAdminId: '2345678', instituteId: '234567' ),
+    Student(id: "t656", name: "noor", depart: "Information Technology", semester: 6, email: "n00r45@gmail.com", role: 'student', insAdminId: '23465345', instituteId: '23467' ),
+    Student(id: "7666", name: "hasan", depart: "Computer Science", semester: 1, email: "hasan@gmail.com", role: 'student',insAdminId: '2345678', instituteId: '234567' ),
 
 
   ];
   List<Lecturer> lecturers=[
-    Lecturer(id: "6789",
+    Lecturer(
+    id: "6789",
+      role: "faculty",
+      insAdminId: '4567890',
+      instituteId: '4567890',
       name:"murad ali",
       deprt: "Computer Science",
       designation: "Assistant Professor",
@@ -35,10 +39,14 @@ class _UserMngState extends State<UserMng> {
       phone: "03351094534",
       courses: ["CS703","CS704"],
       semesters: [1,2],),
-    Lecturer(id: "6789", name:"murad ali", deprt: "Computer Science",
+    Lecturer(id: "6789", role: "faculty",
+        insAdminId: '4567890',
+        instituteId: '4567890',name:"murad ali", deprt: "Computer Science",
         designation: "Assistant Professor", status: "active", email: "murad@gmail.com",
         phone: "03351094534", courses:["CS703","CS704"]),
-    Lecturer(id: "9876", name:"murad ali", deprt: "Physics",
+    Lecturer(id: "9876",role: "faculty",
+        insAdminId: '4567890',
+        instituteId: '4567890', name:"murad ali", deprt: "Physics",
         designation: "Assistant Professor", status: "active",
         email: "murad@gmail.com", phone: "03351094534", courses: ["CS703","CS704"]),
   ];

@@ -22,44 +22,11 @@ class _RegisterInsAdminState extends State<RegisterInsAdmin> {
   TextEditingController confirm_password=TextEditingController();
   final auth=FirebaseAuth.instance;
   bool loading=false;
-  signUpWithInsAdminEmail()async{
-    setState(() {
-      loading=true;
-    });
-    try{
-      await auth.createUserWithEmailAndPassword(email: email.text.trim(),
-          password: password.text.trim()).then((v) async{
-        if(auth.currentUser!=null){
-
-          InsAdmin insAdmin=InsAdmin(
-              id: auth.currentUser!.uid,
-              name: name.text.trim(),
-              email: email.text.trim(),
-              status: 'active',
-            last_login: DateTime.now(),
-            created_at: DateTime.now(),
-          );
-         await Provider.of<DbService>(context,listen: false).addInsAdmin(context,insAdmin);
-          Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_)=>InsAdminDashboard(insAdmin: insAdmin,)),(r)=>false);
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("successfully registered as institute admin"),backgroundColor: Theme.of(context).primaryColor,));
-        }else{
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("invalid email or password"),));
-        }
-      });
-    }catch(e){
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString()),));
-    }finally{
-      setState(() {
-        loading=false;
-      });
-    }
-
-  }
   final formKey=GlobalKey<FormState>();
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body:
+      body:loading?Center(child: CircularProgressIndicator(),):
       Padding(
         padding: const EdgeInsets.all(8.0),
         child: Form(
@@ -178,7 +145,15 @@ class _RegisterInsAdminState extends State<RegisterInsAdmin> {
                   if(password.text!=confirm_password.text){
                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("password not matched"),backgroundColor: Colors.red,));
                   }else{
-                    signUpWithInsAdminEmail();
+                    InsAdmin insAdmin=InsAdmin(
+                        role: "insAdmin",
+                        name: name.text.trim(),
+                        email: email.text.trim(),
+                        status: "active",
+                      created_at: DateTime.now(),
+                      last_login: DateTime.now(),
+                    );
+                    Provider.of<DbService>(context,listen: false).signUpWithInsAdminEmail(insAdmin,password.text.trim(),context);
                   }
                 }else{
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("please fill all fields"),backgroundColor: Colors.red,));

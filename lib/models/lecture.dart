@@ -4,7 +4,7 @@ import 'package:smas3/models/course.dart';
 class LectureModel {
   String? id;
   DateTime dated;
-  Course? course;
+  String? course;
   TimeOfDay start_time,end_time;
   List<String>? students;//student ids here.
   List<String>? present;//student ids here.

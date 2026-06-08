@@ -43,7 +43,7 @@ class _FacClassCardState extends State<FacClassCard> {
                 child: Icon(PhosphorIconsBold.calendarBlank,color: Theme.of(context).primaryColor,size: 25,),
               ),
             ),
-            title: Text(widget.lectureModel.course!.name,style: TextStyle(fontSize: 14),),
+            title: Text(widget.lectureModel.course!,style: TextStyle(fontSize: 14),),
             subtitle: Text("${widget.lectureModel.start_time.hour}:${widget.lectureModel.end_time.minute} - Room ${widget.lectureModel.room}",style: TextStyle(color: Colors.grey,fontSize: 12),),
             trailing: Container(
               padding: EdgeInsets.all(3),

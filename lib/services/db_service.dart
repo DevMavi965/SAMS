@@ -1,7 +1,9 @@
 import 'dart:core';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:smas3/models/Leave_Application_Model.dart';
 import 'package:smas3/models/announcement_model.dart';
 import 'package:smas3/models/fac_model.dart';
@@ -15,8 +17,11 @@ import '../models/admin_model.dart';
 import '../models/department.dart';
 import '../models/semester.dart';
 import '../models/session.dart';
+import '../screens/ins_admin/ins_admin_dashboard.dart';
 
 class DbService with ChangeNotifier{
+
+
   List<InsAdmin> ins_admins=[];
   List<Institute> institutes=[];
   List<Department> departments=[];
@@ -30,16 +35,111 @@ class DbService with ChangeNotifier{
   List<LectureModel> lectures=[];
 
   List<LeaveApplication> leaveApplications=[];
-
-bool loading=false;
-
   final dbref=FirebaseFirestore.instance.collection("SAMS").doc("SAMS_DB");
-  DbService(BuildContext context){
-    getData2();
+  final indexDoc=FirebaseFirestore.instance.collection("SAMS").doc("SAMS_DB").collection("index");
+  bool loading=false;
+  int count=0;
+  final eauth=FirebaseAuth.instance;
+ void setIndx(int v){
+   count=v;
+   notifyListeners();
+ }
+  loginWithInsAdminEmail(String _email,String _password,BuildContext context)async{
+    try{
+      loading=true;
+      notifyListeners();
+      await eauth.signInWithEmailAndPassword(email: _email,
+          password: _password).then((v){
+        if(eauth.currentUser!=null){
+          final doc=dbref.collection("ins_admins").doc(eauth.currentUser!.uid);
+          if(doc!=null) {
+           doc.get().then((v) {
+              InsAdmin insAdmin = InsAdmin(
+                  id: v.id,
+                  role: v['role'],
+                  name: v["name"],
+                  email: v["email"],
+                  created_at: v["created_at"].toDate(),
+                  last_login: v["last_login"].toDate(),
+                  status: v["status"]);
+              getData1(insAdmin.id!);
+             Navigator.pushAndRemoveUntil(context, MaterialPageRoute(
+                  builder: (_) => InsAdminDashboard(insAdmin: insAdmin,)), (r) => false);
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                content: Text("successfully logging as institute admin"),
+                backgroundColor: Theme
+                    .of(context)
+                    .primaryColor,));
+            });
+          }else{
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text("user not found"),));
+          }
+
+        }else{
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("invalid email or password"),));
+        }
+      });
+    }catch(e){
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString()),));
+    }finally{
+
+        loading=false;
+     notifyListeners();
+    }
+
   }
+  signUpWithInsAdminEmail(InsAdmin _insAdmin,String password,BuildContext context)async{
+      loading=true;
+    notifyListeners();
+    try{
+      await eauth.createUserWithEmailAndPassword(email: _insAdmin.email,
+          password: password).then((v) async{
+        if(eauth.currentUser!=null){
+
+        _insAdmin.id=eauth.currentUser!.uid;
+         await addInsAdmin(context,_insAdmin);
+        getData1(_insAdmin.id!);
+        if(context.mounted){
+          Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_)=>InsAdminDashboard(insAdmin: _insAdmin,)),(r)=>false);
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("successfully registered as institute admin"),backgroundColor: Theme.of(context).primaryColor,));
+        }
+        }else{
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("invalid email or password"),));
+        }
+      });
+    }catch(e){
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString()),));
+    }finally{
+
+        loading=false;
+      notifyListeners();
+    }
+
+  }
+  registerAdmin(String _insAdminId,String instituteId,Admin admin,String password,BuildContext context)async{
+    UserCredential uc=await eauth.createUserWithEmailAndPassword(email: admin.email,
+        password: password);
+    if(uc.user!=null){
+
+      admin.id=uc.user!.uid;
+      await addAdmin(context,_insAdminId,instituteId,admin);
+
+      // ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("successfully registered as admin"),backgroundColor: Theme.of(context).primaryColor,));
+    }else{
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("invalid email or password"),));
+    }
+  }
+
+
+
+
+
+  // DbService(BuildContext context){
+  //   getData2forInsAdmin(insAdminId);
+  // }
   // adding data to db
   clearAll(){
-    ins_admins.clear();
     institutes.clear();
     departments.clear();
     students.clear();
@@ -65,6 +165,7 @@ bool loading=false;
         ins_admins.add(
           InsAdmin(
                id: insAdmin.id,
+              role: insAdmin['role'],
               name: insAdmin["name"],
               email: insAdmin["email"],
               created_at: insAdmin["created_at"].toDate(),
@@ -76,6 +177,7 @@ bool loading=false;
           institutes.add(
               Institute(
                   id: ins.id,
+                  insAdminId: insAdmin.id,
                   name: ins["name"],
                   address: ins['address'],
                   contact: ins['contact'],
@@ -124,6 +226,9 @@ bool loading=false;
           for(var student in studentSnap.docs){
             students.add(Student(
                 id: student.id,
+                insAdminId: insAdmin.id,
+                instituteId: ins.id,
+                role: student['role'],
                 name: student['name'],
                 email: student['email'],
                 depart: student['depart'],
@@ -154,6 +259,9 @@ bool loading=false;
           for(var faculty in facultySnap.docs){
             lecturers.add(Lecturer(
                 id: faculty.id,
+                instituteId: ins.id,
+                insAdminId: insAdmin.id,
+                role: faculty['role'],
                 name: faculty['name'],
                 email: faculty['email'],
                 deprt: faculty['depart'],
@@ -172,6 +280,8 @@ bool loading=false;
           for(var admin in adminSnap.docs){
             admins.add(Admin(
               id: admin.id,
+                insAdminId: insAdmin.id,
+                instituteId: ins.id,
                 name: admin['name'],
                 email: admin['email'],
                 institute: admin['institute'],
@@ -194,21 +304,161 @@ bool loading=false;
      notifyListeners();
     }
   }
+
+  getData1(String insAdminId)async{
+    {
+      loading = true;
+      notifyListeners();
+    }
+    try{
+      clearAll();
+        final institutesList=await dbref.collection("ins_admins").doc(insAdminId).collection("institutes").get();
+        for(var ins in institutesList.docs) {
+          institutes.add(
+              Institute(
+                  id: ins.id,
+                  insAdminId: insAdminId,
+                  name: ins["name"],
+                  address: ins['address'],
+                  contact: ins['contact'],
+                  logo: ins['logo'],
+                  created_at: ins['created_at'].toDate(),
+                  location: ins['location']) //
+          );
+          print("ins : 000000000000000000000000000000000000000000000000000000000000000000");
+          final departs=await dbref
+              .collection("ins_admins").doc(insAdminId)
+              .collection("institutes").doc(ins.id)
+              .collection("departments").get();
+          for(var depart in departs.docs){
+            departments.add(Department(
+                id: depart.id,
+                name: depart['name'],
+                hod_name: depart['hod_name']));
+            final sessionsSnap=await dbref
+                .collection("ins_admins").doc(insAdminId)
+                .collection("institutes").doc(ins.id)
+                .collection("departments").doc(depart.id)
+                .collection("sessions").get();
+            for(var sSnap in sessionsSnap.docs){
+              sessions.add(Session(
+                  id: sSnap.id,
+                  start_date: sSnap['start_date'].toDate(),
+                  end_date: sSnap['end_date'].toDate()));
+              final semesterSnap=await dbref
+                  .collection("ins_admins").doc(insAdminId)
+                  .collection("institutes").doc(ins.id)
+                  .collection("departments").doc(depart.id)
+                  .collection("sessions").doc(sSnap.id).collection("semesters").get();
+              for(var semSnap in semesterSnap.docs){
+                semesters.add(Semester(
+                    id: semSnap.id,
+                    start_date: semSnap['start_date'].toDate(),
+                    end_date: semSnap['end_date'].toDate(),
+                    semester_no: semSnap['semester_no']));
+
+              }
+            }
+          }
+          final studentSnap=await dbref
+              .collection("ins_admins").doc(insAdminId)
+              .collection("institutes").doc(ins.id)
+              .collection("students").get();
+          for(var student in studentSnap.docs){
+            students.add(Student(
+                id: student.id,
+                insAdminId: insAdminId,
+                instituteId: ins.id,
+                role: student['role'],
+                name: student['name'],
+                email: student['email'],
+                depart: student['depart'],
+                semester: student['semester'],
+                created_at: student['created_at'].toDate()));
+            final leaveSnap=await dbref.collection("ins_admins").doc(insAdminId)
+                .collection("institutes").doc(ins.id)
+                .collection("students").doc(student.id)
+                .collection("leave_applications").get();
+            for(var leave in leaveSnap.docs){
+              leaveApplications.add(LeaveApplication(
+                  appliedDate: leave['applied_date'].toDate(),
+                  type: leave['type'],
+                  fromDate: leave['start_date'].toDate(),
+                  tillDate: leave['end_date'].toDate(),
+                  reason: leave['reason'],
+                  status: leave['status'],
+                  std_name: leave['std_name'],
+                  std_id: leave['std_id'],
+                  approvedby: leave['approvedby'],
+              ));
+            }
+          }
+          final facultySnap=await dbref
+              .collection("ins_admins").doc(insAdminId)
+              .collection("institutes").doc(ins.id)
+              .collection("faculty").get();
+          for(var faculty in facultySnap.docs){
+            lecturers.add(Lecturer(
+                id: faculty.id,
+                instituteId: ins.id,
+                insAdminId: insAdminId,
+                role: faculty['role'],
+                name: faculty['name'],
+                email: faculty['email'],
+                deprt: faculty['depart'],
+                designation: faculty['designation'],
+                status: faculty['status'],
+                phone: faculty['phone'],
+                created_at: faculty['created_at'].toDate(),
+                semesters: faculty['semester'],
+                courses: faculty['courses']
+            ));
+          }
+          final adminSnap=await dbref
+              .collection("ins_admins").doc(insAdminId)
+              .collection("institutes").doc(ins.id)
+              .collection("admins").get();
+          for(var admin in adminSnap.docs){
+            admins.add(Admin(
+              id: admin.id,
+                insAdminId: insAdminId,
+                instituteId: ins.id,
+                name: admin['name'],
+                email: admin['email'],
+                institute: admin['institute'],
+                role: admin['role'],
+                permissions: admin['permissions'],
+                status: admin['status'],));
+          }
+        }
+
+
+    // ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Column(
+    //   children: [
+    //     Text(departments[0].id!),
+    //   ],
+    // )));
+     }catch(e){
+      // ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+    }finally{
+     loading=false;
+     notifyListeners();
+    }
+  }
   //get data from db
-  getData2(){
+  getData2forInsAdmin(String insAdminId){
     try{
       loading=true;
       notifyListeners();
       clearAll();
-      getInsAdmins();
-      for(var insAdmin in ins_admins){
-        getInstitutes(insAdmin.id!);
+      
+        getInstitutes(insAdminId);
         for(var institute in institutes){
-          getStudents(insAdmin.id!,institute.id!);
-          getFaculty(insAdmin.id!,institute.id!);
-          getAdmins(insAdmin.id!,institute.id!);
+          getStudents(insAdminId,institute.id!);
+          getFaculty(insAdminId,institute.id!);
+          getAdmins(insAdminId,institute.id!);
         }
-      }
+      
     }catch(e){
      debugPrint(e.toString());
     }finally{
@@ -216,30 +466,180 @@ bool loading=false;
       notifyListeners();
     }
   }
-  getInsAdmins(){
+  getData2Others(String insAdminId,String instituteId){
     try{
-     dbref.collection("ins_admins").snapshots().listen((qsnapShot){
-        ins_admins.clear();
-        for(var insAdmin in qsnapShot.docs){
-          ins_admins.add(
-              InsAdmin(
-                  name: insAdmin["name"],
-                  email: insAdmin["email"],
-                  created_at: insAdmin["created_at"].toDate(),//timestamp to datetime
-                  last_login: insAdmin["last_login"].toDate(),
-                  status: insAdmin["status"]
-              ));
-        }
-      });
-
+      loading=true;
       notifyListeners();
+      clearAll();        
+          getStudents(insAdminId,instituteId);
+          getFaculty(insAdminId,instituteId);
+          getAdmins(insAdminId,instituteId);
+        
+      
+    }catch(e){
+     debugPrint(e.toString());
+    }finally{
+      loading=false;
+      notifyListeners();
+    }
+  }
+
+ // getInsAdminsList(){
+ //    try{
+ //     dbref.collection("ins_admins").snapshots().listen((qsnapShot){
+ //        ins_admins.clear();
+ //        if(qsnapShot.docs.isEmpty){
+ //          return null;
+ //        }
+ //        for(var insAdmin in qsnapShot.docs){
+ //          ins_admins.add(
+ //              InsAdmin(
+ //                id: insAdmin.id,
+ //                  role: insAdmin['role'],
+ //                  name: insAdmin["name"],
+ //                  email: insAdmin["email"],
+ //                  created_at: insAdmin["created_at"].toDate(),//timestamp to datetime
+ //                  last_login: insAdmin["last_login"].toDate(),
+ //                  status: insAdmin["status"]
+ //              ));
+ //        }
+ //      });
+ //      return ins_admins;
+ //      // ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("name :${ins_admins[0].name},email:${ins_admins[0].email},id:${ins_admins[0].institute_id},created_at:${ins_admins[0].created_at},last_login:${ins_admins[0].last_login} ")));
+ //
+ //    }catch(e){
+ //      print(e.toString());
+ //    }
+ // }
+ getInstitutesList(String insAdminId){
+    List<Institute> institutes_list=[];
+    try{
+
+        for(var ins in institutes){
+          institutes_list.add(
+              Institute(
+                  id: ins.id,
+                  insAdminId: insAdminId,
+                  name: ins.name,
+                  address: ins.address,
+                  contact: ins.contact,
+                  logo: ins.logo,
+                  created_at: ins.created_at,
+                  location: ins.location )//
+          );
+        }
+
+     print("${institutes_list.length} institutes ............;;;;;..........");
+      return institutes_list;
       // ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("name :${ins_admins[0].name},email:${ins_admins[0].email},id:${ins_admins[0].institute_id},created_at:${ins_admins[0].created_at},last_login:${ins_admins[0].last_login} ")));
 
     }catch(e){
       print(e.toString());
     }
- }
+  }
+  getStudentsList(String insAdminId,String instituteId){
+    try{
+      dbref.collection("ins_admins")
+          .doc(insAdminId).collection("institutes").doc(instituteId)
+          .collection("students")
+          .snapshots().listen((qsnapShot){
+        students.clear();
+        if(qsnapShot.docs.isEmpty){
+          return null;
+        }
+        for(var student in qsnapShot.docs){
+          students.add(Student(
+              id: student.id,
+              instituteId: instituteId,
+              insAdminId: insAdminId,
+              role: student['role'],
+              name: student['name'],
+              email: student['email'],
+              depart: student['depart'],
+              semester: student['semester'],
+              created_at: student['created_at'].toDate()));
+        }
+      });
+
+      return students;
+      // ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("name :${ins_admins[0].name},email:${ins_admins[0].email},id:${ins_admins[0].institute_id},created_at:${ins_admins[0].created_at},last_login:${ins_admins[0].last_login} ")));
+
+    }catch(e){
+      print(e.toString());
+    }
+  }
+  getFacultyList(String insAdminId,String instituteId){
+    try{
+      dbref.collection("ins_admins")
+          .doc(insAdminId).collection("institutes").doc(instituteId)
+          .collection("faculty")
+          .snapshots().listen((qsnapShot){
+        lecturers.clear();
+        if(qsnapShot.docs.isEmpty){
+          return null;
+        }
+        for(var faculty in qsnapShot.docs){
+          lecturers.add(Lecturer(
+              id: faculty.id,
+              insAdminId: insAdminId,
+              instituteId: instituteId,
+              role: faculty['role'],
+              name: faculty['name'],
+              email: faculty['email'],
+              deprt: faculty['depart'],
+              designation: faculty['designation'],
+              status: faculty['status'],
+              phone: faculty['phone'],
+              created_at: faculty['created_at'].toDate(),
+              semesters: faculty['semester'],
+              courses: faculty['courses']
+          ));
+        }
+      });
+      return lecturers;
+      // ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("name :${ins_admins[0].name},email:${ins_admins[0].email},id:${ins_admins[0].institute_id},created_at:${ins_admins[0].created_at},last_login:${ins_admins[0].last_login} ")));
+
+    }catch(e){
+      print(e.toString());
+    }
+  }
+  getAdminsList(String insAdminId,String instituteId){
+    try{
+      dbref.collection("ins_admins")
+          .doc(insAdminId).collection("institutes").doc(instituteId)
+          .collection("admins")
+          .snapshots().listen((qSnapShot){
+        admins.clear();
+        if(qSnapShot.docs.isEmpty){
+          return null;
+        }
+        for(var admin in qSnapShot.docs){
+          admins.add(Admin(
+            id: admin.id,
+            insAdminId: insAdminId,
+            instituteId: instituteId,
+            name: admin['name'],
+            email: admin['email'],
+            institute: admin['institute'],
+            role: admin['role'],
+            permissions: admin['permissions'],
+            status: admin['status'],));
+        }
+      });
+      return admins;
+      // ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("name :${ins_admins[0].name},email:${ins_admins[0].email},id:${ins_admins[0].institute_id},created_at:${ins_admins[0].created_at},last_login:${ins_admins[0].last_login} ")));
+
+    }catch(e){
+      print(e.toString());
+    }
+  }
+
+
+
+
   getInstitutes(String insAdminId){
+    loading=true;
+    notifyListeners();
     try{
       dbref.collection("ins_admins")
           .doc(insAdminId).collection("institutes")
@@ -249,12 +649,13 @@ bool loading=false;
           institutes.add(
               Institute(
                   id: ins.id,
+                  insAdminId: insAdminId,
                   name: ins["name"],
                   address: ins['address'],
                   contact: ins['contact'],
                   logo: ins['logo'],
                   created_at: ins['created_at'].toDate(),
-                  location: ins.get('location') )//
+                  location: ins['location'] )//
           );
         }
       });
@@ -276,6 +677,9 @@ bool loading=false;
         for(var student in qsnapShot.docs){
           students.add(Student(
               id: student.id,
+              insAdminId: insAdminId,
+              instituteId: instituteId,
+              role: student['role'],
               name: student['name'],
               email: student['email'],
               depart: student['depart'],
@@ -290,7 +694,7 @@ bool loading=false;
     }catch(e){
       print(e.toString());
     }
- }
+  }
   getFaculty(String insAdminId,String instituteId){
     try{
       dbref.collection("ins_admins")
@@ -301,6 +705,9 @@ bool loading=false;
         for(var faculty in qsnapShot.docs){
           lecturers.add(Lecturer(
               id: faculty.id,
+              instituteId: instituteId,
+              insAdminId: insAdminId,
+              role: faculty['role'],
               name: faculty['name'],
               email: faculty['email'],
               deprt: faculty['depart'],
@@ -331,6 +738,8 @@ bool loading=false;
         for(var admin in qSnapShot.docs){
           admins.add(Admin(
             id: admin.id,
+            insAdminId: insAdminId,
+            instituteId: instituteId,
             name: admin['name'],
             email: admin['email'],
             institute: admin['institute'],
@@ -376,9 +785,13 @@ bool loading=false;
       final insAdminsRef=await dbref.collection("ins_admins").doc(_insAdmin.id).set({
         "name":_insAdmin.name,
         "email":_insAdmin.email,
+        "role":_insAdmin.role,
         "created_at":Timestamp.fromDate(_insAdmin.created_at!),//datetime to timestamp
         "last_login":Timestamp.fromDate(_insAdmin.last_login!),
         "status":_insAdmin.status
+      });
+      await indexDoc.doc(_insAdmin.id).set({
+        "role":_insAdmin.role,
       });
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Ins Admin Added Successfully")));
     }catch(e){
@@ -390,14 +803,18 @@ bool loading=false;
   addInstitute(BuildContext context,String insAdminId,Institute institute)async{
     try{
       // Institute institute1=Institute(name: "MPT", address: address, contact: contact, logo: logo, created_at: created_at, location: location)
-      final insAdminsRef=await dbref.collection("ins_admins")
+      final insRef=await dbref.collection("ins_admins")
           .doc(insAdminId).collection("institutes").add({
         "name":institute.name,
         "address":institute.address,
         "contact":institute.contact,
         "logo":institute.logo,
         "created_at":Timestamp.fromDate(institute.created_at),//datetime to timestamp
-        "location":GeoPoint(institute.location["lat"],institute.location["long"])
+        "location":{"lat":institute.location["lat"],"long":institute.location["long"]}
+      });
+      institute.id=insRef.id;
+      await indexDoc.doc(institute.id).set({
+        "ins_admin_id":insAdminId,
       });
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Institute Added Successfully")));
     }catch(e){
@@ -408,13 +825,18 @@ bool loading=false;
   }
   addDepartment(BuildContext context,String insAdminId,String instituteId,Department department)async{
     try{
-      final insAdminsRef=await dbref
+      final depRef=await dbref
           .collection("ins_admins").doc(insAdminId)
           .collection("institutes").doc(instituteId)
           .collection("departments").add({
         "name":department.name,
         "created_at":Timestamp.fromDate(department.created_at!),//datetime to timestamp
         "hod_name":department.hod_name,
+      });
+      department.id=depRef.id;
+      await indexDoc.doc(department.id).set({
+        "ins_admin_id":insAdminId,
+        "institute_id":instituteId,
       });
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("department Added Successfully")));
     }catch(e){
@@ -425,7 +847,7 @@ bool loading=false;
   }
   addAnnouncement(BuildContext context,String insAdminId,String instituteId,Announcement announcement)async{
     try{
-      final insAdminsRef=await dbref
+      final announceRef=await dbref
           .collection("ins_admins").doc(insAdminId)
           .collection("institutes").doc(instituteId)
           .collection("announcements")
@@ -437,6 +859,11 @@ bool loading=false;
            "target_aud":announcement.target_aud,
            "created_at":Timestamp.fromDate(announcement.created_at!),//datetime to timestamp
           });
+      announcement.id=announceRef.id;
+      await indexDoc.doc(announcement.id).set({
+        "ins_admin_id":insAdminId,
+        "institute_id":instituteId,
+      });
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("announcement Added Successfully")));
     }catch(e){
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
@@ -446,11 +873,17 @@ bool loading=false;
   }
   addSession(BuildContext context,String insAdminId,String instituteId,String departId,Session session)async{
     try{
-      final insAdminsRef=await dbref.collection("ins_admins")
+      final sessionRef=await dbref.collection("ins_admins")
           .doc(insAdminId).collection("institutes").doc(instituteId).collection("departments").
       doc(departId).collection("sessions").add({
         "start_date":Timestamp.fromDate(session.start_date),//datetime to timestamp
         "end_date":Timestamp.fromDate(session.end_date),//datetime to timestamp
+      });
+      session.id=sessionRef.id;
+      await indexDoc.doc(session.id).set({
+        "ins_admin_id":insAdminId,
+        "institute_id":instituteId,
+        "department_id":departId,
       });
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("session Added Successfully")));
     }catch(e){
@@ -461,12 +894,22 @@ bool loading=false;
   }
   addSemester(BuildContext context,String insAdminId,String instituteId,String departId,String sessionId,Semester semester)async{
     try{
-      final insAdminsRef=await dbref.collection("ins_admins")
-          .doc(insAdminId).collection("institutes").doc(instituteId).collection("departments").
-      doc(departId).collection("sessions").doc(sessionId).collection("semesters").add({
+      final semesterRef=await dbref.
+      collection("ins_admins").doc(insAdminId)
+      .collection("institutes").doc(instituteId)
+      .collection("departments").doc(departId)
+      .collection("sessions").doc(sessionId)
+      .collection("semesters").add({
         "start_date":Timestamp.fromDate(semester.start_date),//datetime to timestamp",
         "end_date":Timestamp.fromDate(semester.end_date),//datetime to timestamp",
         "semester_no":semester.semester_no
+      });
+      semester.id=semesterRef.id;
+      await indexDoc.doc(semester.id).set({
+        "ins_admin_id":insAdminId,
+        "institute_id":instituteId,
+        "department_id":departId,
+        "session_id":sessionId,
       });
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("semester Added Successfully")));
     }catch(e){
@@ -477,7 +920,7 @@ bool loading=false;
   }
   addCourse(BuildContext context,String insAdminId,String instituteId,String departId,String sessionId,String semesterId,Course course)async{
     try{
-      final insAdminsRef=await dbref.
+      final courseRef=await dbref.
       collection("ins_admins").doc(insAdminId)
       .collection("institutes").doc(instituteId)
       .collection("departments").doc(departId)
@@ -493,6 +936,14 @@ bool loading=false;
         "no_of_lectures":course.no_of_lectures,
         "type":course.type,
         "created_at":Timestamp.fromDate(course.created_at!),//datetime to timestamp",
+      });
+      course.id=courseRef.id;
+      await indexDoc.doc(course.id).set({
+        "ins_admin_id":insAdminId,
+        "institute_id":instituteId,
+        "department_id":departId,
+        "session_id":sessionId,
+        "semester_id":semesterId,
       });
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Course Added Successfully")));
     }catch(e){
@@ -519,7 +970,7 @@ bool loading=false;
    lectureModel.end_time.minute,
 
  );
-      final insAdminsRef=await dbref.
+      final lectureRef=await dbref.
       collection("ins_admins").doc(insAdminId)
           .collection("institutes").doc(instituteId)
           .collection("departments").doc(departId)
@@ -538,6 +989,15 @@ bool loading=false;
             "course_name":courseId,//will take course_name using id back in ui
             "status":lectureModel.status,
           });
+         lectureModel.id=lectureRef.id;
+         await indexDoc.doc(lectureModel.id).set({
+           "ins_admin_id":insAdminId,
+           "institute_id":instituteId,
+           "department_id":departId,
+           "session_id":sessionId,
+           "semester_id":semesterId,
+           "course_id":courseId,
+         });
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("lecture Added Successfully")));
     }catch(e){
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
@@ -547,12 +1007,12 @@ bool loading=false;
   }
   addFaculty(BuildContext context,String insAdminId,String instituteId,Lecturer lecturer)async{
     try{
-      final insAdminsRef=await dbref.collection("ins_admins")
+      final facRef=await dbref.collection("ins_admins")
           .doc(insAdminId).collection("institutes").doc(instituteId).
       // collection("departments").doc(departId).
       // collection("sessions").doc(sessionId).
       // collection("semesters").doc(semesterId).
-      collection("faculty").add({
+      collection("faculty").doc(lecturer.id).set({
         // Lecturer(name: name, deprt: deprt, designation: designation, status: status, email: email, phone: phone)
         "name":lecturer.name,
         "email":lecturer.email,
@@ -563,6 +1023,10 @@ bool loading=false;
         "semester":lecturer.semesters,
         "courses":lecturer.courses,
         "phone":lecturer.phone,
+      });
+      await indexDoc.doc(lecturer.id).set({
+        "ins_admin_id":insAdminId,
+        "institute_id":instituteId,
       });
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("faculty Added Successfully")));
     }catch(e){
@@ -578,13 +1042,18 @@ bool loading=false;
       // collection("departments").doc(departId).
       // collection("sessions").doc(sessionId).
       // collection("semesters").doc(semesterId).
-      collection("students").add({
+      collection("students").doc(student.id).set({
       // Student(name: name, depart: depart, semester: semester, email: email)
         "name":student.name,
         "email":student.email,
         "depart":student.depart,
         "semester":student.semester,
         "created_at":Timestamp.fromDate(student.created_at!),//datetime to timestamp",
+      });
+      await indexDoc.doc(student.id).set({
+        "ins_admin_id":insAdminId,
+        "institute_id":instituteId,
+        "role":student.role
       });
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("student Added Successfully")));
     }catch(e){
@@ -600,16 +1069,21 @@ bool loading=false;
       // collection("departments").doc(departId).
       // collection("sessions").doc(sessionId).
       // collection("semesters").doc(semesterId).
-      collection("admins").add({
-      // Admin(name: name, email: email, institute: institute, role: role, status: status,permissions: )
-      "name":admin.name,
-      "email":admin.email,
-      "institute":admin.institute,
-      "role":admin.role,
-      "status":admin.status,
-      "created_at":Timestamp.fromDate(admin.created_at),//datetime to timestamp",
-      "permissions":admin.permissions//["student_management","department_management","lecture_management"] etc
+      collection("admins").doc(admin.id).set({
+        // Admin(name: name, email: email, institute: institute, role: role, status: status,permissions: )
+        "name":admin.name,
+        "email":admin.email,
+        "institute":admin.institute,
+        "role":admin.role,
+        "status":admin.status,
+        "created_at":Timestamp.fromDate(admin.created_at),//datetime to timestamp",
+        "permissions":admin.permissions//["student_management","department_management","lecture_management"] etc
 
+      });
+      await indexDoc.doc(admin.id).set({
+        "ins_admin_id":insAdminId,
+        "institute_id":instituteId,
+        "role":admin.role
       });
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Admin Added Successfully")));
     }catch(e){
@@ -638,6 +1112,12 @@ bool loading=false;
         "reason":leaveApplication.reason,
         "status":leaveApplication.status,
       });
+      leaveApplication.id=insAdminsRef.id;
+      await indexDoc.doc(leaveApplication.id).set({
+        "ins_admin_id":insAdminId,
+        "institute_id":instituteId,
+        "student_id":studentId,
+      });
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("student leave applied Successfully")));
     }catch(e){
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
@@ -657,8 +1137,9 @@ bool loading=false;
 
     }
   }
-  removeInstitute(BuildContext context,String insAdminId,String instituteId)async{
+  removeInstitute(BuildContext context,String instituteId)async{
     try{
+      String insAdminId=await indexDoc.doc(instituteId).get().then((value) => value.get("ins_admin_id"));
       final insAdminsRef=await dbref.collection("ins_admins")
           .doc(insAdminId).collection("institutes").doc(instituteId).delete();
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Institute deleted Successfully")));
@@ -668,11 +1149,12 @@ bool loading=false;
 
     }
   }
-  removeDepartment(BuildContext context,String insAdminId,String instituteId,String departmentId)async{
+  removeDepartment(BuildContext context,String departmentId)async{
     try{
+      final dox=await indexDoc.doc(departmentId).get();
       final insAdminsRef=await dbref
-          .collection("ins_admins").doc(insAdminId)
-          .collection("institutes").doc(instituteId)
+          .collection("ins_admins").doc(dox.get("ins_admin_id"))
+          .collection("institutes").doc(dox.get("institute_id"))
           .collection("departments").doc(departmentId).delete();
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("department deleted Successfully")));
     }catch(e){
@@ -681,11 +1163,12 @@ bool loading=false;
 
     }
   }
-  removeAnnouncement(BuildContext context,String insAdminId,String instituteId,String announcementId)async{
+  removeAnnouncement(BuildContext context,String announcementId)async{
     try{
+      final dox=await indexDoc.doc(announcementId).get();
       final insAdminsRef=await dbref
-          .collection("ins_admins").doc(insAdminId)
-          .collection("institutes").doc(instituteId)
+          .collection("ins_admins").doc(dox.get("ins_admin_id"))
+          .collection("institutes").doc(dox.get("institute_id"))
           .collection("announcements")
           .doc(announcementId).delete();
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("announcement deleted Successfully")));
@@ -695,11 +1178,14 @@ bool loading=false;
 
     }
   }
-  removeSession(BuildContext context,String insAdminId,String instituteId,String departId,String sessionId)async{
+  removeSession(BuildContext context,String sessionId)async{
     try{
+      final dox=await indexDoc.doc(sessionId).get();
       final insAdminsRef=await dbref.collection("ins_admins")
-          .doc(insAdminId).collection("institutes").doc(instituteId).collection("departments").
-      doc(departId).collection("sessions").doc(sessionId).delete();
+          .doc(dox.get("ins_admin_id"))
+          .collection("institutes").doc(dox.get("institute_id"))
+          .collection("departments").
+      doc(dox.get("department_id")).collection("sessions").doc(sessionId).delete();
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("session deleted Successfully")));
     }catch(e){
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
@@ -707,11 +1193,15 @@ bool loading=false;
 
     }
   }
-  removeSemester(BuildContext context,String insAdminId,String instituteId,String departId,String sessionId,String semesterId)async{
+  removeSemester(BuildContext context,String semesterId)async{
     try{
+      final dox=await indexDoc.doc(semesterId).get();
       final insAdminsRef=await dbref.collection("ins_admins")
-          .doc(insAdminId).collection("institutes").doc(instituteId).collection("departments").
-      doc(departId).collection("sessions").doc(sessionId).collection("semesters").doc(semesterId).delete();
+          .doc(dox.get("ins_admin_id")).collection("institutes")
+          .doc(dox.get("institute_id")).collection("departments").
+           doc(dox.get("department_id")).collection("sessions")
+          .doc(dox.get("session_id")).collection("semesters")
+          .doc(semesterId).delete();
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("semester deleted Successfully")));
     }catch(e){
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
@@ -719,14 +1209,15 @@ bool loading=false;
 
     }
   }
-  removeCourse(BuildContext context,String insAdminId,String instituteId,String departId,String sessionId,String semesterId,String courseId)async{
+  removeCourse(BuildContext context,String courseId)async{
     try{
+      final dox=await indexDoc.doc(courseId).get();
       final insAdminsRef=await dbref.
-      collection("ins_admins").doc(insAdminId)
-          .collection("institutes").doc(instituteId)
-          .collection("departments").doc(departId)
-          .collection("sessions").doc(sessionId)
-          .collection("semesters").doc(semesterId)
+      collection("ins_admins").doc(dox.get("ins_admin_id"))
+          .collection("institutes").doc(dox.get("institute_id"))
+          .collection("departments").doc(dox.get("department_id"))
+          .collection("sessions").doc(dox.get("session_id"))
+          .collection("semesters").doc(dox.get("semester_id"))
           .collection("subjects")
           .doc(courseId).delete();
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Course deleted Successfully")));
@@ -736,18 +1227,18 @@ bool loading=false;
 
     }
   }
-  removeLecture(BuildContext context,String insAdminId,String instituteId,String departId,String sessionId,String semesterId,String courseId,String lectureModelId)async{
+  removeLecture(BuildContext context,String lectureModelId)async{
     try{
 
-
+      final dox=await indexDoc.doc(lectureModelId).get();
       final insAdminsRef=await dbref.
-      collection("ins_admins").doc(insAdminId)
-          .collection("institutes").doc(instituteId)
-          .collection("departments").doc(departId)
-          .collection("sessions").doc(sessionId)
-          .collection("semesters").doc(semesterId)
+      collection("ins_admins").doc(dox.get("ins_admin_id"))
+          .collection("institutes").doc(dox.get("institute_id"))
+          .collection("departments").doc(dox.get("department_id"))
+          .collection("sessions").doc(dox.get("session_id"))
+          .collection("semesters").doc(dox.get("semester_id"))
           .collection("subjects")
-          .doc(courseId).collection("lectures")
+          .doc(dox.get("course_id")).collection("lectures")
           .doc(lectureModelId).delete();
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("lecture deleted Successfully")));
     }catch(e){
@@ -756,10 +1247,11 @@ bool loading=false;
 
     }
   }
-  removeFaculty(BuildContext context,String insAdminId,String instituteId,String lecturerId)async{
+  removeFaculty(BuildContext context,String lecturerId)async{
     try{
+      final dox=await indexDoc.doc(lecturerId).get();
       final insAdminsRef=await dbref.collection("ins_admins")
-          .doc(insAdminId).collection("institutes").doc(instituteId).
+          .doc(dox.get("ins_admin_id")).collection("institutes").doc(dox.get("institute_id")).
       // collection("departments").doc(departId).
       // collection("sessions").doc(sessionId).
       // collection("semesters").doc(semesterId).
@@ -771,10 +1263,11 @@ bool loading=false;
 
     }
   }
-  removeStudent(BuildContext context,String insAdminId,String instituteId,String studentId)async{
+  removeStudent(BuildContext context,String studentId)async{
     try{
+      final dox=await indexDoc.doc(studentId).get();
       final insAdminsRef=await dbref.collection("ins_admins")
-          .doc(insAdminId).collection("institutes").doc(instituteId).
+          .doc(dox.get("ins_admin_id")).collection("institutes").doc(dox.get("institute_id")).
       // collection("departments").doc(departId).
       // collection("sessions").doc(sessionId).
       // collection("semesters").doc(semesterId).
@@ -786,10 +1279,11 @@ bool loading=false;
 
     }
   }
-  removeAdmin(BuildContext context,String insAdminId,String instituteId,String adminId)async{
+  removeAdmin(BuildContext context,String adminId)async{
     try{
+      final dox=await indexDoc.doc(adminId).get();
       final insAdminsRef=await dbref.collection("ins_admins")
-          .doc(insAdminId).collection("institutes").doc(instituteId).
+          .doc(dox.get("ins_admin_id")).collection("institutes").doc(dox.get("institute_id")).
       // collection("departments").doc(departId).
       // collection("sessions").doc(sessionId).
       // collection("semesters").doc(semesterId).
@@ -801,14 +1295,15 @@ bool loading=false;
 
     }
   }
-  removeStudentLeaveApplication(BuildContext context,String insAdminId,String instituteId,String studentId,String leaveApplicationId)async{
+  removeStudentLeaveApplication(BuildContext context,String leaveApplicationId)async{
     try{
+      final dox=await indexDoc.doc(leaveApplicationId).get();
       final insAdminsRef=await dbref.collection("ins_admins")
-          .doc(insAdminId).collection("institutes").doc(instituteId).
+          .doc(dox.get("ins_admin_id")).collection("institutes").doc(dox.get("institute_id")).
       // collection("departments").doc(departId).
       // collection("sessions").doc(sessionId).
       // collection("semesters").doc(semesterId).
-      collection("students").doc(studentId).collection("leave_applications")
+      collection("students").doc(dox.get("student_id")).collection("leave_applications")
           .doc(leaveApplicationId).delete();
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("student leaveApplication deleted Successfully")));
     }catch(e){
@@ -837,8 +1332,9 @@ bool loading=false;
 
     }
   }
-  updateInstitute(BuildContext context,String insAdminId,Institute institute)async{
+  updateInstitute(BuildContext context,Institute institute)async{
     try{
+      String insAdminId=await indexDoc.doc(institute.id).get().then((value) => value.get("ins_admin_id"));
       // Institute institute1=Institute(name: "MPT", address: address, contact: contact, logo: logo, created_at: created_at, location: location)
       final insAdminsRef=await dbref.collection("ins_admins")
           .doc(insAdminId).collection("institutes").doc(institute.id).update({
@@ -856,11 +1352,12 @@ bool loading=false;
 
     }
   }
-  updateDepartment(BuildContext context,String insAdminId,String instituteId,Department department)async{
+  updateDepartment(BuildContext context,Department department)async{
     try{
+      final dox=await indexDoc.doc(department.id).get();
       final insAdminsRef=await dbref
-          .collection("ins_admins").doc(insAdminId)
-          .collection("institutes").doc(instituteId)
+          .collection("ins_admins").doc(dox.get("ins_admin_id"))
+          .collection("institutes").doc(dox.get("institute_id"))
           .collection("departments").doc(department.id).update({
         "name":department.name,
         "created_at":Timestamp.fromDate(department.created_at!),//datetime to timestamp
@@ -873,11 +1370,12 @@ bool loading=false;
 
     }
   }
-  updateAnnouncement(BuildContext context,String insAdminId,String instituteId,Announcement announcement)async{
+  updateAnnouncement(BuildContext context,Announcement announcement)async{
     try{
+      final dox=await indexDoc.doc(announcement.id).get();
       final insAdminsRef=await dbref
-          .collection("ins_admins").doc(insAdminId)
-          .collection("institutes").doc(instituteId)
+          .collection("ins_admins").doc(dox.get("ins_admin_id"))
+          .collection("institutes").doc(dox.get("institute_id"))
           .collection("announcements")
           .doc(announcement.id).update({
         // Announcement(an_title: an_title, an_message: an_message, an_type: an_type, target_aud: target_aud)
@@ -894,11 +1392,13 @@ bool loading=false;
 
     }
   }
-  updateSession(BuildContext context,String insAdminId,String instituteId,String departId,Session session)async{
+  updateSession(BuildContext context,Session session)async{
     try{
+      final dox=await indexDoc.doc(session.id).get();
       final insAdminsRef=await dbref.collection("ins_admins")
-          .doc(insAdminId).collection("institutes").doc(instituteId).collection("departments").
-      doc(departId).collection("sessions").doc(session.id).update({
+          .doc(dox.get("ins_admin_id")).collection("institutes").doc(dox.get("institute_id"))
+          .collection("departments").
+      doc(dox.get("department_id")).collection("sessions").doc(session.id).update({
         "start_date":Timestamp.fromDate(session.start_date),//datetime to timestamp
         "end_date":Timestamp.fromDate(session.end_date),//datetime to timestamp
       });
@@ -909,11 +1409,14 @@ bool loading=false;
 
     }
   }
-  updateSemester(BuildContext context,String insAdminId,String instituteId,String departId,String sessionId,Semester semester)async{
+  updateSemester(BuildContext context,Semester semester)async{
     try{
+      final dox=await indexDoc.doc(semester.id).get();
       final insAdminsRef=await dbref.collection("ins_admins")
-          .doc(insAdminId).collection("institutes").doc(instituteId).collection("departments").
-      doc(departId).collection("sessions").doc(sessionId).collection("semesters").doc(semester.id).update({
+          .doc(dox.get("ins_admin_id")).collection("institutes")
+          .doc(dox.get("institute_id")).collection("departments").
+      doc(dox.get("department_id")).collection("sessions")
+          .doc(dox.get("session_id")).collection("semesters").doc(semester.id).update({
         "start_date":Timestamp.fromDate(semester.start_date),//datetime to timestamp",
         "end_date":Timestamp.fromDate(semester.end_date),//datetime to timestamp",
         "semester_no":semester.semester_no
@@ -925,14 +1428,15 @@ bool loading=false;
 
     }
   }
-  updateCourse(BuildContext context,String insAdminId,String instituteId,String departId,String sessionId,String semesterId,Course course)async{
+  updateCourse(BuildContext context,Course course)async{
     try{
+      final dox=await indexDoc.doc(course.id).get();
       final insAdminsRef=await dbref.
-      collection("ins_admins").doc(insAdminId)
-          .collection("institutes").doc(instituteId)
-          .collection("departments").doc(departId)
-          .collection("sessions").doc(sessionId)
-          .collection("semesters").doc(semesterId)
+      collection("ins_admins").doc(dox.get("ins_admin_id"))
+          .collection("institutes").doc(dox.get("institute_id"))
+          .collection("departments").doc(dox.get("department_id"))
+          .collection("sessions").doc(dox.get("session_id"))
+          .collection("semesters").doc(dox.get("semester_id"))
           .collection("subjects")
           .doc(course.id).update({
         // Subject(name: name, course_code: course_code, lecturer: lecturer, credit_hours: credit_hours, no_of_lectures: no_of_lectures, type: type)
@@ -951,7 +1455,7 @@ bool loading=false;
 
     }
   }
-  updateLecture(BuildContext context,String insAdminId,String instituteId,String departId,String sessionId,String semesterId,String courseId,LectureModel lectureModel)async{
+  updateLecture(BuildContext context,LectureModel lectureModel)async{
     try{
       DateTime start_time_date=DateTime(
         lectureModel.dated.year,
@@ -969,14 +1473,15 @@ bool loading=false;
         lectureModel.end_time.minute,
 
       );
+      final dox=await indexDoc.doc(lectureModel.id).get();
       final insAdminsRef=await dbref.
-      collection("ins_admins").doc(insAdminId)
-          .collection("institutes").doc(instituteId)
-          .collection("departments").doc(departId)
-          .collection("sessions").doc(sessionId)
-          .collection("semesters").doc(semesterId)
+      collection("ins_admins").doc(dox.get("ins_admin_id"))
+          .collection("institutes").doc(dox.get("institute_id"))
+          .collection("departments").doc(dox.get("department_id"))
+          .collection("sessions").doc(dox.get("session_id"))
+          .collection("semesters").doc(dox.get("semester_id"))
           .collection("subjects")
-          .doc(courseId).collection("lectures")
+          .doc(dox.get("course_id")).collection("lectures")
           .doc(lectureModel.id).update({
         "dated":Timestamp.fromDate(lectureModel.dated),//datetime to timestamp",
         "start_time":Timestamp.fromDate(start_time_date),//datetime to timestamp",
@@ -985,7 +1490,7 @@ bool loading=false;
         "present":lectureModel.present,
         "absent":lectureModel.absent,
         "room":lectureModel.room,
-        "course_name":courseId,//will take course_name using id back in ui
+        "course_name":lectureModel.course,//will take course_name using id back in ui
         "status":lectureModel.status,
       });
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("lecture updated Successfully")));
@@ -995,7 +1500,7 @@ bool loading=false;
 
     }
   }
-  markAttendancePresent(BuildContext context,String insAdminId,String instituteId,String departId,String sessionId,String semesterId,String courseId,LectureModel lectureModel,String studentId)async{
+  markAttendancePresent(BuildContext context,LectureModel lectureModel,String studentId)async{
     try{
       List<String> students_=lectureModel.present!;
       students_.add(studentId);
@@ -1015,14 +1520,15 @@ bool loading=false;
         lectureModel.end_time.minute,
 
       );
+      final dox=await indexDoc.doc(lectureModel.id).get();
       final insAdminsRef=await dbref.
-      collection("ins_admins").doc(insAdminId)
-          .collection("institutes").doc(instituteId)
-          .collection("departments").doc(departId)
-          .collection("sessions").doc(sessionId)
-          .collection("semesters").doc(semesterId)
+      collection("ins_admins").doc(dox.get("ins_admin_id"))
+          .collection("institutes").doc(dox.get("institute_id"))
+          .collection("departments").doc(dox.get("department_id"))
+          .collection("sessions").doc(dox.get("session_id"))
+          .collection("semesters").doc(dox.get("semester_id"))
           .collection("subjects")
-          .doc(courseId).collection("lectures")
+          .doc(dox.get("course_id")).collection("lectures")
           .doc(lectureModel.id).update({
         "dated":Timestamp.fromDate(lectureModel.dated),//datetime to timestamp",
         "start_time":Timestamp.fromDate(start_time_date),//datetime to timestamp",
@@ -1031,7 +1537,7 @@ bool loading=false;
         "present":students_,
         "absent":lectureModel.absent,
         "room":lectureModel.room,
-        "course_name":courseId,//will take course_name using id back in ui
+        "course_name":lectureModel.course,//will take course_name using id back in ui
         "status":lectureModel.status,
       });
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("lecture updated Successfully")));
@@ -1041,8 +1547,9 @@ bool loading=false;
 
     }
   }
-  markAttendancePresentGroup(BuildContext context,String insAdminId,String instituteId,String departId,String sessionId,String semesterId,String courseId,LectureModel lectureModel,List<String> studentIds)async{
+  markAttendancePresentGroup(BuildContext context,LectureModel lectureModel,List<String> studentIds)async{
     try{
+      final dox=await indexDoc.doc(lectureModel.id).get();
       List<String> students_p=lectureModel.present!;
       for(int i=0;i<studentIds.length;i++){
         students_p.add(studentIds[i]);
@@ -1064,23 +1571,15 @@ bool loading=false;
 
       );
       final insAdminsRef=await dbref.
-      collection("ins_admins").doc(insAdminId)
-          .collection("institutes").doc(instituteId)
-          .collection("departments").doc(departId)
-          .collection("sessions").doc(sessionId)
-          .collection("semesters").doc(semesterId)
+      collection("ins_admins").doc(dox.get("ins_admin_id"))
+          .collection("institutes").doc(dox.get("institute_id"))
+          .collection("departments").doc(dox.get("department_id"))
+          .collection("sessions").doc(dox.get("session_id"))
+          .collection("semesters").doc(dox.get("semester_id"))
           .collection("subjects")
-          .doc(courseId).collection("lectures")
+          .doc(dox.get("course_id")).collection("lectures")
           .doc(lectureModel.id).update({
-        "dated":Timestamp.fromDate(lectureModel.dated),//datetime to timestamp",
-        "start_time":Timestamp.fromDate(start_time_date),//datetime to timestamp",
-        "end_time":Timestamp.fromDate(end_time_date),//datetime to timestamp",
-        "students":lectureModel.students,
         "present":students_p,
-        "absent":lectureModel.absent,
-        "room":lectureModel.room,
-        "course_name":courseId,//will take course_name using id back in ui
-        "status":lectureModel.status,
       });
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("lecture updated Successfully")));
     }catch(e){
@@ -1089,8 +1588,9 @@ bool loading=false;
 
     }
   }
-  markAttendanceAbsentGroup(BuildContext context,String insAdminId,String instituteId,String departId,String sessionId,String semesterId,String courseId,LectureModel lectureModel,List<String> studentIds)async{
+  markAttendanceAbsentGroup(BuildContext context,LectureModel lectureModel,List<String> studentIds)async{
     try{
+      final dox=await indexDoc.doc(lectureModel.id).get();
       List<String> students_ab=lectureModel.absent!;
       for(int i=0;i<studentIds.length;i++){
         students_ab.add(studentIds[i]);
@@ -1112,23 +1612,15 @@ bool loading=false;
 
       );
       final insAdminsRef=await dbref.
-      collection("ins_admins").doc(insAdminId)
-          .collection("institutes").doc(instituteId)
-          .collection("departments").doc(departId)
-          .collection("sessions").doc(sessionId)
-          .collection("semesters").doc(semesterId)
+      collection("ins_admins").doc(dox.get("ins_admin_id"))
+          .collection("institutes").doc(dox.get("institute_id"))
+          .collection("departments").doc(dox.get("department_id"))
+          .collection("sessions").doc(dox.get("session_id"))
+          .collection("semesters").doc(dox.get("semester_id"))
           .collection("subjects")
-          .doc(courseId).collection("lectures")
+          .doc(dox.get("course_id")).collection("lectures")
           .doc(lectureModel.id).update({
-        "dated":Timestamp.fromDate(lectureModel.dated),//datetime to timestamp",
-        "start_time":Timestamp.fromDate(start_time_date),//datetime to timestamp",
-        "end_time":Timestamp.fromDate(end_time_date),//datetime to timestamp",
-        "students":lectureModel.students,
-        "present":lectureModel.present,
         "absent":students_ab,
-        "room":lectureModel.room,
-        "course_name":courseId,//will take course_name using id back in ui
-        "status":lectureModel.status,
       });
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("lecture updated Successfully")));
     }catch(e){
@@ -1137,8 +1629,9 @@ bool loading=false;
 
     }
   }
-  markAttendanceAbsent(BuildContext context,String insAdminId,String instituteId,String departId,String sessionId,String semesterId,String courseId,LectureModel lectureModel,String studentId)async{
+  markAttendanceAbsent(BuildContext context,LectureModel lectureModel,String studentId)async{
     try{
+      final dox=await indexDoc.doc(lectureModel.id).get();
       List<String> students_abs=lectureModel.absent!;
       students_abs.add(studentId);
       DateTime start_time_date=DateTime(
@@ -1158,23 +1651,23 @@ bool loading=false;
 
       );
       final insAdminsRef=await dbref.
-      collection("ins_admins").doc(insAdminId)
-          .collection("institutes").doc(instituteId)
-          .collection("departments").doc(departId)
-          .collection("sessions").doc(sessionId)
-          .collection("semesters").doc(semesterId)
+      collection("ins_admins").doc(dox.get("ins_admin_id"))
+          .collection("institutes").doc(dox.get("institute_id"))
+          .collection("departments").doc(dox.get("department_id"))
+          .collection("sessions").doc(dox.get("session_id"))
+          .collection("semesters").doc(dox.get("semester_id"))
           .collection("subjects")
-          .doc(courseId).collection("lectures")
+          .doc(dox.get("course_id")).collection("lectures")
           .doc(lectureModel.id).update({
-        "dated":Timestamp.fromDate(lectureModel.dated),//datetime to timestamp",
-        "start_time":Timestamp.fromDate(start_time_date),//datetime to timestamp",
-        "end_time":Timestamp.fromDate(end_time_date),//datetime to timestamp",
-        "students":lectureModel.students,
-        "present":lectureModel.present,
+        // "dated":Timestamp.fromDate(lectureModel.dated),//datetime to timestamp",
+        // "start_time":Timestamp.fromDate(start_time_date),//datetime to timestamp",
+        // "end_time":Timestamp.fromDate(end_time_date),//datetime to timestamp",
+        // "students":lectureModel.students,
+        // "present":lectureModel.present,
         "absent":students_abs,
-        "room":lectureModel.room,
-        "course_name":courseId,//will take course_name using id back in ui
-        "status":lectureModel.status,
+        // "room":lectureModel.room,
+        // "course_name":lectureModel.course,//will take course_name using id back in ui
+        // "status":lectureModel.status,
       });
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("lecture updated Successfully")));
     }catch(e){
@@ -1183,10 +1676,12 @@ bool loading=false;
 
     }
   }
-  updateFaculty(BuildContext context,String insAdminId,String instituteId,Lecturer lecturer)async{
+  updateFaculty(BuildContext context,Lecturer lecturer)async{
     try{
+      final dox=await indexDoc.doc(lecturer.id).get();
       final insAdminsRef=await dbref.collection("ins_admins")
-          .doc(insAdminId).collection("institutes").doc(instituteId).
+          .doc(dox.get("ins_admin_id")).collection("institutes")
+          .doc(dox.get("institute_id")).
       // collection("departments").doc(departId).
       // collection("sessions").doc(sessionId).
       // collection("semesters").doc(semesterId).
@@ -1209,10 +1704,11 @@ bool loading=false;
 
     }
   }
-  updateStudent(BuildContext context,String insAdminId,String instituteId,Student student)async{
+  updateStudent(BuildContext context,Student student)async{
     try{
+      final dox=await indexDoc.doc(student.id).get();
       final insAdminsRef=await dbref.collection("ins_admins")
-          .doc(insAdminId).collection("institutes").doc(instituteId).
+          .doc(dox.get("ins_admin_id")).collection("institutes").doc(dox.get("institute_id")).
       // collection("departments").doc(departId).
       // collection("sessions").doc(sessionId).
       // collection("semesters").doc(semesterId).
@@ -1231,10 +1727,11 @@ bool loading=false;
 
     }
   }
-  updateAdmin(BuildContext context,String insAdminId,String instituteId,Admin admin)async{
+  updateAdmin(BuildContext context,Admin admin)async{
     try{
+      final dox=await indexDoc.doc(admin.id).get();
       final insAdminsRef=await dbref.collection("ins_admins")
-          .doc(insAdminId).collection("institutes").doc(instituteId).
+          .doc(dox.get("ins_admin_id")).collection("institutes").doc(dox.get("institute_id")).
       // collection("departments").doc(departId).
       // collection("sessions").doc(sessionId).
       // collection("semesters").doc(semesterId).
@@ -1256,23 +1753,29 @@ bool loading=false;
 
     }
   }
-  assignPermissionsAdmin(BuildContext context,String insAdminId,String instituteId,Admin admin,String permission)async{
+  assignPermissionsAdmin(BuildContext context,Admin admin,String permission)async{
     try{
+      final dox=await indexDoc.doc(admin.id).get();
       List<String> permissions_=admin.permissions!;
-      permissions_.add(permission);
+      if(permissions_.contains(permission)){
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("permission already assigned")));
+      return;
+      }
+        permissions_.add(permission);
+
       final insAdminsRef=await dbref.collection("ins_admins")
-          .doc(insAdminId).collection("institutes").doc(instituteId).
+          .doc(dox.get("ins_admin_id")).collection("institutes").doc(dox.get("institute_id")).
       // collection("departments").doc(departId).
       // collection("sessions").doc(sessionId).
       // collection("semesters").doc(semesterId).
       collection("admins").doc(admin.id).update({
         // Admin(name: name, email: email, institute: institute, role: role, status: status,permissions: )
-        "name":admin.name,
-        "email":admin.email,
-        "institute":admin.institute,
-        "role":admin.role,
-        "status":admin.status,
-        "created_at":Timestamp.fromDate(admin.created_at),//datetime to timestamp",
+        // "name":admin.name,
+        // "email":admin.email,
+        // "institute":admin.institute,
+        // "role":admin.role,
+        // "status":admin.status,
+        // "created_at":Timestamp.fromDate(admin.created_at),//datetime to timestamp",
         "permissions":permissions_//["student_management","department_management","lecture_management"] etc
 
       });
@@ -1283,23 +1786,32 @@ bool loading=false;
 
     }
   }
-  revokePermissionsAdmin(BuildContext context,String insAdminId,String instituteId,Admin admin,String permission)async{
+  revokePermissionsAdmin(BuildContext context,Admin admin,String permission)async{
     try{
+      final dox=await indexDoc.doc(admin.id).get();
       List<String> permissions_=admin.permissions!;
-      permissions_.remove(permission);
+      if(permissions_.isEmpty){
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("no permissions found")));
+      return;
+      }else if(permissions_.contains(permission)){
+        permissions_.remove(permission);
+      }else{
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("permission not found")));
+      }
+
       final insAdminsRef=await dbref.collection("ins_admins")
-          .doc(insAdminId).collection("institutes").doc(instituteId).
+          .doc(dox.get("ins_admin_id")).collection("institutes").doc(dox.get("institute_id")).
       // collection("departments").doc(departId).
       // collection("sessions").doc(sessionId).
       // collection("semesters").doc(semesterId).
       collection("admins").doc(admin.id).update({
         // Admin(name: name, email: email, institute: institute, role: role, status: status,permissions: )
-        "name":admin.name,
-        "email":admin.email,
-        "institute":admin.institute,
-        "role":admin.role,
-        "status":admin.status,
-        "created_at":Timestamp.fromDate(admin.created_at),//datetime to timestamp",
+        // "name":admin.name,
+        // "email":admin.email,
+        // "institute":admin.institute,
+        // "role":admin.role,
+        // "status":admin.status,
+        // "created_at":Timestamp.fromDate(admin.created_at),//datetime to timestamp",
         "permissions":permissions_//["student_management","department_management","lecture_management"] etc
 
       });
@@ -1310,14 +1822,50 @@ bool loading=false;
 
     }
   }
-  updateStudentLeaveApplication(BuildContext context,String insAdminId,String instituteId,String studentId,LeaveApplication leaveApplication)async{
+  revokeAllPermissionsAdmin(BuildContext context,Admin admin)async{
     try{
+      final dox=await indexDoc.doc(admin.id).get();
+      List<String> permissions_=admin.permissions!;
+      if(permissions_.isNotEmpty){
+        permissions_.clear();
+      }else{
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("has none of the permissions")));
+      }
+      if(permissions_.isEmpty){
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("no permissions found")));
+      }
       final insAdminsRef=await dbref.collection("ins_admins")
-          .doc(insAdminId).collection("institutes").doc(instituteId).
+          .doc(dox.get("ins_admin_id")).collection("institutes").doc(dox.get("institute_id")).
       // collection("departments").doc(departId).
       // collection("sessions").doc(sessionId).
       // collection("semesters").doc(semesterId).
-      collection("students").doc(studentId).collection("leave_applications")
+      collection("admins").doc(admin.id).update({
+        // Admin(name: name, email: email, institute: institute, role: role, status: status,permissions: )
+        // "name":admin.name,
+        // "email":admin.email,
+        // "institute":admin.institute,
+        // "role":admin.role,
+        // "status":admin.status,
+        // "created_at":Timestamp.fromDate(admin.created_at),//datetime to timestamp",
+        "permissions":permissions_//["student_management","department_management","lecture_management"] etc
+
+      });
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Admin Added Successfully")));
+    }catch(e){
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+    }finally{
+
+    }
+  }
+  updateStudentLeaveApplication(BuildContext context,LeaveApplication leaveApplication)async{
+    try{
+      final dox=await indexDoc.doc(leaveApplication.id).get();
+      final insAdminsRef=await dbref.collection("ins_admins")
+          .doc(dox.get("ins_admin_id")).collection("institutes").doc(dox.get("institute_id")).
+      // collection("departments").doc(departId).
+      // collection("sessions").doc(sessionId).
+      // collection("semesters").doc(semesterId).
+      collection("students").doc(dox.get("student_id")).collection("leave_applications")
           .doc(leaveApplication.id).update({
         // LeaveApplication(appliedDate: appliedDate, type: type, fromDate: fromDate,
         // tillDate: tillDate, reason: reason, status: status, std_name: std_name, std_id: std_id)
@@ -1329,6 +1877,7 @@ bool loading=false;
         "type":leaveApplication.type,
         "reason":leaveApplication.reason,
         "status":leaveApplication.status,
+        "approvedby":leaveApplication.approvedby,
       });
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("student leave applied Successfully")));
     }catch(e){
@@ -1337,24 +1886,25 @@ bool loading=false;
 
     }
   }
-  approveStudentLeaveApplication(BuildContext context,String insAdminId,String instituteId,String studentId,LeaveApplication leaveApplication,String adminName)async{
+  approveStudentLeaveApplication(BuildContext context,LeaveApplication leaveApplication,String adminName)async{
     try{
+      final dox=await indexDoc.doc(leaveApplication.id).get();
       final insAdminsRef=await dbref.collection("ins_admins")
-          .doc(insAdminId).collection("institutes").doc(instituteId).
+          .doc(dox.get("ins_admin_id")).collection("institutes").doc(dox.get("institute_id")).
       // collection("departments").doc(departId).
       // collection("sessions").doc(sessionId).
       // collection("semesters").doc(semesterId).
-      collection("students").doc(studentId).collection("leave_applications")
+      collection("students").doc(dox.get("student_id")).collection("leave_applications")
           .doc(leaveApplication.id).update({
         // LeaveApplication(appliedDate: appliedDate, type: type, fromDate: fromDate,
         // tillDate: tillDate, reason: reason, status: status, std_name: std_name, std_id: std_id)
-        "start_date":Timestamp.fromDate(leaveApplication.fromDate),//datetime to timestamp",
-        "end_date":Timestamp.fromDate(leaveApplication.tillDate),//datetime to timestamp",
-        "applied_date":Timestamp.fromDate(leaveApplication.appliedDate),//datetime to timestamp","
-        "std_name":leaveApplication.std_name,
-        "std_id":leaveApplication.std_id,
-        "type":leaveApplication.type,
-        "reason":leaveApplication.reason,
+        // "start_date":Timestamp.fromDate(leaveApplication.fromDate),//datetime to timestamp",
+        // "end_date":Timestamp.fromDate(leaveApplication.tillDate),//datetime to timestamp",
+        // "applied_date":Timestamp.fromDate(leaveApplication.appliedDate),//datetime to timestamp","
+        // "std_name":leaveApplication.std_name,
+        // "std_id":leaveApplication.std_id,
+        // "type":leaveApplication.type,
+        // "reason":leaveApplication.reason,
         "status":"approved",
         "approvedby":adminName,
       });
@@ -1365,24 +1915,25 @@ bool loading=false;
 
     }
   }
-  rejectStudentLeaveApplication(BuildContext context,String insAdminId,String instituteId,String studentId,LeaveApplication leaveApplication,String adminName)async{
+  rejectStudentLeaveApplication(BuildContext context,LeaveApplication leaveApplication,String adminName)async{
     try{
+      final dox=await indexDoc.doc(leaveApplication.id).get();
       final insAdminsRef=await dbref.collection("ins_admins")
-          .doc(insAdminId).collection("institutes").doc(instituteId).
+          .doc(dox.get("ins_admin_id")).collection("institutes").doc(dox.get("institute_id")).
       // collection("departments").doc(departId).
       // collection("sessions").doc(sessionId).
       // collection("semesters").doc(semesterId).
-      collection("students").doc(studentId).collection("leave_applications")
+      collection("students").doc(dox.get("student_id")).collection("leave_applications")
           .doc(leaveApplication.id).update({
         // LeaveApplication(appliedDate: appliedDate, type: type, fromDate: fromDate,
         // tillDate: tillDate, reason: reason, status: status, std_name: std_name, std_id: std_id)
-        "start_date":Timestamp.fromDate(leaveApplication.fromDate),//datetime to timestamp",
-        "end_date":Timestamp.fromDate(leaveApplication.tillDate),//datetime to timestamp",
-        "applied_date":Timestamp.fromDate(leaveApplication.appliedDate),//datetime to timestamp","
-        "std_name":leaveApplication.std_name,
-        "std_id":leaveApplication.std_id,
-        "type":leaveApplication.type,
-        "reason":leaveApplication.reason,
+        // "start_date":Timestamp.fromDate(leaveApplication.fromDate),//datetime to timestamp",
+        // "end_date":Timestamp.fromDate(leaveApplication.tillDate),//datetime to timestamp",
+        // "applied_date":Timestamp.fromDate(leaveApplication.appliedDate),//datetime to timestamp","
+        // "std_name":leaveApplication.std_name,
+        // "std_id":leaveApplication.std_id,
+        // "type":leaveApplication.type,
+        // "reason":leaveApplication.reason,
         "status":"rejected",
         "approvedby":adminName,
       });

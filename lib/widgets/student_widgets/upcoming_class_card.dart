@@ -44,14 +44,14 @@ class UpcomingClassCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
                 SizedBox(height: 10,),
-                Text(lectureModel.course!.name,style: TextStyle(fontSize: 15,fontWeight: FontWeight.w700),),
+                Text(lectureModel.course!,style: TextStyle(fontSize: 15,fontWeight: FontWeight.w700),),
                 SizedBox(height: 10,),
                 //lecturaer
                 Row(
                   children: [
                     Icon(Icons.person,color: Colors.grey,size: 14,),
                     SizedBox(width: 4,),
-                    Text(lectureModel.course!.lecturer!,style: TextStyle(fontSize: 13,color: Colors.grey,fontWeight: FontWeight.w600),),
+                    Text("dr ${lectureModel.course!}",style: TextStyle(fontSize: 13,color: Colors.grey,fontWeight: FontWeight.w600),),
                   ],
                 ),
                 SizedBox(height: 10,),

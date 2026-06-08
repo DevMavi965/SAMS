@@ -1,10 +1,11 @@
 class InsAdmin {
   String? id;
-  String name,email ;
+  String name,email ,role;
   String status;
   DateTime? created_at,last_login;
   InsAdmin({
     this.id,
+    required this.role,
     required this.name,
     required this.email,
     required this.status,
