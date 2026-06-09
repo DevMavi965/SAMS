@@ -1,6 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:smas3/models/admin_model.dart';
+import 'package:smas3/services/db_service.dart';
 import 'package:smas3/widgets/admin_widgets/adminProfileCard.dart';
 import 'package:smas3/widgets/admin_widgets/admin_setting_card.dart';
 import 'package:smas3/widgets/fac_widgets/admin_info_card.dart';
@@ -44,6 +46,8 @@ class _AdminProfileState extends State<AdminProfile> {
             ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                 backgroundColor: Colors.red
                 ,content: Text("Logging out as ${widget._admin.name}")));
+               Provider.of<DbService>(context,listen: false).signOut(context);
+            Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
           },
           label: Text("Logout"),
           icon: Icon(Icons.logout),

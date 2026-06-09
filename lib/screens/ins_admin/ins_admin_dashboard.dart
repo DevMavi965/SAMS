@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:smas3/models/admin_model.dart';
+import 'package:smas3/models/fac_model.dart';
 import 'package:smas3/models/ins_admin.dart';
 import 'package:smas3/models/institute.dart';
 import 'package:smas3/models/student_model.dart';
@@ -45,8 +46,10 @@ class _InsAdminDashboardState extends State<InsAdminDashboard> {
           }, icon: Icon(Icons.logout))
         ],
       ),
-      body: Consumer<DbService>(builder: (context,provider,child){
-        return StreamBuilder(stream: provider.dbref.collection("ins_admins").doc(widget.insAdmin.id).collection("institutes").snapshots(), builder: (context,snapshot){
+      body:
+      Builder(builder: (context){
+        final dbref=Provider.of<DbService>(context).dbref;
+        return StreamBuilder(stream: dbref.collection("ins_admins").doc(widget.insAdmin.id).collection("institutes").snapshots(), builder: (context,snapshot){
           if(snapshot.connectionState==ConnectionState.waiting){
             return Center(child: CircularProgressIndicator(),);
           }else if(snapshot.hasData)
@@ -68,17 +71,31 @@ class _InsAdminDashboardState extends State<InsAdminDashboard> {
                     title: Text(institute.name!),
                     subtitle: Text(institute.address!),
                     trailing: IconButton(onPressed: (){
-                      Provider.of<DbService>(context,listen: false).registerAdmin(widget.insAdmin.id!, institute.id!,
-                          Admin(name: "Ali Zachary",
-                              insAdminId: widget.insAdmin.id!,
+                      Provider.of<DbService>(context,listen: false).registerFac(widget.insAdmin.id!, institute.id!,
+                          Lecturer(
+                              name: "Ameer Muawiya",
+                              deprt: "Business Analytics",
+                              role: "faculty",
                               instituteId: institute.id!,
-                              email: "ali64@gmail.com",
-                              institute: institute.name,
-                              role: "admin",
-                              permissions: ["student_management","faculty_management","course_management"],
-                              status: "active"),
-
-                          "12341234", context);
+                              insAdminId: widget.insAdmin.id!,
+                              designation: "Professor",
+                              status: "active",
+                              courses: ["Data Mining","Artificial Intelligence"],
+                              semesters: [1,2,5,6,8],
+                              email: "ameer123@gmail.com",
+                              phone: "0345231345")
+                          , "12345678", context);
+                      // Provider.of<DbService>(context,listen: false).registerAdmin(widget.insAdmin.id!, institute.id!,
+                      //     Admin(name: "Ali Zachary",
+                      //         insAdminId: widget.insAdmin.id!,
+                      //         instituteId: institute.id!,
+                      //         email: "ali67@gmail.com",
+                      //         institute: institute.name,
+                      //         role: "admin",
+                      //         permissions: ["student_management","faculty_management","course_management"],
+                      //         status: "active"),
+                      //
+                      //     "12341234", context);
                       // addStudent(context, widget.insAdmin.id!, institute.id!,
                       // Student(role: "student", name: "maria", insAdminId: widget.insAdmin.id!,
                       //     instituteId: institute.id!, depart: "Computer Science", semester: 4, email: "maria")

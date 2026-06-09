@@ -85,31 +85,6 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
   }
-  loginWithAdminEmail()async{
-    setState(() {
-      loading=true;
-    });
-    try{
-      await eauth.signInWithEmailAndPassword(email: emailController.text.trim(),
-          password: passwordController.text.trim()).then((v){
-        if(eauth.currentUser!=null){
-          Admin admin=Provider.of<DbService>(context,listen: false).admins.firstWhere((element) => element.email==emailController.text.trim());
-          print(admin.name);
-          Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_)=>AdminDeshboard(admin: admin)),(r)=>false);
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("successfully logging as admin"),backgroundColor: Theme.of(context).primaryColor,));
-        }else{
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("invalid email or password"),));
-        }
-      });
-    }catch(e){
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString()),));
-    }finally{
-      setState(() {
-        loading=false;
-      });
-    }
-
-  }
   // loginWithInsAdminEmail()async{
   //    try{
   //      await eauth.signInWithEmailAndPassword(email: emailController.text.trim(),
@@ -143,7 +118,8 @@ class _LoginScreenState extends State<LoginScreen> {
      }else if(selectedRole=="Faculty"){
        loginWithFacEmail();
      }else if(selectedRole=="Admin"){
-       loginWithAdminEmail();
+       Provider.of<DbService>(context,listen: false)
+           .loginWithAdminEmail(emailController.text.trim(), passwordController.text.trim(), context);
      }else if(selectedRole=="insAdmin"){
        Provider.of<DbService>(context,listen: false)
            .loginWithInsAdminEmail(emailController.text.trim(), passwordController.text.trim(), context);
@@ -160,7 +136,7 @@ class _LoginScreenState extends State<LoginScreen> {
       backgroundColor:Colors.white,
       // const Color(0xFFF1FAF5),
       body:Consumer<DbService>(builder: (context,provider,child){
-        return
+        return loading?Center(child: CircularProgressIndicator(),):
         Center(
           child: SingleChildScrollView(
             child: Form(
