@@ -15,6 +15,7 @@ import 'package:smas3/models/course.dart';
 import 'package:smas3/screens/admin/admin_deshboard.dart';
 import 'package:smas3/screens/auth_screens/login_screen.dart';
 import 'package:smas3/screens/faculty/fac_deshboard.dart';
+import 'package:smas3/screens/student/stdudent_deshboard.dart';
 
 import '../models/admin_model.dart';
 import '../models/department.dart';
@@ -51,33 +52,37 @@ class DbService with ChangeNotifier{
     try{
       loading=true;
       notifyListeners();
-      await eauth.signInWithEmailAndPassword(email: _email,
-          password: _password).then((v){
-        if(eauth.currentUser!=null) {
-          final doc = dbref.collection("ins_admins").doc(
-              eauth.currentUser!.uid);
-          doc.get().then((v) {
-            InsAdmin insAdmin = InsAdmin(
-                id: v.id,
-                role: v['role'],
-                name: v["name"],
-                email: v["email"],
-                created_at: v["created_at"].toDate(),
-                last_login: v["last_login"].toDate(),
-                status: v["status"]);
-            if (context.mounted) {
-              Navigator.pushAndRemoveUntil(context, MaterialPageRoute(
-                  builder: (_) => InsAdminDashboard(insAdmin: insAdmin,)), (
-                  r) => false);
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                content: Text("successfully logging as institute admin"),
-                backgroundColor: Theme
-                    .of(context)
-                    .primaryColor,));
-            }
-          });
-                }
-      });
+     final userCred= await eauth.signInWithEmailAndPassword(email: _email,
+          password: _password);
+      if(userCred.user!=null) {
+        final v =await dbref.collection("ins_admins").doc(
+            userCred.user!.uid).get();
+        if(!v.exists){
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("not registered as institute admin"),));
+          eauth.signOut();
+          return;
+        }
+          InsAdmin insAdmin = InsAdmin(
+              id: v.id,
+              role: v['role'],
+              name: v["name"],
+              email: v["email"],
+              created_at: v["created_at"].toDate(),
+              last_login: v["last_login"].toDate(),
+              status: v["status"]);
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text("successfully logged-in as institute admin"),
+              backgroundColor: Theme
+                  .of(context)
+                  .primaryColor,));
+            Navigator.pushAndRemoveUntil(context, MaterialPageRoute(
+                builder: (_) => InsAdminDashboard(insAdmin: insAdmin,)), (
+                r) => false);
+
+          }
+
+      }
     }catch(e){
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString()),));
     }finally{
@@ -136,6 +141,12 @@ class DbService with ChangeNotifier{
           password: _password).then((v) async {
         if(eauth.currentUser!=null){
           final dox=await indexDoc.doc(eauth.currentUser!.uid).get();
+          if(dox.exists==false){
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("invalid email or password"),));
+            eauth.signOut();
+            return;
+          }
+
           final insAdminId=dox['ins_admin_id'];
           final instituteId=dox['institute_id'];
          print(dox.data());
@@ -144,6 +155,11 @@ class DbService with ChangeNotifier{
               .collection("ins_admins").doc(insAdminId).
                collection("institutes").doc(instituteId)
               .collection("admins").doc(eauth.currentUser!.uid).get();
+          if(!v.exists){
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("not registered as admin"),));
+            eauth.signOut();
+            return;
+          }
           print(v.data());
           Admin _admin=Admin(
             id: v.id,
@@ -185,17 +201,22 @@ class DbService with ChangeNotifier{
 
 
   registerFac(String _insAdminId,String instituteId,Lecturer lecturer,String password,BuildContext context)async{
-    UserCredential uc=await eauth.createUserWithEmailAndPassword(email: lecturer.email,
-        password: password);
-    if(uc.user!=null){
+   try {
+     UserCredential uc = await eauth.createUserWithEmailAndPassword(
+         email: lecturer.email,
+         password: password);
+     if (uc.user != null) {
+       lecturer.id = uc.user!.uid;
+       await addFaculty(context, _insAdminId, instituteId, lecturer);
 
-      lecturer.id=uc.user!.uid;
-      await addFaculty(context, _insAdminId, instituteId, lecturer);
-
-      // ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("successfully registered as admin"),backgroundColor: Theme.of(context).primaryColor,));
-    }else{
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("invalid email or password"),));
-    }
+       // ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("successfully registered as admin"),backgroundColor: Theme.of(context).primaryColor,));
+     } else {
+       ScaffoldMessenger.of(context).showSnackBar(
+           SnackBar(content: Text("invalid email or password"),));
+     }
+   }catch(e){
+     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString()),));
+   }
   }
   loginWithFacEmail(String _email,String _password,BuildContext context)async{
     try{
@@ -205,6 +226,11 @@ class DbService with ChangeNotifier{
           password: _password).then((v) async {
         if(eauth.currentUser!=null){
           final dox=await indexDoc.doc(eauth.currentUser!.uid).get();
+          if(dox.exists==false){
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("invalid email or password"),));
+            eauth.signOut();
+            return;
+          }
           final insAdminId=dox['ins_admin_id'];
           final instituteId=dox['institute_id'];
           print(dox.data());
@@ -213,6 +239,11 @@ class DbService with ChangeNotifier{
               .collection("ins_admins").doc(insAdminId).
           collection("institutes").doc(instituteId)
               .collection("faculty").doc(eauth.currentUser!.uid).get();
+          if(!v.exists){
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("not registered as faculty"),));
+            eauth.signOut();
+            return;
+          }
           print(v.data());
           Lecturer faculty=Lecturer(
               id: v.id,
@@ -226,6 +257,7 @@ class DbService with ChangeNotifier{
               email: v['email'],
               semesters: List<int>.from(v['semester']),
               courses: List<String>.from(v['courses']),
+              created_at: v['created_at'].toDate(),
               phone: v['phone'],);
           if(context.mounted){
             Navigator.pushAndRemoveUntil(context, MaterialPageRoute(
@@ -254,6 +286,91 @@ class DbService with ChangeNotifier{
 
   }
 
+
+  registerStudent(String _insAdminId,String instituteId,Student student,String password,BuildContext context)async{
+    try {
+      UserCredential uc = await eauth.createUserWithEmailAndPassword(
+          email: student.email,
+          password: password);
+      if (uc.user != null) {
+        print(uc.user!.uid);
+        student.id = uc.user!.uid;
+        await addStudent(context, _insAdminId, instituteId, student);
+
+        // ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("successfully registered as admin"),backgroundColor: Theme.of(context).primaryColor,));
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("invalid email or password"),));
+      }
+    }catch(e){
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString()),));
+    }
+  }
+  loginWithStudentEmail(String _email,String _password,BuildContext context)async{
+    try{
+      loading=true;
+      notifyListeners();
+      await eauth.signInWithEmailAndPassword(email: _email,
+          password: _password).then((v) async {
+        if(eauth.currentUser!=null){
+          final dox=await indexDoc.doc(eauth.currentUser!.uid).get();
+          if(dox.exists==false){
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("invalid email or password"),));
+            eauth.signOut();
+            return;
+          }
+          final insAdminId=dox['ins_admin_id'];
+          final instituteId=dox['institute_id'];
+          print(dox.data());
+          final doc=dbref.collection("ins_admins").doc(insAdminId);
+          final v=await dbref
+          .collection("ins_admins").doc(insAdminId)
+          .collection("institutes").doc(instituteId)
+          .collection("students").doc(eauth.currentUser!.uid).get();
+          print(v.data());
+          if(!v.exists){
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("not registered as student"),));
+            eauth.signOut();
+            return;
+          }
+          Student student=Student(
+              id: v.id,
+              role: v['role'],
+              name: v['name'],
+              insAdminId: insAdminId,
+              instituteId: instituteId,
+              depart: v['depart'],
+              semester: v['semester'],
+              email: v['email'],
+              created_at: v['created_at'].toDate(),
+          );
+          if(context.mounted){
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text("successfully logged-in as ${student.name}"),
+              backgroundColor: Theme
+                  .of(context)
+                  .primaryColor,));
+            Navigator.pushAndRemoveUntil(context, MaterialPageRoute(
+                builder: (_) => StudentDeshboard(student: student)), (
+                r) => false);
+
+          }
+          await getData1(insAdminId);
+
+        }else{
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("invalid email or password"),));
+        }
+      });
+    }catch(e){
+      print(e.toString());
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString()),));
+    }finally{
+
+      loading=false;
+      notifyListeners();
+    }
+
+  }
 
   signOut(BuildContext context)async{
     try{
@@ -1157,9 +1274,10 @@ class DbService with ChangeNotifier{
         "name":lecturer.name,
         "email":lecturer.email,
         "depart":lecturer.deprt,
+        "role":lecturer.role,
         "designation":lecturer.designation,
         "status":lecturer.status,
-        "created_at":Timestamp.fromDate(lecturer.created_at!),//datetime to timestamp",
+        "created_at":Timestamp.fromDate(DateTime.now()),//datetime to timestamp",
         "semester":lecturer.semesters,
         "courses":lecturer.courses,
         "phone":lecturer.phone,
@@ -1183,10 +1301,13 @@ class DbService with ChangeNotifier{
       // collection("sessions").doc(sessionId).
       // collection("semesters").doc(semesterId).
       collection("students").doc(student.id).set({
-      // Student(name: name, depart: depart, semester: semester, email: email)
+      // Student(role: '', insAdminId: '', instituteId: '', name: '', depart: '', semester: null, email: '')
         "name":student.name,
         "email":student.email,
         "depart":student.depart,
+        "role":student.role,
+        "ins_admin_id":insAdminId,
+        "institute_id":instituteId,
         "semester":student.semester,
         "created_at":Timestamp.fromDate(student.created_at!),//datetime to timestamp",
       });

@@ -59,13 +59,15 @@ class _StdProfileCardState extends State<StdProfileCard> {
                 ),
               ),
               SizedBox(width: 20,),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(widget.student.name,style: TextStyle(color: Colors.white,fontWeight: FontWeight.bold,fontSize: 18),),
-                  Text(widget.student.id.toString(),style: TextStyle(color: Colors.white,fontWeight: FontWeight.w400,fontSize: 14),),
-                ],
+              Flexible(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(widget.student.name,style: TextStyle(color: Colors.white,fontWeight: FontWeight.bold,fontSize: 18),),
+                    Text(widget.student.id.toString(),overflow: TextOverflow.ellipsis,style: TextStyle(color: Colors.white,fontWeight: FontWeight.w400,fontSize: 14),),
+                  ],
 
+                ),
               )
             ],
           ),

@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:smas3/models/fac_model.dart';
 import 'package:smas3/widgets/fac_widgets/fac_personal_info_card.dart';
 import 'package:smas3/widgets/fac_widgets/fac_profile_card.dart';
 import 'package:smas3/widgets/fac_widgets/fac_setting_card.dart';
+
+import '../../services/db_service.dart';
 class FacProfileTab extends StatefulWidget {
   final Lecturer lecturer;
   const FacProfileTab({super.key, required this.lecturer});
@@ -42,6 +45,7 @@ class _FacProfileTabState extends State<FacProfileTab> {
             ),
           ),
           onPressed: (){
+            Provider.of<DbService>(context,listen: false).signOut(context);
            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                backgroundColor: Colors.red
                ,content: Text("Logging out as ${widget.lecturer.name}")));

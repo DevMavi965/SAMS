@@ -37,86 +37,11 @@ class _LoginScreenState extends State<LoginScreen> {
   bool obscure = true;
   bool loading=false;
   final eauth=FirebaseAuth.instance;
-   loginWithStdEmail()async{
-     setState(() {
-       loading=true;
-     });
-     try{
-       final cu=await eauth.signInWithEmailAndPassword(email: emailController.text.trim(),
-           password: passwordController.text.trim()).then((v){
-         if(eauth.currentUser!=null){
-           Student student=Provider.of<DbService>(context,listen: false).students.firstWhere((element) => element.id==eauth.currentUser!.uid);
-           print(student.name);
-           Navigator.push(context, MaterialPageRoute(builder: (_)=>StudentDeshboard(student: student)));
-         }else{
-           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("invalid email or password"),));
-         }
-       });
-     }catch(e){
-       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("error:$e"),));
-     }finally{
-       setState(() {
-         loading=false;
-       });
-     }
-
-   }
-  loginWithFacEmail()async{
-    setState(() {
-      loading=true;
-    });
-    try{
-      await eauth.signInWithEmailAndPassword(email: emailController.text.trim(),
-          password: passwordController.text.trim()).then((v){
-        if(eauth.currentUser!=null){
-          InsAdmin insAdmin=Provider.of<DbService>(context,listen: false).ins_admins.firstWhere((element) => element.email==emailController.text.trim());
-          print(insAdmin.name);
-          Navigator.push(context, MaterialPageRoute(builder: (_)=>InsAdminDashboard(insAdmin: insAdmin,)));
-        }else{
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("invalid email or password"),));
-        }
-      });
-    }catch(e){
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString()),));
-    }finally{
-      setState(() {
-        loading=false;
-      });
-    }
-
-  }
-  // loginWithInsAdminEmail()async{
-  //    try{
-  //      await eauth.signInWithEmailAndPassword(email: emailController.text.trim(),
-  //          password: passwordController.text.trim()).then((v){
-  //        if(eauth.currentUser!=null){
-  //          InsAdmin insAdmin=Provider.of<DbService>(context,listen: false).ins_admins.firstWhere((element) => element.id==eauth.currentUser!.uid);
-  //          print(insAdmin.name);
-  //          if(insAdmin!=null){
-  //            Navigator.push(context, MaterialPageRoute(builder: (_)=>InsAdminDashboard(insAdmin: insAdmin,)));
-  //            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("successfully logging as institute admin"),backgroundColor: Theme.of(context).primaryColor,));
-  //          }else{
-  //            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("invalid email or password"),));
-  //          }
-  //
-  //        }else{
-  //          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("invalid email or password"),));
-  //        }
-  //      });
-  //    }catch(e){
-  //      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString()),));
-  //    }finally{
-  //      setState(() {
-  //        loading=false;
-  //      });
-  //    }
-  //
-  //  }
   login(){
      if(selectedRole=="Student"){
-       loginWithStdEmail();
+       Provider.of<DbService>(context,listen: false).loginWithStudentEmail(emailController.text.trim(), passwordController.text.trim(), context);
      }else if(selectedRole=="Faculty"){
-       loginWithFacEmail();
+       Provider.of<DbService>(context,listen: false).loginWithFacEmail(emailController.text.trim(), passwordController.text.trim(), context);
      }else if(selectedRole=="Admin"){
        Provider.of<DbService>(context,listen: false)
            .loginWithAdminEmail(emailController.text.trim(), passwordController.text.trim(), context);
@@ -136,7 +61,7 @@ class _LoginScreenState extends State<LoginScreen> {
       backgroundColor:Colors.white,
       // const Color(0xFFF1FAF5),
       body:Consumer<DbService>(builder: (context,provider,child){
-        return loading?Center(child: CircularProgressIndicator(),):
+        return provider.loading?Center(child: CircularProgressIndicator(),):
         Center(
           child: SingleChildScrollView(
             child: Form(

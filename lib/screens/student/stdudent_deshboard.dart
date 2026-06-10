@@ -32,28 +32,58 @@ class StudentDeshboard extends StatefulWidget {
 class _StudentDeshboardState extends State<StudentDeshboard> {
  int current=0;
   List<String> menus=["home","schedule","leave","alerts","profile"];
- List<LectureModel> lectures =[
-   LectureModel(dated: DateTime.parse("2025-11-06T08:00:00"), start_time: TimeOfDay.now(), end_time: TimeOfDay.now(), students: null, present: null, absent: null, room: "16A"),
-   LectureModel(dated: DateTime.parse("2025-11-06T08:00:00"), start_time: TimeOfDay.now(), end_time: TimeOfDay.now(), students: null, present: null, absent: null, room: "16A"),
-   LectureModel(dated: DateTime.parse("2025-11-06T08:00:00"), start_time: TimeOfDay.now(), end_time: TimeOfDay.now(), students: null, present: null, absent: null, room: "16A"),
-
-
-   //day3
-   LectureModel(dated: DateTime.parse("2025-11-10T08:00:00"), start_time: TimeOfDay.now(), end_time: TimeOfDay.now(), students: null, present: null, absent: null, room: "16A"),
-   LectureModel(dated: DateTime.parse("2025-11-10T08:00:00"), start_time: TimeOfDay.now(), end_time: TimeOfDay.now(), students: null, present: null, absent: null, room: "16A"),
-   LectureModel(dated: DateTime.parse("2025-11-10T08:00:00"), start_time: TimeOfDay.now(), end_time: TimeOfDay.now(), students: null, present: null, absent: null, room: "16A"),
-
-
-   // day4
-   LectureModel(dated: DateTime.parse("2025-11-11T08:00:00"), start_time: TimeOfDay.now(), end_time: TimeOfDay.now(), students: null, present: null, absent: null, room: "16A"),
-   LectureModel(dated: DateTime.parse("2025-11-11T08:00:00"), start_time: TimeOfDay.now(), end_time: TimeOfDay.now(), students: null, present: null, absent: null, room: "16A"),
-   LectureModel(dated: DateTime.parse("2025-11-11T08:00:00"), start_time: TimeOfDay.now(), end_time: TimeOfDay.now(), students: null, present: null, absent: null, room: "16A"),
-
-   // day5
-   LectureModel(dated: DateTime.parse("2025-11-12T08:00:00"), start_time: TimeOfDay.now(), end_time: TimeOfDay.now(), students: null, present: null, absent: null, room: "16A"),
-   LectureModel(dated: DateTime.parse("2025-11-12T09:00:00"), start_time: TimeOfDay.now(), end_time: TimeOfDay.now(), students: null, present: null, absent: null, room: "16A"),
-   LectureModel(dated: DateTime.parse("2025-11-12T10:00:00"), start_time: TimeOfDay.now(), end_time: TimeOfDay.now(), students: null, present: null, absent: null, room: "16A"),
-   LectureModel(dated: DateTime.parse("2025-11-12T11:00:00"), start_time: TimeOfDay.now(), end_time: TimeOfDay.now(), students: null, present: null, absent: null, room: "16A"),
+ List<LectureModel> lectures=[
+   LectureModel(
+       dated: DateTime.now(),
+       start_time: TimeOfDay(hour: 9, minute: 00),
+       end_time: TimeOfDay(hour: 10, minute: 00),
+       students: ["2537888","2537889","2537890","2537891","2537892"],
+       present:["2537889","2537891","2537892"],
+       absent: ["2537888","25378"] ,
+       room: "14-B",
+       status: "upcoming",
+       course: "Data Mining"
+   ),
+   LectureModel(
+       dated: DateTime.now(),
+       start_time: TimeOfDay(hour: 10, minute: 00),
+       end_time: TimeOfDay(hour: 12, minute: 00),
+       students: ["2537888","2537889","2537890","2537891","2537892"],
+       present:["2537888","2537889","2537890","2537891"],
+       absent: ["2537892"] ,
+       room: "8-A",
+       status: "upcoming",
+       course: "Microprocessors"
+   ),
+   LectureModel(
+       dated: DateTime.now(),
+       start_time: TimeOfDay(hour: 10, minute: 00),
+       end_time: TimeOfDay(hour: 12, minute: 00),
+       students: ["2537888","2537889","2537890","2537891","2537892"],
+       present:["2537888","2537889","2537890","2537891"],
+       absent: ["2537892"] ,
+       room: "Lab-2",
+       status: "upcoming",
+       course: "System-Design Lab"
+   ),
+   LectureModel(
+       dated: DateTime.now(),
+       start_time: TimeOfDay(hour: 10, minute: 00),
+       end_time: TimeOfDay(hour: 12, minute: 00),
+       students: ["2537888","2537889","2537890","2537891","2537892"],
+       present:["2537888","2537889","2537890","2537891"],
+       absent: ["2537892"] ,
+       room: "13-C",
+       status: "upcoming",
+       course: "Microprocessors"
+   ),
+   // Lecture(
+   //     course: Course(name: "DSA", lecturer:"Dr Asif", room:"13C", time: DateTime.now(), status: "upcoming"),
+   //     total_std:50,
+   //     absent_std:2,
+   //     late_std: 2,
+   //     present_std: 48,
+   //     status: "completed"),
 
  ];
   List<Announcement> stud_announcements = [

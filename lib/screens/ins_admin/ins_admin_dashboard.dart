@@ -68,23 +68,36 @@ class _InsAdminDashboardState extends State<InsAdminDashboard> {
               children: [
                 for(var institute in Institute_list)
                   ListTile(
-                    title: Text(institute.name!),
-                    subtitle: Text(institute.address!),
+                    title: Text(institute.name),
+                    subtitle: Text(institute.address),
                     trailing: IconButton(onPressed: (){
-                      Provider.of<DbService>(context,listen: false).registerFac(widget.insAdmin.id!, institute.id!,
-                          Lecturer(
-                              name: "Ameer Muawiya",
-                              deprt: "Business Analytics",
-                              role: "faculty",
-                              instituteId: institute.id!,
+                      Provider.of<DbService>(context,listen: false).registerStudent(
+                          widget.insAdmin.id!, institute.id!,
+                          Student(
+                              role: "student",
+                              name: "maria",
                               insAdminId: widget.insAdmin.id!,
-                              designation: "Professor",
-                              status: "active",
-                              courses: ["Data Mining","Artificial Intelligence"],
-                              semesters: [1,2,5,6,8],
-                              email: "ameer123@gmail.com",
-                              phone: "0345231345")
-                          , "12345678", context);
+                              instituteId: institute.id!,
+                              depart: "Computer Science",
+                              semester: 4,
+                              email: "maria13@gmail.com",
+                              created_at: DateTime.now()
+                          ),
+                           "12312344", context);
+                      // Provider.of<DbService>(context,listen: false).registerFac(widget.insAdmin.id!, institute.id!,
+                      //     Lecturer(
+                      //         name: "Ameer Muawiya",
+                      //         deprt: "Business Analytics",
+                      //         role: "faculty",
+                      //         instituteId: institute.id!,
+                      //         insAdminId: widget.insAdmin.id!,
+                      //         designation: "Professor",
+                      //         status: "active",
+                      //         courses: ["Data Mining","Artificial Intelligence"],
+                      //         semesters: [1,2,5,6,8],
+                      //         email: "am1234@gmail.com",
+                      //         phone: "0345231345")
+                      //     , "12345678", context);
                       // Provider.of<DbService>(context,listen: false).registerAdmin(widget.insAdmin.id!, institute.id!,
                       //     Admin(name: "Ali Zachary",
                       //         insAdminId: widget.insAdmin.id!,

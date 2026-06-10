@@ -44,14 +44,14 @@ class UpcomingClassCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
                 SizedBox(height: 10,),
-                Text(lectureModel.course!,style: TextStyle(fontSize: 15,fontWeight: FontWeight.w700),),
+                Text(lectureModel.course,style: TextStyle(fontSize: 15,fontWeight: FontWeight.w700),),
                 SizedBox(height: 10,),
                 //lecturaer
                 Row(
                   children: [
                     Icon(Icons.person,color: Colors.grey,size: 14,),
                     SizedBox(width: 4,),
-                    Text("dr ${lectureModel.course!}",style: TextStyle(fontSize: 13,color: Colors.grey,fontWeight: FontWeight.w600),),
+                    Text("dr ${lectureModel.course}",style: TextStyle(fontSize: 13,color: Colors.grey,fontWeight: FontWeight.w600),),
                   ],
                 ),
                 SizedBox(height: 10,),
@@ -74,7 +74,7 @@ class UpcomingClassCard extends StatelessWidget {
                   children: [
                     Icon(CupertinoIcons.clock,color: Colors.grey,size: 13,),
                     SizedBox(width: 3,),
-                    Text("${lectureModel.start_time}-${lectureModel.end_time}",style: TextStyle(fontSize: 13,color: Colors.grey),),
+                    Text("${lectureModel.start_time.hour}:${lectureModel.start_time.minute}-${lectureModel.end_time.hour}:${lectureModel.end_time.minute}",style: TextStyle(fontSize: 13,color: Colors.grey),),
                   ],
                 ),
                 SizedBox(height: 5,),
