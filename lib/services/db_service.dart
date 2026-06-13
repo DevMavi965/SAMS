@@ -1285,6 +1285,7 @@ class DbService with ChangeNotifier{
       await indexDoc.doc(lecturer.id).set({
         "ins_admin_id":insAdminId,
         "institute_id":instituteId,
+        "role":lecturer.role
       });
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("faculty Added Successfully")));
     }catch(e){
@@ -1374,6 +1375,7 @@ class DbService with ChangeNotifier{
         "type":leaveApplication.type,
         "reason":leaveApplication.reason,
         "status":leaveApplication.status,
+        "approvedby":leaveApplication.approvedby
       });
       leaveApplication.id=stdappRef.id;
       await indexDoc.doc(leaveApplication.id).set({
@@ -1381,6 +1383,7 @@ class DbService with ChangeNotifier{
         "institute_id":instituteId,
         "student_id":studentId,
       });
+      notifyListeners();
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("student leave applied Successfully")));
     }catch(e){
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
@@ -1394,6 +1397,7 @@ class DbService with ChangeNotifier{
       // InsAdmin insAdmin=InsAdmin(name: "Ameer Muawiya", email: "ameermuawiya34@gmail.com", created_at: DateTime.now(), last_login: DateTime.now(), status: "active");
       final insAdminsRef=await dbref.collection("ins_admins").doc(insAdminId).delete();
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Ins Admin deleted Successfully")));
+      await indexDoc.doc(insAdminId).delete();
     }catch(e){
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
     }finally{
@@ -1405,6 +1409,7 @@ class DbService with ChangeNotifier{
       String insAdminId=await indexDoc.doc(instituteId).get().then((value) => value.get("ins_admin_id"));
       final insRef=await dbref.collection("ins_admins")
           .doc(insAdminId).collection("institutes").doc(instituteId).delete();
+     await indexDoc.doc(instituteId).delete();
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Institute deleted Successfully")));
     }catch(e){
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
@@ -1419,6 +1424,7 @@ class DbService with ChangeNotifier{
           .collection("ins_admins").doc(dox.get("ins_admin_id"))
           .collection("institutes").doc(dox.get("institute_id"))
           .collection("departments").doc(departmentId).delete();
+      await indexDoc.doc(departmentId).delete();
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("department deleted Successfully")));
     }catch(e){
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
@@ -1434,6 +1440,7 @@ class DbService with ChangeNotifier{
           .collection("institutes").doc(dox.get("institute_id"))
           .collection("announcements")
           .doc(announcementId).delete();
+      await indexDoc.doc(announcementId).delete();
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("announcement deleted Successfully")));
     }catch(e){
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
@@ -1449,6 +1456,7 @@ class DbService with ChangeNotifier{
           .collection("institutes").doc(dox.get("institute_id"))
           .collection("departments").
       doc(dox.get("department_id")).collection("sessions").doc(sessionId).delete();
+      await indexDoc.doc(sessionId).delete();
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("session deleted Successfully")));
     }catch(e){
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
@@ -1465,6 +1473,7 @@ class DbService with ChangeNotifier{
            doc(dox.get("department_id")).collection("sessions")
           .doc(dox.get("session_id")).collection("semesters")
           .doc(semesterId).delete();
+      await indexDoc.doc(semesterId).delete();
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("semester deleted Successfully")));
     }catch(e){
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
@@ -1483,6 +1492,7 @@ class DbService with ChangeNotifier{
           .collection("semesters").doc(dox.get("semester_id"))
           .collection("lectures")
           .doc(courseId).delete();
+      await indexDoc.doc(courseId).delete();
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Course deleted Successfully")));
     }catch(e){
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
@@ -1503,6 +1513,7 @@ class DbService with ChangeNotifier{
           .collection("lectures")
           .doc(dox.get("course_id")).collection("lectures")
           .doc(lectureModelId).delete();
+      await indexDoc.doc(lectureModelId).delete();
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("lecture deleted Successfully")));
     }catch(e){
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
@@ -1519,6 +1530,7 @@ class DbService with ChangeNotifier{
       // collection("sessions").doc(sessionId).
       // collection("semesters").doc(semesterId).
       collection("faculty").doc(lecturerId).delete();
+      await indexDoc.doc(lecturerId).delete();
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("faculty deleted Successfully")));
     }catch(e){
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
@@ -1535,6 +1547,7 @@ class DbService with ChangeNotifier{
       // collection("sessions").doc(sessionId).
       // collection("semesters").doc(semesterId).
       collection("students").doc(studentId).delete();
+      await indexDoc.doc(studentId).delete();
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("student deleted Successfully")));
     }catch(e){
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
@@ -1551,6 +1564,7 @@ class DbService with ChangeNotifier{
       // collection("sessions").doc(sessionId).
       // collection("semesters").doc(semesterId).
       collection("admins").doc(adminId).delete();
+      await indexDoc.doc(adminId).delete();
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Admin deleted Successfully")));
     }catch(e){
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
@@ -1568,6 +1582,7 @@ class DbService with ChangeNotifier{
       // collection("semesters").doc(semesterId).
       collection("students").doc(dox.get("student_id")).collection("leave_applications")
           .doc(leaveApplicationId).delete();
+      await indexDoc.doc(leaveApplicationId).delete();
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("student leaveApplication deleted Successfully")));
     }catch(e){
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));

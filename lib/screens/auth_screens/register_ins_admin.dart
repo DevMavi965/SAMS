@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:lottie/lottie.dart';
 import 'package:provider/provider.dart';
 
 import '../../models/ins_admin.dart';
@@ -26,7 +27,10 @@ class _RegisterInsAdminState extends State<RegisterInsAdmin> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body:loading?Center(child: CircularProgressIndicator(),):
+      body:loading?Center(child:
+      SizedBox(
+          width:150,height: 150,
+          child: Lottie.asset("assets/anims/m2.json")),):
       Padding(
         padding: const EdgeInsets.all(8.0),
         child: Form(
@@ -146,7 +150,7 @@ class _RegisterInsAdminState extends State<RegisterInsAdmin> {
                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("password not matched"),backgroundColor: Colors.red,));
                   }else{
                     InsAdmin insAdmin=InsAdmin(
-                        role: "insAdmin",
+                        role: "ins_admin",
                         name: name.text.trim(),
                         email: email.text.trim(),
                         status: "active",

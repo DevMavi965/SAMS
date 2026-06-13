@@ -107,7 +107,7 @@ class PersonalInfo extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text("Enrolled Since",style: TextStyle(color: Colors.grey),),
-                          Text("Sep 24,2022"),
+                          Text("${student.created_at!.day}/${student.created_at!.month}/${student.created_at!.year}"),
                         ],
                       )
                     ],

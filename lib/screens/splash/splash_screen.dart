@@ -1,6 +1,17 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
+
+import '../../models/admin_model.dart';
+import '../../models/fac_model.dart';
+import '../../models/ins_admin.dart';
+import '../../models/student_model.dart';
+import '../admin/admin_deshboard.dart';
+import '../faculty/fac_deshboard.dart';
+import '../ins_admin/ins_admin_dashboard.dart';
+import '../student/stdudent_deshboard.dart';
 
 
 class SplashScreen extends StatefulWidget {
@@ -11,10 +22,129 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
-
+  final dbRef=FirebaseFirestore.instance.collection("SAMS").doc("SAMS_DB");
+final indexDoc=FirebaseFirestore.instance.collection("SAMS").doc("SAMS_DB").collection("index");
+final auth=FirebaseAuth.instance;
   void nextScreen()async{
-   await Future.delayed(Duration(seconds: 3));
-    await Navigator.pushReplacementNamed(context, '/login');
+    await Future.delayed(Duration(seconds: 3));
+    
+    if(auth.currentUser!=null){
+      final dox=await indexDoc.doc(auth.currentUser!.uid).get();
+      if(dox.exists==false){
+        await Navigator.pushReplacementNamed(context, '/login');
+        return;
+      }
+      String role=dox['role'];
+        if(role=="ins_admin"){
+        final v =await dbRef.collection("ins_admins").doc(auth.currentUser!.uid).get();
+        if(!v.exists){
+          await Navigator.pushReplacementNamed(context, '/login');
+          return;
+        }
+        InsAdmin insAdmin = InsAdmin(
+            id: v.id,
+            role: v['role'],
+            name: v["name"],
+            email: v["email"],
+            created_at: v["created_at"].toDate(),
+            last_login: v["last_login"].toDate(),
+            status: v["status"]);
+        if (context.mounted) {
+          Navigator.pushAndRemoveUntil(context, MaterialPageRoute(
+              builder: (_) => InsAdminDashboard(insAdmin: insAdmin,)), (
+              r) => false);
+         return;
+        }
+      } else
+        if(role=="admin"){
+        final instituteId=dox['institute_id'];
+        final insAdminId=dox['ins_admin_id'];
+        final v =await dbRef.collection("ins_admins").doc(insAdminId)
+            .collection("institutes").doc(instituteId)
+            .collection("admins").doc(auth.currentUser!.uid).get();
+        if(!v.exists){
+          await Navigator.pushReplacementNamed(context, '/login');
+          return;
+        }
+        Admin _admin=Admin(
+          id: v.id,
+          insAdminId: v['ins_admin_id'],
+          instituteId: v['institute_id'],
+          name: v['name'],
+          email: v['email'],
+          institute: v['institute'],
+          role: v['role'],
+          permissions:List<String>.from( v['permissions']),
+          status: v['status'],
+        );
+        if(context.mounted){
+          Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => AdminDeshboard(admin: _admin)), (r) => false);
+        return;
+        }
+
+      }else
+        if(role=="faculty"){
+        final instituteId=dox['institute_id'];
+        final insAdminId=dox['ins_admin_id'];
+        final v =await dbRef.collection("ins_admins").doc(insAdminId)
+            .collection("institutes").doc(instituteId)
+            .collection("faculty").doc(auth.currentUser!.uid).get();
+        if(!v.exists){
+          await Navigator.pushReplacementNamed(context, '/login');
+          return;
+        }
+        Lecturer faculty=Lecturer(
+          id: v.id,
+          name: v['name'],
+          deprt: v['depart'],
+          role: v['role'],
+          instituteId: instituteId,
+          insAdminId: insAdminId,
+          designation: v['designation'],
+          status: v['status'],
+          email: v['email'],
+          semesters: List<int>.from(v['semester']),
+          courses: List<String>.from(v['courses']),
+          created_at: v['created_at'].toDate(),
+          phone: v['phone'],);
+        if(context.mounted){
+          Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => FacDeshboard(lecturer: faculty)), (r) => false);
+        return;
+        }
+      }else
+        if(role=="student"){
+        final instituteId=dox['institute_id'];
+        final insAdminId=dox['ins_admin_id'];
+        final v =await dbRef.collection("ins_admins").doc(insAdminId)
+            .collection("institutes").doc(instituteId)
+            .collection("students").doc(auth.currentUser!.uid).get();
+        if(!v.exists){
+          await Navigator.pushReplacementNamed(context, '/login');
+          return;
+        }
+        Student student=Student(
+          id: v.id,
+          role: v['role'],
+          name: v['name'],
+          insAdminId: insAdminId,
+          instituteId: instituteId,
+          depart: v['depart'],
+          semester: v['semester'],
+          email: v['email'],
+          created_at: v['created_at'].toDate(),
+        );
+        if(context.mounted){
+          Navigator.pushAndRemoveUntil(context, MaterialPageRoute(
+              builder: (_) => StudentDeshboard(student: student)), (
+              r) => false);
+           return;
+        }
+      }
+    }
+    else {
+      await Navigator.pushReplacementNamed(context, '/login');
+      return;
+    }
   }
   @override
   void initState() {

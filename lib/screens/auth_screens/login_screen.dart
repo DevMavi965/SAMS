@@ -1,6 +1,9 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:lottie/lottie.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:smas3/models/admin_model.dart';
@@ -10,6 +13,7 @@ import 'package:smas3/screens/faculty/fac_deshboard.dart';
 import 'package:smas3/screens/ins_admin/ins_admin_dashboard.dart';
 import 'package:smas3/screens/student/stdudent_deshboard.dart';
 import 'package:smas3/services/db_service.dart';
+import '../../models/fac_model.dart';
 import '../../models/ins_admin.dart';
 import '../admin/admin_deshboard.dart';
 
@@ -50,7 +54,147 @@ class _LoginScreenState extends State<LoginScreen> {
            .loginWithInsAdminEmail(emailController.text.trim(), passwordController.text.trim(), context);
      }
   }
+  continueWithGoogle()async{
+  try{
+    setState(() {
+      loading=true;
+    });
+    final dbRef=FirebaseFirestore.instance.collection("SAMS").doc("SAMS_DB");
+    final indexDoc=FirebaseFirestore.instance.collection("SAMS").doc("SAMS_DB").collection("index");
+    GoogleSignIn googleSignIn=GoogleSignIn.instance;
+    await googleSignIn.initialize(
+      serverClientId: "319337104794-jghsq31njud2m6nrf9cmmraf7lke384u.apps.googleusercontent.com"
+    );
+    GoogleSignInAccount? googleSignInAccount=await googleSignIn.authenticate();
+    GoogleSignInAuthentication googleAuth=await googleSignInAccount.authentication;
+    AuthCredential credential=GoogleAuthProvider.credential(
+      idToken: googleAuth.idToken,
+    );
+    UserCredential userCredential=await eauth.signInWithCredential(credential);
 
+    if(userCredential.user!=null){
+      final dox=await indexDoc.doc(userCredential.user!.uid).get();
+      if(dox.exists==false){
+        await Navigator.pushReplacementNamed(context, '/login');
+        return;
+      }
+      String role=dox['role'];
+      if(role=="ins_admin"){
+        final v =await dbRef.collection("ins_admins").doc(userCredential.user!.uid).get();
+        if(!v.exists){
+          await Navigator.pushReplacementNamed(context, '/login');
+          return;
+        }
+        InsAdmin insAdmin = InsAdmin(
+            id: v.id,
+            role: v['role'],
+            name: v["name"],
+            email: v["email"],
+            created_at: v["created_at"].toDate(),
+            last_login: v["last_login"].toDate(),
+            status: v["status"]);
+        if (context.mounted) {
+          Navigator.pushAndRemoveUntil(context, MaterialPageRoute(
+              builder: (_) => InsAdminDashboard(insAdmin: insAdmin,)), (
+              r) => false);
+          return;
+        }
+      } else
+      if(role=="admin"){
+        final instituteId=dox['institute_id'];
+        final insAdminId=dox['ins_admin_id'];
+        final v =await dbRef.collection("ins_admins").doc(insAdminId)
+            .collection("institutes").doc(instituteId)
+            .collection("admins").doc(userCredential.user!.uid).get();
+        if(!v.exists){
+          await Navigator.pushReplacementNamed(context, '/login');
+          return;
+        }
+        Admin _admin=Admin(
+          id: v.id,
+          insAdminId: v['ins_admin_id'],
+          instituteId: v['institute_id'],
+          name: v['name'],
+          email: v['email'],
+          institute: v['institute'],
+          role: v['role'],
+          permissions:List<String>.from( v['permissions']),
+          status: v['status'],
+        );
+        if(context.mounted){
+          Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => AdminDeshboard(admin: _admin)), (r) => false);
+          return;
+        }
+
+      }else
+      if(role=="faculty"){
+        final instituteId=dox['institute_id'];
+        final insAdminId=dox['ins_admin_id'];
+        final v =await dbRef.collection("ins_admins").doc(insAdminId)
+            .collection("institutes").doc(instituteId)
+            .collection("faculty").doc(userCredential.user!.uid).get();
+        if(!v.exists){
+          await Navigator.pushReplacementNamed(context, '/login');
+          return;
+        }
+        Lecturer faculty=Lecturer(
+          id: v.id,
+          name: v['name'],
+          deprt: v['depart'],
+          role: v['role'],
+          instituteId: instituteId,
+          insAdminId: insAdminId,
+          designation: v['designation'],
+          status: v['status'],
+          email: v['email'],
+          semesters: List<int>.from(v['semester']),
+          courses: List<String>.from(v['courses']),
+          created_at: v['created_at'].toDate(),
+          phone: v['phone'],);
+        if(context.mounted){
+          Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => FacDeshboard(lecturer: faculty)), (r) => false);
+          return;
+        }
+      }else
+      if(role=="student"){
+        final instituteId=dox['institute_id'];
+        final insAdminId=dox['ins_admin_id'];
+        final v =await dbRef.collection("ins_admins").doc(insAdminId)
+            .collection("institutes").doc(instituteId)
+            .collection("students").doc(userCredential.user!.uid).get();
+        if(!v.exists){
+          await Navigator.pushReplacementNamed(context, '/login');
+          return;
+        }
+        Student student=Student(
+          id: v.id,
+          role: v['role'],
+          name: v['name'],
+          insAdminId: insAdminId,
+          instituteId: instituteId,
+          depart: v['depart'],
+          semester: v['semester'],
+          email: v['email'],
+          created_at: v['created_at'].toDate(),
+        );
+        if(context.mounted){
+          Navigator.pushAndRemoveUntil(context, MaterialPageRoute(
+              builder: (_) => StudentDeshboard(student: student)), (
+              r) => false);
+          return;
+        }
+      }
+    }
+
+  }catch(e){
+    print(e);
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString()),));
+  }finally{
+  setState(() {
+    loading=false;
+  });
+  }
+  }
   final formKey = GlobalKey<FormState>();
 
   @override
@@ -60,8 +204,15 @@ class _LoginScreenState extends State<LoginScreen> {
     return  Scaffold(
       backgroundColor:Colors.white,
       // const Color(0xFFF1FAF5),
-      body:Consumer<DbService>(builder: (context,provider,child){
-        return provider.loading?Center(child: CircularProgressIndicator(),):
+      body:loading?
+      Center(child:
+      SizedBox(
+          width:150,height: 150,
+          child: Lottie.asset("assets/anims/m2.json")),):Consumer<DbService>(builder: (context,provider,child){
+        return provider.loading?Center(child:
+        SizedBox(
+            width:150,height: 150,
+            child: Lottie.asset("assets/anims/m2.json")),):
         Center(
           child: SingleChildScrollView(
             child: Form(
@@ -359,6 +510,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   SizedBox(height: 15,),
                   InkWell(
                     onTap: (){
+                      continueWithGoogle();
                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("using google"),));
                     },
                     child: Row(

@@ -3,17 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:smas3/firebase_options.dart';
 import 'package:smas3/models/Routes.dart';
-import 'package:smas3/models/admin_model.dart';
-import 'package:smas3/models/ins_admin.dart';
-import 'package:smas3/models/student_model.dart';
 import 'package:smas3/providers/theme_Provider.dart';
-import 'package:smas3/screens/admin/admin_deshboard.dart';
-import 'package:smas3/screens/auth_screens/login_screen.dart';
-import 'package:smas3/screens/auth_screens/register_ins_admin.dart';
-import 'package:smas3/screens/faculty/fac_deshboard.dart';
-import 'package:smas3/screens/ins_admin/ins_admin_dashboard.dart';
-import 'package:smas3/screens/splash/splash_screen.dart';
-import 'package:smas3/screens/student/stdudent_deshboard.dart';
 import 'package:smas3/services/db_service.dart';
 
 void main()async {

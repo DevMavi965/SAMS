@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:provider/provider.dart';
 import 'package:smas3/models/admin_model.dart';
 import 'package:smas3/models/announcement_model.dart';
 import 'package:smas3/models/lecture.dart';
@@ -20,6 +21,7 @@ import 'package:smas3/widgets/student_widgets/std_announc_card.dart';
 import 'package:smas3/widgets/student_widgets/upcoming_class_card.dart';
 
 import '../../models/Leave_Application_Model.dart';
+import '../../services/db_service.dart';
 
 class StudentDeshboard extends StatefulWidget {
   final Student student;
@@ -98,10 +100,7 @@ class _StudentDeshboardState extends State<StudentDeshboard> {
         an_type: "event", target_aud: "Students")
   ];
 
- late List<LeaveApplication> leaveApplications = [
-   LeaveApplication(appliedDate:DateTime.now(), type: "academic", fromDate:DateTime.now(), tillDate: DateTime.now().add(Duration(days: 3)), reason: "reason of application", status: "pending", std_name: "arslan masoud", std_id: '505778', approvedby: null),
-
- ];
+ late List<LeaveApplication> leaveApplications = Provider.of<DbService>(context,listen: false).leaveApplications.where((element) => element.std_id==widget.student.id).toList();
   List<In_Notification> notifications=[
     In_Notification(title: "attendance", body: "body of notification attendance ", type: "attendance", time: "10:00", is_read: false),
     In_Notification(title: "good", body: "you passed quiz #A14 ", type: "good", time: "10:00", is_read: true),
@@ -112,7 +111,7 @@ class _StudentDeshboardState extends State<StudentDeshboard> {
   late List<Widget> screens=[
     StdHome(announcements: stud_announcements, lectures: lectures, student: widget.student),
     Scheduletab(lectures: lectures,),
-    LeaveTab(leaveApplications: leaveApplications,student: widget.student,),
+    LeaveTab(student: widget.student,),
     AlertTab(notifications: notifications,),
     ProfileTab(student: widget.student,)
 

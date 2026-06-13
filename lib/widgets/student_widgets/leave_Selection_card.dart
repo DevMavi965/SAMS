@@ -237,7 +237,7 @@ List<LeaveApplication> pendingApplications(List<LeaveApplication> leaveApplicati
           top: 10,
           bottom: 7
       ),
-      height: 130,
+      height: 150,
       // #D89A20
       decoration: BoxDecoration(
           color: leaveApplication.status=="rejected"?Colors.red.shade100:
@@ -287,7 +287,7 @@ List<LeaveApplication> pendingApplications(List<LeaveApplication> leaveApplicati
               child: Row(
                 children: [
                   SizedBox(width: 40,),
-                  Flexible(child: Text("${leaveApplication.fromDate} - ${leaveApplication.tillDate}",overflow: TextOverflow.ellipsis,style: TextStyle(color: Colors.grey,fontSize: 12),)),
+                  Flexible(child: Text("${leaveApplication.fromDate.day}/${leaveApplication.fromDate.month}/${leaveApplication.fromDate.year} to ${leaveApplication.tillDate.day}/${leaveApplication.tillDate.month}/${leaveApplication.tillDate.year}",overflow: TextOverflow.ellipsis,style: TextStyle(color: Colors.grey,fontSize: 12),)),
                 ],
               ),
             ),
@@ -310,9 +310,18 @@ List<LeaveApplication> pendingApplications(List<LeaveApplication> leaveApplicati
                 SizedBox(width: 40,),
                 Icon(Icons.calendar_today_outlined,color: Colors.grey,size: 13,),
                 SizedBox(width: 5,),
-                Text("applied ${leaveApplication.appliedDate}",style: TextStyle(color: Colors.grey,fontSize: 12),),
+                Text("applied ${leaveApplication.appliedDate.day}/${leaveApplication.appliedDate.month}/${leaveApplication.appliedDate.year} ",style: TextStyle(color: Colors.grey,fontSize: 12),),
               ],
-            )
+            ),
+            SizedBox(height: 10,),
+            leaveApplication.approvedby!=null? Row(
+              children: [
+                SizedBox(width: 40,),
+                Icon(Icons.person,color: Colors.grey,size: 13,),
+                SizedBox(width: 5,),
+                Text(leaveApplication.approvedby!=null?"approved by ${leaveApplication.approvedby}":"pending",style: TextStyle(color: Colors.grey,fontSize: 12),)
+              ],
+            ):SizedBox()
           ],
         ),
       ),
