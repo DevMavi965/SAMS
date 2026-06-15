@@ -11,6 +11,7 @@ import 'package:smas3/models/student_model.dart';
 import 'package:smas3/screens/auth_screens/register_ins_admin.dart';
 import 'package:smas3/screens/faculty/fac_deshboard.dart';
 import 'package:smas3/screens/ins_admin/ins_admin_dashboard.dart';
+import 'package:smas3/screens/ins_admin/ins_selection.dart';
 import 'package:smas3/screens/student/stdudent_deshboard.dart';
 import 'package:smas3/services/db_service.dart';
 import '../../models/fac_model.dart';
@@ -95,7 +96,7 @@ class _LoginScreenState extends State<LoginScreen> {
             status: v["status"]);
         if (context.mounted) {
           Navigator.pushAndRemoveUntil(context, MaterialPageRoute(
-              builder: (_) => InsAdminDashboard(insAdmin: insAdmin,)), (
+              builder: (_) => InsSelection(insAdmin: insAdmin)), (
               r) => false);
           return;
         }
@@ -209,7 +210,8 @@ class _LoginScreenState extends State<LoginScreen> {
       SizedBox(
           width:150,height: 150,
           child: Lottie.asset("assets/anims/m2.json")),):Consumer<DbService>(builder: (context,provider,child){
-        return provider.loading?Center(child:
+        return provider.loading?
+        Center(child:
         SizedBox(
             width:150,height: 150,
             child: Lottie.asset("assets/anims/m2.json")),):

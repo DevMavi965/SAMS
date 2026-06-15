@@ -1,7 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Institute {
-  String name,address,logo;
+  String name,address;
+  String? logo;
   int contact;
   DateTime created_at;
   Map<String,dynamic> location;
@@ -10,7 +11,7 @@ class Institute {
     required this.name,
     required this.address,
     required this.contact,
-    required this.logo,
+    this.logo,
     required this.created_at,
     required this.location,
     this.id,

@@ -15,6 +15,7 @@ import 'package:smas3/models/course.dart';
 import 'package:smas3/screens/admin/admin_deshboard.dart';
 import 'package:smas3/screens/auth_screens/login_screen.dart';
 import 'package:smas3/screens/faculty/fac_deshboard.dart';
+import 'package:smas3/screens/ins_admin/ins_selection.dart';
 import 'package:smas3/screens/student/stdudent_deshboard.dart';
 
 import '../models/admin_model.dart';
@@ -26,7 +27,7 @@ import '../screens/ins_admin/ins_admin_dashboard.dart';
 class DbService with ChangeNotifier{
 
 
-  List<InsAdmin> ins_admins=[];
+  // List<InsAdmin> ins_admins=[];
   List<Institute> institutes=[];
   List<Department> departments=[];
   List<Student> students=[];
@@ -62,6 +63,7 @@ class DbService with ChangeNotifier{
           eauth.signOut();
           return;
         }
+
           InsAdmin insAdmin = InsAdmin(
               id: v.id,
               role: v['role'],
@@ -70,6 +72,7 @@ class DbService with ChangeNotifier{
               created_at: v["created_at"].toDate(),
               last_login: v["last_login"].toDate(),
               status: v["status"]);
+             Provider.of<DbService>(context,listen: false).getData1(insAdmin.id!);
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(SnackBar(
               content: Text("successfully logged-in as institute admin"),
@@ -77,7 +80,7 @@ class DbService with ChangeNotifier{
                   .of(context)
                   .primaryColor,));
             Navigator.pushAndRemoveUntil(context, MaterialPageRoute(
-                builder: (_) => InsAdminDashboard(insAdmin: insAdmin,)), (
+                builder: (_) => InsSelection(insAdmin: insAdmin)), (
                 r) => false);
 
           }
@@ -104,7 +107,7 @@ class DbService with ChangeNotifier{
          await addInsAdmin(context,_insAdmin);
         getData1(_insAdmin.id!);
         if(context.mounted){
-          Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_)=>InsAdminDashboard(insAdmin: _insAdmin,)),(r)=>false);
+          Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_)=>InsSelection(insAdmin: _insAdmin,)),(r)=>false);
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("successfully registered as institute admin"),backgroundColor: Theme.of(context).primaryColor,));
         }
         }else{
@@ -409,158 +412,157 @@ class DbService with ChangeNotifier{
     lectures.clear();
     leaveApplications.clear();
   }
-  getData()async{
-    {
-      loading = true;
-      notifyListeners();
-    }
-    try{
-      clearAll();
-
-      final insAdmins=await dbref.collection("ins_admins").get();
-      for(var insAdmin in insAdmins.docs){
-        ins_admins.add(
-          InsAdmin(
-               id: insAdmin.id,
-              role: insAdmin['role'],
-              name: insAdmin["name"],
-              email: insAdmin["email"],
-              created_at: insAdmin["created_at"].toDate(),
-              last_login: insAdmin["last_login"].toDate(),
-              status: insAdmin["status"])
-        );
-        final institutesList=await dbref.collection("ins_admins").doc(insAdmin.id).collection("institutes").get();
-        for(var ins in institutesList.docs) {
-          institutes.add(
-              Institute(
-                  id: ins.id,
-                  insAdminId: insAdmin.id,
-                  name: ins["name"],
-                  address: ins['address'],
-                  contact: ins['contact'],
-                  logo: ins['logo'],
-                  created_at: ins['created_at'].toDate(),
-                  location: ins.get('location') )//
-          );
-          final departs=await dbref
-              .collection("ins_admins").doc(insAdmin.id)
-              .collection("institutes").doc(ins.id)
-              .collection("departments").get();
-          for(var depart in departs.docs){
-            departments.add(Department(
-                id: depart.id,
-                name: depart['name'],
-                hod_name: depart['hod_name']));
-            final sessionsSnap=await dbref
-                .collection("ins_admins").doc(insAdmin.id)
-                .collection("institutes").doc(ins.id)
-                .collection("departments").doc(depart.id)
-                .collection("sessions").get();
-            for(var sSnap in sessionsSnap.docs){
-              sessions.add(Session(
-                  id: sSnap.id,
-                  start_date: sSnap['start_date'].toDate(),
-                  end_date: sSnap['end_date'].toDate()));
-              final semesterSnap=await dbref
-                  .collection("ins_admins").doc(insAdmin.id)
-                  .collection("institutes").doc(ins.id)
-                  .collection("departments").doc(depart.id)
-                  .collection("sessions").doc(sSnap.id).collection("semesters").get();
-              for(var semSnap in semesterSnap.docs){
-                semesters.add(Semester(
-                    id: semSnap.id,
-                    start_date: semSnap['start_date'].toDate(),
-                    end_date: semSnap['end_date'].toDate(),
-                    semester_no: semSnap['semester_no']));
-
-              }
-            }
-          }
-          final studentSnap=await dbref
-              .collection("ins_admins").doc(insAdmin.id)
-              .collection("institutes").doc(ins.id)
-              .collection("students").get();
-          for(var student in studentSnap.docs){
-            students.add(Student(
-                id: student.id,
-                insAdminId: insAdmin.id,
-                instituteId: ins.id,
-                role: student['role'],
-                name: student['name'],
-                email: student['email'],
-                depart: student['depart'],
-                semester: student['semester'],
-                created_at: student['created_at'].toDate()));
-            final leaveSnap=await dbref.collection("ins_admins").doc(insAdmin.id)
-                .collection("institutes").doc(ins.id)
-                .collection("students").doc(student.id)
-                .collection("leave_applications").get();
-            for(var leave in leaveSnap.docs){
-              leaveApplications.add(LeaveApplication(
-                  appliedDate: leave['applied_date'].toDate(),
-                  type: leave['type'],
-                  fromDate: leave['start_date'].toDate(),
-                  tillDate: leave['end_date'].toDate(),
-                  reason: leave['reason'],
-                  status: leave['status'],
-                  std_name: leave['std_name'],
-                  std_id: leave['std_id'],
-                  approvedby: leave['approvedby'],
-              ));
-            }
-          }
-          final facultySnap=await dbref
-              .collection("ins_admins").doc(insAdmin.id)
-              .collection("institutes").doc(ins.id)
-              .collection("faculty").get();
-          for(var faculty in facultySnap.docs){
-            lecturers.add(Lecturer(
-                id: faculty.id,
-                instituteId: ins.id,
-                insAdminId: insAdmin.id,
-                role: faculty['role'],
-                name: faculty['name'],
-                email: faculty['email'],
-                deprt: faculty['depart'],
-                designation: faculty['designation'],
-                status: faculty['status'],
-                phone: faculty['phone'],
-                created_at: faculty['created_at'].toDate(),
-                semesters: faculty['semester'],
-                courses: faculty['courses']
-            ));
-          }
-          final adminSnap=await dbref
-              .collection("ins_admins").doc(insAdmin.id)
-              .collection("institutes").doc(ins.id)
-              .collection("admins").get();
-          for(var admin in adminSnap.docs){
-            admins.add(Admin(
-              id: admin.id,
-                insAdminId: insAdmin.id,
-                instituteId: ins.id,
-                name: admin['name'],
-                email: admin['email'],
-                institute: admin['institute'],
-                role: admin['role'],
-                permissions: List<String>.from(admin['permissions']),
-                status: admin['status'],));
-          }
-        }
-      }
-
-    // ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Column(
-    //   children: [
-    //     Text(departments[0].id!),
-    //   ],
-    // )));
-     }catch(e){
-      // ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
-    }finally{
-     loading=false;
-     notifyListeners();
-    }
-  }
+  // getData()async{
+  //   {
+  //     loading = true;
+  //     notifyListeners();
+  //   }
+  //   try{
+  //     clearAll();
+  //
+  //     final insAdmins=await dbref.collection("ins_admins").get();
+  //
+  //       //   InsAdmin(
+  //       //        id: insAdmin.id,
+  //       //       role: insAdmin['role'],
+  //       //       name: insAdmin["name"],
+  //       //       email: insAdmin["email"],
+  //       //       created_at: insAdmin["created_at"].toDate(),
+  //       //       last_login: insAdmin["last_login"].toDate(),
+  //       //       status: insAdmin["status"])
+  //       // );
+  //       final institutesList=await dbref.collection("ins_admins").doc(insAdmin.id).collection("institutes").get();
+  //       for(var ins in institutesList.docs) {
+  //         institutes.add(
+  //             Institute(
+  //                 id: ins.id,
+  //                 insAdminId: insAdmin.id,
+  //                 name: ins["name"],
+  //                 address: ins['address'],
+  //                 contact: ins['contact'],
+  //                 logo: ins['logo'],
+  //                 created_at: ins['created_at'].toDate(),
+  //                 location: ins.get('location') )//
+  //         );
+  //         final departs=await dbref
+  //             .collection("ins_admins").doc(insAdmin.id)
+  //             .collection("institutes").doc(ins.id)
+  //             .collection("departments").get();
+  //         for(var depart in departs.docs){
+  //           departments.add(Department(
+  //               id: depart.id,
+  //               name: depart['name'],
+  //               hod_name: depart['hod_name']));
+  //           final sessionsSnap=await dbref
+  //               .collection("ins_admins").doc(insAdmin.id)
+  //               .collection("institutes").doc(ins.id)
+  //               .collection("departments").doc(depart.id)
+  //               .collection("sessions").get();
+  //           for(var sSnap in sessionsSnap.docs){
+  //             sessions.add(Session(
+  //                 id: sSnap.id,
+  //                 start_date: sSnap['start_date'].toDate(),
+  //                 end_date: sSnap['end_date'].toDate()));
+  //             final semesterSnap=await dbref
+  //                 .collection("ins_admins").doc(insAdmin.id)
+  //                 .collection("institutes").doc(ins.id)
+  //                 .collection("departments").doc(depart.id)
+  //                 .collection("sessions").doc(sSnap.id).collection("semesters").get();
+  //             for(var semSnap in semesterSnap.docs){
+  //               semesters.add(Semester(
+  //                   id: semSnap.id,
+  //                   start_date: semSnap['start_date'].toDate(),
+  //                   end_date: semSnap['end_date'].toDate(),
+  //                   semester_no: semSnap['semester_no']));
+  //
+  //             }
+  //           }
+  //         }
+  //         final studentSnap=await dbref
+  //             .collection("ins_admins").doc(insAdmin.id)
+  //             .collection("institutes").doc(ins.id)
+  //             .collection("students").get();
+  //         for(var student in studentSnap.docs){
+  //           students.add(Student(
+  //               id: student.id,
+  //               insAdminId: insAdmin.id,
+  //               instituteId: ins.id,
+  //               role: student['role'],
+  //               name: student['name'],
+  //               email: student['email'],
+  //               depart: student['depart'],
+  //               semester: student['semester'],
+  //               created_at: student['created_at'].toDate()));
+  //           final leaveSnap=await dbref.collection("ins_admins").doc(insAdmin.id)
+  //               .collection("institutes").doc(ins.id)
+  //               .collection("students").doc(student.id)
+  //               .collection("leave_applications").get();
+  //           for(var leave in leaveSnap.docs){
+  //             leaveApplications.add(LeaveApplication(
+  //                 appliedDate: leave['applied_date'].toDate(),
+  //                 type: leave['type'],
+  //                 fromDate: leave['start_date'].toDate(),
+  //                 tillDate: leave['end_date'].toDate(),
+  //                 reason: leave['reason'],
+  //                 status: leave['status'],
+  //                 std_name: leave['std_name'],
+  //                 std_id: leave['std_id'],
+  //                 approvedby: leave['approvedby'],
+  //             ));
+  //           }
+  //         }
+  //         final facultySnap=await dbref
+  //             .collection("ins_admins").doc(insAdmin.id)
+  //             .collection("institutes").doc(ins.id)
+  //             .collection("faculty").get();
+  //         for(var faculty in facultySnap.docs){
+  //           lecturers.add(Lecturer(
+  //               id: faculty.id,
+  //               instituteId: ins.id,
+  //               insAdminId: insAdmin.id,
+  //               role: faculty['role'],
+  //               name: faculty['name'],
+  //               email: faculty['email'],
+  //               deprt: faculty['depart'],
+  //               designation: faculty['designation'],
+  //               status: faculty['status'],
+  //               phone: faculty['phone'],
+  //               created_at: faculty['created_at'].toDate(),
+  //               semesters: faculty['semester'],
+  //               courses: faculty['courses']
+  //           ));
+  //         }
+  //         final adminSnap=await dbref
+  //             .collection("ins_admins").doc(insAdmin.id)
+  //             .collection("institutes").doc(ins.id)
+  //             .collection("admins").get();
+  //         for(var admin in adminSnap.docs){
+  //           admins.add(Admin(
+  //             id: admin.id,
+  //               insAdminId: insAdmin.id,
+  //               instituteId: ins.id,
+  //               name: admin['name'],
+  //               email: admin['email'],
+  //               institute: admin['institute'],
+  //               role: admin['role'],
+  //               permissions: List<String>.from(admin['permissions']),
+  //               status: admin['status'],));
+  //         }
+  //       }
+  //
+  //
+  //   // ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Column(
+  //   //   children: [
+  //   //     Text(departments[0].id!),
+  //   //   ],
+  //   // )));
+  //    }catch(e){
+  //     // ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+  //   }finally{
+  //    loading=false;
+  //    notifyListeners();
+  //   }
+  // }
 
   getData1(String insAdminId)async{
     {
@@ -1063,6 +1065,7 @@ class DbService with ChangeNotifier{
       final insRef=await dbref.collection("ins_admins")
           .doc(insAdminId).collection("institutes").add({
         "name":institute.name,
+        "ins_admin_id":insAdminId,
         "address":institute.address,
         "contact":institute.contact,
         "logo":institute.logo,
@@ -1075,6 +1078,7 @@ class DbService with ChangeNotifier{
       });
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Institute Added Successfully")));
     }catch(e){
+      // print(e.toString());
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
     }finally{
 
@@ -1612,19 +1616,25 @@ class DbService with ChangeNotifier{
   }
   updateInstitute(BuildContext context,Institute institute)async{
     try{
-      String insAdminId=await indexDoc.doc(institute.id).get().then((value) => value.get("ins_admin_id"));
+      final dox=await indexDoc.doc(institute.id).get();
+      String insAdminId=dox.get("ins_admin_id");
       // Institute institute1=Institute(name: "MPT", address: address, contact: contact, logo: logo, created_at: created_at, location: location)
       final insRef=await dbref.collection("ins_admins")
           .doc(insAdminId).collection("institutes").doc(institute.id).update({
         "name":institute.name,
+        "ins_admin_id":insAdminId,
         "address":institute.address,
         "contact":institute.contact,
         "logo":institute.logo,
         "created_at":Timestamp.fromDate(institute.created_at),//datetime to timestamp
-        "location":GeoPoint(institute.location["lat"],institute.location["long"])
+        "location":{
+          "lat":institute.location["lat"],
+          "long":institute.location["long"]}
       });
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Institute updated Successfully")));
     }catch(e){
+      print(e.toString());
+
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
     }finally{
 

@@ -1,9 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:provider/provider.dart';
 import 'package:smas3/models/admin_model.dart';
+import 'package:smas3/models/ins_admin.dart';
+import 'package:smas3/models/institute.dart';
+import 'package:smas3/services/db_service.dart';
 
 class ManageAdmins extends StatefulWidget {
-  const ManageAdmins({super.key});
+  final InsAdmin insAdmin;
+  final Institute institute;
+  const ManageAdmins({super.key, required this.insAdmin, required this.institute});
 
   @override
   State<ManageAdmins> createState() => _ManageAdminsState();
@@ -54,7 +61,8 @@ class _ManageAdminsState extends State<ManageAdmins> {
   ];
   @override
   Widget build(BuildContext context) {
-    return SafeArea(child: ListView(
+    return SafeArea(child:
+    ListView(
       children: [
         Text("Manage Admins",style: TextStyle(fontSize: 20,fontWeight: FontWeight.w600)),
         SizedBox(height: 7,),
@@ -89,7 +97,7 @@ class _ManageAdminsState extends State<ManageAdmins> {
               context: context, builder: (_)=>
               Container(
             padding: EdgeInsets.symmetric(
-              horizontal: 10,vertical: 10,
+              horizontal: 15,vertical: 10,
 
             ),
            child: SizedBox(
@@ -188,7 +196,7 @@ class _ManageAdminsState extends State<ManageAdmins> {
                            validator: (v){
                              if(v!.isEmpty){
                                return "Please enter password";
-                             }else if(v.length<6){
+                             }else if(v.length<8){
                                return "Password must be at least 6 characters";
                              }
                              return null;
@@ -208,7 +216,8 @@ class _ManageAdminsState extends State<ManageAdmins> {
                            ],
                          ),
                          SizedBox(height: 7,),
-                         // deprt mng
+                         // deprt mng0
+                         for(int i=0; i<duties.length; i++)...[
                          Container(
                            padding: EdgeInsets.symmetric(
                              horizontal: 10,vertical: 10
@@ -224,29 +233,44 @@ class _ManageAdminsState extends State<ManageAdmins> {
                              child: Row(
                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                children: [
-                                 CircleAvatar(
-                                   child: Icon(PhosphorIconsBold.buildingApartment),
-                                 ),
-                                 Column(
-                                   crossAxisAlignment: CrossAxisAlignment.start,
-                                   children: [
-                                     Text(duties[0]),
-                                     SizedBox(height: 3,),
-                                     Text(duty_detail[0],style: TextStyle(color: Colors.grey),)
-                                   ],
-                                 ),
-                                 SizedBox(
-                                   width: 40,
-                                   height: 35,
-                                   child: FittedBox(
-                                     fit: BoxFit.fill,
-                                     child: Switch(value: checked[0], onChanged: (v){
-                                       setState(() {
-                                         checked[0]=!checked[0];
-                                       });
-                                     }),
+                                Expanded(
+                                  flex:1,
+                                  child: Container(
+                                    margin: EdgeInsets.only(right: 10),
+                                    padding: EdgeInsets.all(1),
+                                    child: CircleAvatar(
+
+                                      backgroundColor: Theme.of(context).primaryColor.withAlpha(30),
+                                       child: getIcon(i),
+                                     ),
+                                  ),),
+                                Expanded(
+                                  flex:6,
+                                  child:
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(duties[i].split("_").join(" "),style: TextStyle(fontSize: 14),),
+                                    SizedBox(height: 3,),
+                                    Text(duty_detail[i],overflow: TextOverflow.ellipsis,style: TextStyle(color: Colors.grey,fontSize: 12),)
+                                  ],
+                                ),),
+                                Expanded(
+                                  child: SizedBox(
+                                     width: 40,
+                                     height: 35,
+                                     child: FittedBox(
+                                       fit: BoxFit.fill,
+                                       child: Switch(
+                                           activeThumbColor: Theme.of(context).primaryColor,
+                                           value: checked[i], onChanged: (v){
+                                         setState(() {
+                                           checked[i]=!checked[i];
+                                         });
+                                       }),
+                                     ),
                                    ),
-                                 )
+                                )
                                  // IconButton(onPressed: (){
                                  //   setState(() {
                                  //     checked[0]=!checked[0];
@@ -256,58 +280,20 @@ class _ManageAdminsState extends State<ManageAdmins> {
                                ],
                              )
                          ),
-                         SizedBox(height: 3,),
-                         // students
-                         Container(
-                             padding: EdgeInsets.symmetric(
-                                 horizontal: 10,vertical: 10
-                             ),
-                             decoration: BoxDecoration(
-                                 color: Colors.white,
-                                 borderRadius: BorderRadius.circular(10),
-                                 border: Border.all(
-                                     color: Colors.grey.shade300,
-                                     width: 0.5
-                                 )
-                             ),
-                             child: Row(
-                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                               children: [
-                                 CircleAvatar(
-                                   child: Icon(Icons.people_alt),
-                                 ),
-                                 Column(
-                                   crossAxisAlignment: CrossAxisAlignment.start,
-                                   children: [
-                                     Text(duties[1]),
-                                     SizedBox(height: 3,),
-                                     Text(duty_detail[1],style: TextStyle(color: Colors.grey),)
-                                   ],
-                                 ),
-                                 SizedBox(
-                                   width: 40,
-                                   height: 35,
-                                   child: FittedBox(
-                                     fit: BoxFit.fill,
-                                     child: Switch(value: checked[1], onChanged: (v){
-                                       setState(() {
-                                         checked[1]=!checked[1];
-                                       });
-                                     }),
-                                   ),
-                                 )
-                                 // IconButton(onPressed: (){
-                                 //   setState(() {
-                                 //     checked[0]=!checked[0];
-                                 //   });
-                                 // }, icon: Icon(checked[0]?Icons.check_circle:Icons.circle_outlined))
-
-                               ],
-                             )
-                         ),
-                         SizedBox(height: 3,),
-                         //
-                         ElevatedButton(onPressed: (){}, child: Text("add"))
+                         SizedBox(height: 3,),],
+                         ElevatedButton(onPressed: (){
+                           if(formKey.currentState!.validate()){
+                             Admin admin=Admin(
+                                 name: name.text.trim(),
+                                 insAdminId: widget.insAdmin.id!,
+                                 instituteId: widget.institute.id!,
+                                 email: email.text.trim(),
+                                 institute: widget.institute.name,
+                                 role: "admin",
+                                 status: "active");
+                             Provider.of<DbService>(context,listen: false).registerAdmin(widget.insAdmin.id!, widget.institute.id!, admin, password.text.trim(), context);
+                           }
+                         }, child: Text("add"))
                        ],
                      ),
                    ),
@@ -324,10 +310,26 @@ class _ManageAdminsState extends State<ManageAdmins> {
   Widget AdminListCard(Admin admin){
 
     return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: 10,vertical: 10
+
+      padding: EdgeInsets.only(
+        left: 5,
+        top: 8,
+        bottom: 5,
+        right: 12
       ),
       decoration: BoxDecoration(
+        boxShadow: [
+          BoxShadow(
+            offset: Offset(-1, -1),
+            blurRadius: 2,
+            color: Colors.grey
+          ),
+          BoxShadow(
+            offset: Offset(1, 1),
+            blurRadius: 2,
+            color: Colors.grey
+          )
+        ],
         color: Colors.white,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
@@ -362,7 +364,7 @@ child: Column(
         child:Text(admin.permissions==null?"no duties":(admin.permissions!.isEmpty?"no duties":"${admin.permissions!.length} duties"),))
       )
     ],),
-    SizedBox(height: 10,),
+    SizedBox(height: 15,),
     Row(
       children: [
         for(int i=0;i<admin.permissions!.length && i<3;i++)...[
@@ -379,6 +381,33 @@ child: Column(
             )):SizedBox()
       ],
     ),
+    SizedBox(height: 10,),
+   Row(
+     children: [
+       Text("created at : ${ DateFormat("dd/MM/yyyy").format(admin.created_at)}",style: TextStyle(color: Colors.grey),),
+       Spacer(),
+       IconButton(onPressed: (){
+         showDialog(context: context, builder: (_)=>AlertDialog(
+           title: Text("Delete Admin"),
+           icon: Icon(Icons.delete,size: 28,),
+           content: Text("Are you sure you want to delete this admin?"),
+           actions: [
+             TextButton(onPressed: (){
+               Navigator.pop(context);
+             }, child: Text("No")),
+             TextButton(onPressed: (){
+                setState(() {
+                admins.remove(admin);
+                });
+               // Provider.of<DbService>(context,listen: false).deleteAdmin(context, admin.id!);
+               Navigator.pop(context);
+             }, child: Text("Yes")),
+
+           ],
+         ));
+       }, icon: Icon(Icons.delete,color: Theme.of(context).primaryColor,))
+     ],
+   )
   ],
 ),
     );
@@ -399,6 +428,29 @@ child: Column(
 
   String getFirstWord(String s) {
     return s.split("_")[0];
+  }
+
+  Widget? getIcon(int i) {
+    switch(i){
+      case 0:
+        return Icon(PhosphorIconsBold.clock,color: Theme.of(context).primaryColor,);
+        break;
+      case 1:
+        return Icon(PhosphorIconsBold.speakerSimpleHigh,color: Theme.of(context).primaryColor,);
+        break;
+      case 2:
+        return Icon(PhosphorIconsBold.notepad,color: Theme.of(context).primaryColor,);
+        break;
+      case 3:
+        return Icon(Icons.person_add_alt_1,color: Theme.of(context).primaryColor,);
+        break;
+      case 4:
+        return Icon(Icons.person_add_alt,color: Theme.of(context).primaryColor,);
+        break;
+      case 5:
+        return Icon(PhosphorIconsBold.buildingApartment,color: Theme.of(context).primaryColor,);
+        break;
+    }
   }
 }
 

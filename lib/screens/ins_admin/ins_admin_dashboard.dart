@@ -18,7 +18,8 @@ import '../../services/db_service.dart';
 
 class InsAdminDashboard extends StatefulWidget {
   final InsAdmin insAdmin;
-  const InsAdminDashboard({super.key, required this.insAdmin});
+  final Institute institute;
+  const InsAdminDashboard({super.key, required this.insAdmin, required this.institute});
 
   @override
   State<InsAdminDashboard> createState() => _InsAdminDashboardState();
@@ -34,7 +35,7 @@ class _InsAdminDashboardState extends State<InsAdminDashboard> {
   ];
   late List<Widget> screens=[
     InsAdminHome(),
-    ManageAdmins(),
+    ManageAdmins(insAdmin: widget.insAdmin,institute:widget.institute ,),
     InsReports(),
     insAdminProfile(insAdmin: widget.insAdmin,)
   ];

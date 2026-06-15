@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
+import 'package:smas3/screens/ins_admin/ins_selection.dart';
 
 import '../../models/admin_model.dart';
 import '../../models/fac_model.dart';
@@ -51,7 +52,7 @@ final auth=FirebaseAuth.instance;
             status: v["status"]);
         if (context.mounted) {
           Navigator.pushAndRemoveUntil(context, MaterialPageRoute(
-              builder: (_) => InsAdminDashboard(insAdmin: insAdmin,)), (
+              builder: (_) => InsSelection(insAdmin: insAdmin,)), (
               r) => false);
          return;
         }
@@ -192,7 +193,8 @@ final auth=FirebaseAuth.instance;
             Expanded(flex: 3,
                 child:SizedBox(),),
             Expanded(
-              child: Container(
+              child:
+              Container(
                 margin: EdgeInsets.only(
                   left: 30,right: 30,top: 30,bottom: 10
                 ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:smas3/models/fac_model.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:smas3/models/ins_admin.dart';
+import 'package:smas3/screens/ins_admin/ins_selection.dart';
 
 import '../../models/admin_model.dart';
 class Ins_info_card extends StatefulWidget {
@@ -35,6 +36,42 @@ class _Ins_info_cardState extends State<Ins_info_card> {
           width: 0.2,
         ),
         children: [
+          //semester current
+          TableRow(
+              children: [
+                InkWell(
+                  onTap: (){
+                   Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_)=>InsSelection(insAdmin: widget.insAdmin)), (t)=>false);
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.all(12.0),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 45,
+                          height: 45,
+                          decoration: BoxDecoration(
+                            color: Colors.green.shade50,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(Icons.school,size: 25,color: Theme.of(context).primaryColor,),
+                        ),
+                        SizedBox(width: 10,),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text("Institute Settings",),
+                            Text("Switch & Configure Institute Settings",style: TextStyle(color: Colors.grey),),
+                          ],
+                        )
+                        ,Spacer(),
+                        Icon(Icons.arrow_forward_ios,color: Colors.grey,)
+                      ],
+                    ),
+                  ),
+                )
+              ]
+          ),
           //email
           TableRow(
               children: [
@@ -143,42 +180,7 @@ class _Ins_info_cardState extends State<Ins_info_card> {
                 )
               ]
           ),
-          //semester current
-          TableRow(
-              children: [
-                InkWell(
-                  onTap: (){
 
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.all(12.0),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 45,
-                          height: 45,
-                          decoration: BoxDecoration(
-                            color: Colors.green.shade50,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(PhosphorIconsBold.database,size: 25,color: Theme.of(context).primaryColor,),
-                        ),
-                        SizedBox(width: 10,),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text("Database backup",),
-                            Text("Configure Automatic backups",style: TextStyle(color: Colors.grey),),
-                          ],
-                        )
-                        ,Spacer(),
-                        Icon(Icons.arrow_forward_ios,color: Colors.grey,)
-                      ],
-                    ),
-                  ),
-                )
-              ]
-          )
         ],
       ),
     );
