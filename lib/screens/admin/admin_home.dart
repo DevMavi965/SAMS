@@ -3,14 +3,17 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:smas3/maxins/rm_functions.dart';
+import 'package:smas3/models/admin_model.dart';
 import 'package:smas3/models/deprt_alert.dart';
+import 'package:smas3/models/ins_admin.dart';
 import 'package:smas3/widgets/admin_widgets/Admin_home_grid.dart';
 import 'package:smas3/widgets/admin_widgets/admin_custom_lineCart.dart';
 import 'package:smas3/widgets/admin_widgets/depart_att_card.dart';
 import 'package:smas3/widgets/admin_widgets/deprt_aler_card.dart';
 
 class AdminHome extends StatefulWidget {
-  const AdminHome({super.key});
+  final Admin admin;
+  const AdminHome({super.key, required this.admin});
 
   @override
   State<AdminHome> createState() => _AdminHomeState();
@@ -54,7 +57,7 @@ class _AdminHomeState extends State<AdminHome> {
   @override
   Widget build(BuildContext context) {
     return SafeArea(child: ListView(children: [
-      Text("Admin Dashboard",style: TextStyle(fontSize: 20,fontWeight: FontWeight.w600)),
+      Text("Welcome ${widget.admin.name}",style: TextStyle(fontSize: 20,fontWeight: FontWeight.w600)),
       SizedBox(height: 7,),
       Text("System Overview & Management",style: TextStyle(fontSize: 15,color: Colors.grey),),
       SizedBox(height: 20,),

@@ -2,6 +2,7 @@ import 'dart:core';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:smas3/models/Leave_Application_Model.dart';
@@ -87,7 +88,9 @@ class DbService with ChangeNotifier{
 
       }
     }catch(e){
+      if(context.mounted){
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString()),));
+      }
     }finally{
 
         loading=false;
@@ -111,11 +114,15 @@ class DbService with ChangeNotifier{
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("successfully registered as institute admin"),backgroundColor: Theme.of(context).primaryColor,));
         }
         }else{
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("invalid email or password"),));
+          if(context.mounted){
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("invalid email or password"),));}
         }
       });
     }catch(e){
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString()),));
+      if(context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(e.toString()),));
+      }
     }finally{
 
         loading=false;
@@ -123,17 +130,99 @@ class DbService with ChangeNotifier{
     }
 
   }
-  registerAdmin(String _insAdminId,String instituteId,Admin admin,String password,BuildContext context)async{
-    UserCredential uc=await eauth.createUserWithEmailAndPassword(email: admin.email,
-        password: password);
-    if(uc.user!=null){
+  // registerAdmin(String _insAdminId,String instituteId,Admin admin,String password,BuildContext context)async{
+  //  final curentU;
+  //  if(eauth.currentUser!=null){
+  //    curentU=eauth.currentUser;
+  //    eauth.signOut();
+  //  }
+  //  try{
+  //    UserCredential uc=await eauth.createUserWithEmailAndPassword(email: admin.email,
+  //        password: password);
+  //    if(uc.user!=null){
+  //
+  //      admin.id=uc.user!.uid;
+  //      await addAdmin(context,_insAdminId,instituteId,admin);
+  //
+  //      // ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("successfully registered as admin"),backgroundColor: Theme.of(context).primaryColor,));
+  //    }else{
+  //      // if(context.mounted) {
+  //      //   ScaffoldMessenger.of(context).showSnackBar(
+  //      //       SnackBar(content: Text("invalid email or password"),));
+  //      // }
+  //      print("invalid email or password for admin");
+  //    }
+  //  }catch(e){
+  //    print(e.toString());
+  //  }finally{
+  //    eauth.signOut();
+  //    eauth.currentUser=curentU;
+  //  }
+  //
+  // }
+  registerAdmin(String _insAdminId, String instituteId, Admin admin, String password, BuildContext context) async {
+    // iCreated a secondary app instence to avoid disrupting current_auth session
+    FirebaseApp secondaryApp;
+    try {
+      secondaryApp = await Firebase.initializeApp(
+        name: 'SecondaryApp',
+        options: Firebase.app().options,
+      );
+    } catch (e) {
+      secondaryApp = Firebase.app('SecondaryApp');
+    }
 
-      admin.id=uc.user!.uid;
-      await addAdmin(context,_insAdminId,instituteId,admin);
+    try {
+      final secondaryAuth = FirebaseAuth.instanceFor(app: secondaryApp);
 
-      // ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("successfully registered as admin"),backgroundColor: Theme.of(context).primaryColor,));
-    }else{
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("invalid email or password"),));
+      UserCredential uc = await secondaryAuth.createUserWithEmailAndPassword(
+        email: admin.email,
+        password: password,
+      );
+
+      if (uc.user != null) {
+        admin.id = uc.user!.uid;
+        await addAdmin(context, _insAdminId, instituteId, admin);
+        await indexDoc.doc(admin.id).set({
+          "ins_admin_id": _insAdminId,
+          "institute_id": instituteId,
+          "password":password,
+          "role":admin.role
+        });
+      } else {
+        print("invalid email or password for admin");
+      }
+    } catch (e) {
+      print(e.toString());
+    } finally {
+      // Sign0ut from secondary and delete the tempOrary app
+      await FirebaseAuth.instanceFor(app: secondaryApp).signOut();
+      await secondaryApp.delete();
+    }
+  }
+  deleteAuthUser(String email, String password) async {
+    FirebaseApp secondaryApp;
+    try {
+      secondaryApp = await Firebase.initializeApp(
+        name: 'TempDeleteApp',
+        options: Firebase.app().options,
+      );
+    } catch (e) {
+      secondaryApp = Firebase.app('TempDeleteApp');
+    }
+
+    try {
+      final secondaryAuth = FirebaseAuth.instanceFor(app: secondaryApp);
+      final uc = await secondaryAuth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      await uc.user?.delete();
+    } catch (e) {
+      print("Auth delete error: $e");
+    } finally {
+      await FirebaseAuth.instanceFor(app: secondaryApp).signOut();
+      await secondaryApp.delete();
     }
   }
   loginWithAdminEmail(String _email,String _password,BuildContext context)async{
@@ -188,12 +277,14 @@ class DbService with ChangeNotifier{
           await getData1(insAdminId);
 
         }else{
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("invalid email or password"),));
+          if(context.mounted){
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("invalid email or password"),));}
         }
       });
     }catch(e){
       print(e.toString());
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString()),));
+      // if(context.mounted){
+      // ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString()),));}
     }finally{
 
       loading=false;
@@ -214,11 +305,13 @@ class DbService with ChangeNotifier{
 
        // ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("successfully registered as admin"),backgroundColor: Theme.of(context).primaryColor,));
      } else {
+       if(context.mounted) {
        ScaffoldMessenger.of(context).showSnackBar(
-           SnackBar(content: Text("invalid email or password"),));
+           SnackBar(content: Text("invalid email or password"),));}
      }
    }catch(e){
-     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString()),));
+     if(context.mounted){
+     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString()),));}
    }
   }
   loginWithFacEmail(String _email,String _password,BuildContext context)async{
@@ -230,7 +323,8 @@ class DbService with ChangeNotifier{
         if(eauth.currentUser!=null){
           final dox=await indexDoc.doc(eauth.currentUser!.uid).get();
           if(dox.exists==false){
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("invalid email or password"),));
+            if(context.mounted){
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("invalid email or password"),));}
             eauth.signOut();
             return;
           }
@@ -243,7 +337,8 @@ class DbService with ChangeNotifier{
           collection("institutes").doc(instituteId)
               .collection("faculty").doc(eauth.currentUser!.uid).get();
           if(!v.exists){
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("not registered as faculty"),));
+            if(context.mounted){
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("not registered as faculty"),));}
             eauth.signOut();
             return;
           }
@@ -275,12 +370,14 @@ class DbService with ChangeNotifier{
           await getData1(insAdminId);
 
         }else{
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("invalid email or password"),));
+          if(context.mounted){
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("invalid email or password"),));}
         }
       });
     }catch(e){
       print(e.toString());
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString()),));
+      if(context.mounted){
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString()),));}
     }finally{
 
       loading=false;
@@ -302,11 +399,13 @@ class DbService with ChangeNotifier{
 
         // ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("successfully registered as admin"),backgroundColor: Theme.of(context).primaryColor,));
       } else {
+        if(context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("invalid email or password"),));
+            SnackBar(content: Text("invalid email or password"),));}
       }
     }catch(e){
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString()),));
+      if(context.mounted){
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString()),));}
     }
   }
   loginWithStudentEmail(String _email,String _password,BuildContext context)async{
@@ -361,12 +460,14 @@ class DbService with ChangeNotifier{
           await getData1(insAdminId);
 
         }else{
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("invalid email or password"),));
+          if(context.mounted){
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("invalid email or password"),));}
         }
       });
     }catch(e){
       print(e.toString());
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString()),));
+      if(context.mounted){
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString()),));}
     }finally{
 
       loading=false;
@@ -384,7 +485,8 @@ class DbService with ChangeNotifier{
         Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_)=>LoginScreen()),(r)=>false);
       }
     }catch(e){
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString()),));
+      if(context.mounted){
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString()),));}
     }
     finally {
       loading = false;
@@ -1052,9 +1154,13 @@ class DbService with ChangeNotifier{
       await indexDoc.doc(_insAdmin.id).set({
         "role":_insAdmin.role,
       });
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Ins Admin Added Successfully")));
+      print("insAdmin Added Successfully");
+      // if(context.mounted){
+      // ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Ins Admin Added Successfully")));}
     }catch(e){
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      print(e.toString());
+      // if(context.mounted){
+      // ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));}
     }finally{
 
     }
@@ -1076,10 +1182,12 @@ class DbService with ChangeNotifier{
       await indexDoc.doc(institute.id).set({
         "ins_admin_id":insAdminId,
       });
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Institute Added Successfully")));
+      if(context.mounted){
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Institute Added Successfully")));}
     }catch(e){
       // print(e.toString());
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      if(context.mounted){
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));}
     }finally{
 
     }
@@ -1099,9 +1207,11 @@ class DbService with ChangeNotifier{
         "ins_admin_id":insAdminId,
         "institute_id":instituteId,
       });
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("department Added Successfully")));
+      if(context.mounted){
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("department Added Successfully")));}
     }catch(e){
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      if(context.mounted){
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));}
     }finally{
 
     }
@@ -1125,9 +1235,11 @@ class DbService with ChangeNotifier{
         "ins_admin_id":insAdminId,
         "institute_id":instituteId,
       });
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("announcement Added Successfully")));
+      if(context.mounted){
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("announcement Added Successfully")));}
     }catch(e){
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      if(context.mounted){
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));}
     }finally{
 
     }
@@ -1146,9 +1258,11 @@ class DbService with ChangeNotifier{
         "institute_id":instituteId,
         "department_id":departId,
       });
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("session Added Successfully")));
+      if(context.mounted){
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("session Added Successfully")));}
     }catch(e){
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      if(context.mounted){
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));}
     }finally{
 
     }
@@ -1172,9 +1286,11 @@ class DbService with ChangeNotifier{
         "department_id":departId,
         "session_id":sessionId,
       });
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("semester Added Successfully")));
+      if(context.mounted){
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("semester Added Successfully")));}
     }catch(e){
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      if(context.mounted){
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));}
     }finally{
 
     }
@@ -1206,9 +1322,11 @@ class DbService with ChangeNotifier{
         "session_id":sessionId,
         "semester_id":semesterId,
       });
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Course Added Successfully")));
+      if(context.mounted){
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Course Added Successfully")));}
     }catch(e){
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      if(context.mounted){
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));}
     }finally{
 
     }
@@ -1259,9 +1377,11 @@ class DbService with ChangeNotifier{
            "semester_id":semesterId,
            "course_id":courseId,
          });
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("lecture Added Successfully")));
+         if(context.mounted){
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("lecture Added Successfully")));}
     }catch(e){
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      if(context.mounted){
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));}
     }finally{
 
     }
@@ -1291,9 +1411,10 @@ class DbService with ChangeNotifier{
         "institute_id":instituteId,
         "role":lecturer.role
       });
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("faculty Added Successfully")));
-    }catch(e){
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      print("faculty added.............................${lecturer.id}");
+      // ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("faculty Added Successfully")));
+    }catch(e){print(e.toString());
+      // ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
     }finally{
 
     }
@@ -1321,9 +1442,11 @@ class DbService with ChangeNotifier{
         "institute_id":instituteId,
         "role":student.role
       });
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("student Added Successfully")));
+      print("student added.............................${student.id}");
+      // ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("student Added Successfully")));
     }catch(e){
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      print(e.toString());
+      // ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
     }finally{
 
     }
@@ -1348,14 +1471,11 @@ class DbService with ChangeNotifier{
         "permissions":admin.permissions//["student_management","department_management","lecture_management"] etc
 
       });
-      await indexDoc.doc(admin.id).set({
-        "ins_admin_id":insAdminId,
-        "institute_id":instituteId,
-        "role":admin.role
-      });
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Admin Added Successfully")));
+      print("admin added.............................");
+      // ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Admin Added Successfully")));
     }catch(e){
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      print(e.toString());
+      // ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
     }finally{
 
     }
@@ -1388,9 +1508,12 @@ class DbService with ChangeNotifier{
         "student_id":studentId,
       });
       notifyListeners();
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("student leave applied Successfully")));
+      if(context.mounted){
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("student leave applied Successfully")));
+      }
     }catch(e){
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      if(context.mounted){
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));}
     }finally{
 
     }
@@ -1400,10 +1523,10 @@ class DbService with ChangeNotifier{
     try{
       // InsAdmin insAdmin=InsAdmin(name: "Ameer Muawiya", email: "ameermuawiya34@gmail.com", created_at: DateTime.now(), last_login: DateTime.now(), status: "active");
       final insAdminsRef=await dbref.collection("ins_admins").doc(insAdminId).delete();
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Ins Admin deleted Successfully")));
+      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Ins Admin deleted Successfully")));
       await indexDoc.doc(insAdminId).delete();
     }catch(e){
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
     }finally{
 
     }
@@ -1414,9 +1537,9 @@ class DbService with ChangeNotifier{
       final insRef=await dbref.collection("ins_admins")
           .doc(insAdminId).collection("institutes").doc(instituteId).delete();
      await indexDoc.doc(instituteId).delete();
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Institute deleted Successfully")));
+      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Institute deleted Successfully")));
     }catch(e){
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
     }finally{
 
     }
@@ -1429,9 +1552,9 @@ class DbService with ChangeNotifier{
           .collection("institutes").doc(dox.get("institute_id"))
           .collection("departments").doc(departmentId).delete();
       await indexDoc.doc(departmentId).delete();
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("department deleted Successfully")));
+      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("department deleted Successfully")));
     }catch(e){
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
     }finally{
 
     }
@@ -1445,9 +1568,9 @@ class DbService with ChangeNotifier{
           .collection("announcements")
           .doc(announcementId).delete();
       await indexDoc.doc(announcementId).delete();
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("announcement deleted Successfully")));
+      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("announcement deleted Successfully")));
     }catch(e){
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
     }finally{
 
     }
@@ -1461,9 +1584,9 @@ class DbService with ChangeNotifier{
           .collection("departments").
       doc(dox.get("department_id")).collection("sessions").doc(sessionId).delete();
       await indexDoc.doc(sessionId).delete();
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("session deleted Successfully")));
+      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("session deleted Successfully")));
     }catch(e){
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
     }finally{
 
     }
@@ -1478,9 +1601,9 @@ class DbService with ChangeNotifier{
           .doc(dox.get("session_id")).collection("semesters")
           .doc(semesterId).delete();
       await indexDoc.doc(semesterId).delete();
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("semester deleted Successfully")));
+      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("semester deleted Successfully")));
     }catch(e){
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
     }finally{
 
     }
@@ -1497,9 +1620,9 @@ class DbService with ChangeNotifier{
           .collection("lectures")
           .doc(courseId).delete();
       await indexDoc.doc(courseId).delete();
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Course deleted Successfully")));
+      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Course deleted Successfully")));
     }catch(e){
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
     }finally{
 
     }
@@ -1518,9 +1641,9 @@ class DbService with ChangeNotifier{
           .doc(dox.get("course_id")).collection("lectures")
           .doc(lectureModelId).delete();
       await indexDoc.doc(lectureModelId).delete();
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("lecture deleted Successfully")));
+      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("lecture deleted Successfully")));
     }catch(e){
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
     }finally{
 
     }
@@ -1535,9 +1658,9 @@ class DbService with ChangeNotifier{
       // collection("semesters").doc(semesterId).
       collection("faculty").doc(lecturerId).delete();
       await indexDoc.doc(lecturerId).delete();
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("faculty deleted Successfully")));
+      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("faculty deleted Successfully")));
     }catch(e){
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
     }finally{
 
     }
@@ -1552,9 +1675,9 @@ class DbService with ChangeNotifier{
       // collection("semesters").doc(semesterId).
       collection("students").doc(studentId).delete();
       await indexDoc.doc(studentId).delete();
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("student deleted Successfully")));
+      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("student deleted Successfully")));
     }catch(e){
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
     }finally{
 
     }
@@ -1562,16 +1685,20 @@ class DbService with ChangeNotifier{
   removeAdmin(BuildContext context,String adminId)async{
     try{
       final dox=await indexDoc.doc(adminId).get();
+      final adminRefdoc=await dbref.collection("ins_admins")
+          .doc(dox.get("ins_admin_id")).collection("institutes").doc(dox.get("institute_id")).
+      collection("admins").doc(adminId).get();
+
+      String email_d=await adminRefdoc["email"];
+      String password_d=await dox["password"];
+      await deleteAuthUser(email_d, password_d);
       final adminRef=await dbref.collection("ins_admins")
           .doc(dox.get("ins_admin_id")).collection("institutes").doc(dox.get("institute_id")).
-      // collection("departments").doc(departId).
-      // collection("sessions").doc(sessionId).
-      // collection("semesters").doc(semesterId).
       collection("admins").doc(adminId).delete();
       await indexDoc.doc(adminId).delete();
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Admin deleted Successfully")));
+      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Admin deleted Successfully")));
     }catch(e){
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
     }finally{
 
     }
@@ -1587,9 +1714,9 @@ class DbService with ChangeNotifier{
       collection("students").doc(dox.get("student_id")).collection("leave_applications")
           .doc(leaveApplicationId).delete();
       await indexDoc.doc(leaveApplicationId).delete();
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("student leaveApplication deleted Successfully")));
+      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("student leaveApplication deleted Successfully")));
     }catch(e){
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
     }finally{
 
     }
@@ -1607,9 +1734,9 @@ class DbService with ChangeNotifier{
         "last_login":Timestamp.fromDate(insAdmin.last_login!),
         "status":insAdmin.status
       });
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Ins Admin updated Successfully")));
+      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Ins Admin updated Successfully")));
     }catch(e){
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
     }finally{
 
     }
@@ -1631,11 +1758,11 @@ class DbService with ChangeNotifier{
           "lat":institute.location["lat"],
           "long":institute.location["long"]}
       });
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Institute updated Successfully")));
+      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Institute updated Successfully")));
     }catch(e){
       print(e.toString());
 
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
     }finally{
 
     }
@@ -1651,9 +1778,9 @@ class DbService with ChangeNotifier{
         "created_at":Timestamp.fromDate(department.created_at!),//datetime to timestamp
         "hod_name":department.hod_name,
       });
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("department updated Successfully")));
+      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("department updated Successfully")));
     }catch(e){
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
     }finally{
 
     }
@@ -1673,9 +1800,9 @@ class DbService with ChangeNotifier{
         "target_aud":announcement.target_aud,
         "created_at":Timestamp.fromDate(announcement.created_at!),//datetime to timestamp
       });
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("announcement updated Successfully")));
+      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("announcement updated Successfully")));
     }catch(e){
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
     }finally{
 
     }
@@ -1690,9 +1817,9 @@ class DbService with ChangeNotifier{
         "start_date":Timestamp.fromDate(session.start_date),//datetime to timestamp
         "end_date":Timestamp.fromDate(session.end_date),//datetime to timestamp
       });
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("session updated Successfully")));
+      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("session updated Successfully")));
     }catch(e){
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
     }finally{
 
     }
@@ -1709,9 +1836,9 @@ class DbService with ChangeNotifier{
         "end_date":Timestamp.fromDate(semester.end_date),//datetime to timestamp",
         "semester_no":semester.semester_no
       });
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("semester updated Successfully")));
+      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("semester updated Successfully")));
     }catch(e){
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
     }finally{
 
     }
@@ -1735,9 +1862,9 @@ class DbService with ChangeNotifier{
         "type":course.type,
         "created_at":Timestamp.fromDate(course.created_at!),//datetime to timestamp",
       });
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Course updated Successfully")));
+      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Course updated Successfully")));
     }catch(e){
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
     }finally{
 
     }
@@ -1780,9 +1907,9 @@ class DbService with ChangeNotifier{
         "course_name":lectureModel.course,//will take course_name using id back in ui
         "status":lectureModel.status,
       });
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("lecture updated Successfully")));
+      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("lecture updated Successfully")));
     }catch(e){
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
     }finally{
 
     }
@@ -1827,9 +1954,9 @@ class DbService with ChangeNotifier{
         "course_name":lectureModel.course,//will take course_name using id back in ui
         "status":lectureModel.status,
       });
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("lecture updated Successfully")));
+      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("lecture updated Successfully")));
     }catch(e){
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
     }finally{
 
     }
@@ -1868,9 +1995,9 @@ class DbService with ChangeNotifier{
           .doc(lectureModel.id).update({
         "present":students_p,
       });
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("lecture updated Successfully")));
+      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("lecture updated Successfully")));
     }catch(e){
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
     }finally{
 
     }
@@ -1909,9 +2036,9 @@ class DbService with ChangeNotifier{
           .doc(lectureModel.id).update({
         "absent":students_ab,
       });
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("group attendance marked absent Successfully")));
+      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("group attendance marked absent Successfully")));
     }catch(e){
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
     }finally{
 
     }
@@ -1956,9 +2083,9 @@ class DbService with ChangeNotifier{
         // "course_name":lectureModel.course,//will take course_name using id back in ui
         // "status":lectureModel.status,
       });
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("attendance marked Successfully")));
+      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("attendance marked Successfully")));
     }catch(e){
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
     }finally{
 
     }
@@ -1984,9 +2111,9 @@ class DbService with ChangeNotifier{
         "courses":lecturer.courses,
         "phone":lecturer.phone,
       });
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("faculty updated Successfully")));
+      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("faculty updated Successfully")));
     }catch(e){
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
     }finally{
 
     }
@@ -2007,9 +2134,9 @@ class DbService with ChangeNotifier{
         "semester":student.semester,
         "created_at":Timestamp.fromDate(student.created_at!),//datetime to timestamp",
       });
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("student data updated Successfully")));
+      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("student data updated Successfully")));
     }catch(e){
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
     }finally{
 
     }
@@ -2033,9 +2160,9 @@ class DbService with ChangeNotifier{
         "permissions":admin.permissions//["student_management","department_management","lecture_management"] etc
 
       });
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Admin data added Successfully")));
+      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Admin data added Successfully")));
     }catch(e){
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
     }finally{
 
     }
@@ -2045,7 +2172,7 @@ class DbService with ChangeNotifier{
       final dox=await indexDoc.doc(admin.id).get();
       List<String> permissions_=admin.permissions!;
       if(permissions_.contains(permission)){
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("permission already assigned")));
+        if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("permission already assigned")));
       return;
       }
         permissions_.add(permission);
@@ -2066,9 +2193,9 @@ class DbService with ChangeNotifier{
         "permissions":permissions_//["student_management","department_management","lecture_management"] etc
 
       });
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("permission assigned Successfully")));
+      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("permission assigned Successfully")));
     }catch(e){
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
     }finally{
 
     }
@@ -2078,12 +2205,12 @@ class DbService with ChangeNotifier{
       final dox=await indexDoc.doc(admin.id).get();
       List<String> permissions_=admin.permissions!;
       if(permissions_.isEmpty){
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("no permissions found")));
+        if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("no permissions found")));
       return;
       }else if(permissions_.contains(permission)){
         permissions_.remove(permission);
       }else{
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("permission not found")));
+        if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("permission not found")));
         return;
       }
 
@@ -2103,9 +2230,9 @@ class DbService with ChangeNotifier{
         "permissions":permissions_//["student_management","department_management","lecture_management"] etc
 
       });
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("permission revoked Successfully")));
+      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("permission revoked Successfully")));
     }catch(e){
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
     }finally{
 
     }
@@ -2115,7 +2242,7 @@ class DbService with ChangeNotifier{
       final dox=await indexDoc.doc(admin.id).get();
       List<String> permissions_=admin.permissions!;
       if(permissions_.isEmpty){
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("no permissions found")));
+        if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("no permissions found")));
        return;
       }
       permissions_.clear();
@@ -2135,9 +2262,9 @@ class DbService with ChangeNotifier{
         "permissions":permissions_//["student_management","department_management","lecture_management"] etc
 
       });
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Revoked all permissions Successfully")));
+      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Revoked all permissions Successfully")));
     }catch(e){
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
     }finally{
 
     }
@@ -2164,9 +2291,9 @@ class DbService with ChangeNotifier{
         "status":leaveApplication.status,
         "approvedby":leaveApplication.approvedby,
       });
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("student leave updated Successfully")));
+      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("student leave updated Successfully")));
     }catch(e){
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
     }finally{
 
     }
@@ -2193,9 +2320,9 @@ class DbService with ChangeNotifier{
         "status":"approved",
         "approvedby":adminName,
       });
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("student leave approved Successfully")));
+      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("student leave approved Successfully")));
     }catch(e){
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
     }finally{
 
     }
@@ -2222,9 +2349,9 @@ class DbService with ChangeNotifier{
         "status":"rejected",
         "approvedby":adminName,
       });
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("student leave rejected")));
+      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("student leave rejected")));
     }catch(e){
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
     }finally{
 
     }

@@ -10,11 +10,13 @@ import 'package:smas3/widgets/insAdmin/info_card.dart';
 import 'package:smas3/widgets/insAdmin/insSettingc.dart';
 import 'package:smas3/widgets/insAdmin/profile_card.dart';
 
+import '../../models/institute.dart';
 import '../../widgets/admin_widgets/adminProfileCard.dart';
 
 class insAdminProfile extends StatefulWidget {
   final InsAdmin insAdmin;
-  const insAdminProfile({super.key, required this.insAdmin, }) ;
+  final Institute institute;
+  const insAdminProfile({super.key, required this.insAdmin, required this.institute, }) ;
 
   @override
   State<insAdminProfile> createState() => _insAdminProfileState();
@@ -28,7 +30,7 @@ class _insAdminProfileState extends State<insAdminProfile> {
         Text("Settings",style: TextStyle(fontSize: 20,fontWeight: FontWeight.bold),),
         Text("System Configuration",style: TextStyle(fontSize: 15,color: Colors.grey),),
         SizedBox(height: 10,),
-        InsAdmin_ProfileCard(insAdmin: widget.insAdmin),
+        InsAdmin_ProfileCard(insAdmin: widget.insAdmin, institute: widget.institute,),
         SizedBox(height: 25,),
         Text("System Settings",style: TextStyle(fontSize: 16,fontWeight: FontWeight.w500),),
         SizedBox(height: 10,),
@@ -48,11 +50,42 @@ class _insAdminProfileState extends State<insAdminProfile> {
             ),
           ),
           onPressed: (){
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                backgroundColor: Colors.red
-                ,content: Text("Logging out as ${widget.insAdmin.name}")));
-            Provider.of<DbService>(context,listen: false).signOut(context);
-            Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+            showDialog(context: context, builder: (_)=>
+            AlertDialog(
+              icon: Icon(Icons.logout,size: 28,color: Theme.of(context).primaryColor,),
+              title: Text("Are you sure you want to logout?",style: TextStyle(fontSize: 16),),
+              actions: [
+                Row(
+                  children: [
+                    ElevatedButton(onPressed: (){
+                      Navigator.pop(context);
+                    },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white60,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(7),
+
+                        ),),
+                        child: Text("Cancel",style: TextStyle(color: Colors.black),)),
+                    Spacer(),
+                    ElevatedButton(onPressed: (){
+                      Provider.of<DbService>(context,listen: false).signOut(context);
+                      Navigator.pop(context);
+                      Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+                    },
+                     style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(7),
+                            side: BorderSide(color: Colors.red,width: 0.5),
+                          ),),
+                        child: Text("Logout",style: TextStyle(color: Colors.white),)),
+                  ],
+                ),
+
+              ],
+            )
+            );
           },
           label: Text("Logout"),
           icon: Icon(Icons.logout),

@@ -6,6 +6,7 @@ import 'package:lottie/lottie.dart';
 import 'package:provider/provider.dart';
 import 'package:smas3/models/ins_admin.dart';
 import 'package:smas3/models/institute.dart';
+import 'package:smas3/screens/auth_screens/login_screen.dart';
 import 'package:smas3/screens/ins_admin/add_institute.dart';
 import 'package:smas3/screens/ins_admin/ins_admin_dashboard.dart';
 import 'package:smas3/screens/ins_admin/update_ins.dart';
@@ -44,7 +45,7 @@ class _InsSelectionState extends State<InsSelection> {
             }else{
               institutes_list.clear();
               if(snapshot.data!.docs.isEmpty){
-                return Center(child: Text("no data"),);
+                return Center(child: Text("no data , plz add institute first"),);
               }else{
                 for(var ins in snapshot.data!.docs){
                   institutes_list.add(
@@ -60,7 +61,7 @@ class _InsSelectionState extends State<InsSelection> {
                     )
                   );
                 }
-                return !snapshot.hasData?Center(child: Text("no data"),): ListView.builder(
+                return !snapshot.hasData?Center(child: Text("no data,"),): ListView.builder(
                   itemCount: institutes_list.length,
                   itemBuilder: (BuildContext context, int index) {
                     return FutureBuilder<InstituteStats>(
@@ -103,8 +104,10 @@ class _InsSelectionState extends State<InsSelection> {
             }
       }),
       floatingActionButton: FloatingActionButton(onPressed: (){
+        // Provider.of<DbService>(context,listen: false).signOut(context);
+        // Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_)=>LoginScreen()), (i)=>false);
         Navigator.push(context, MaterialPageRoute(builder: (_)=>AddInstitute(insAdmin: widget.insAdmin,)));
-      },child: Icon(Icons.add_business_rounded,color: Theme.of(context).primaryColor,),backgroundColor: Colors.white60,),
+      },backgroundColor: Colors.white60,child: Icon(Icons.add_business_rounded,color: Theme.of(context).primaryColor,),),
     );
   }
 

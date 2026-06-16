@@ -34,10 +34,10 @@ class _InsAdminDashboardState extends State<InsAdminDashboard> {
     "Profile"
   ];
   late List<Widget> screens=[
-    InsAdminHome(),
+    InsAdminHome(insAdmin: widget.insAdmin,institute: widget.institute,),
     ManageAdmins(insAdmin: widget.insAdmin,institute:widget.institute ,),
     InsReports(),
-    insAdminProfile(insAdmin: widget.insAdmin,)
+    insAdminProfile(insAdmin: widget.insAdmin,institute: widget.institute,)
   ];
   logout()async{
     await FirebaseAuth.instance.signOut();
@@ -47,7 +47,7 @@ class _InsAdminDashboardState extends State<InsAdminDashboard> {
   Widget build(BuildContext context) {
     return Scaffold(
       body:Container(padding: EdgeInsets.symmetric(
-          horizontal: 15,vertical: 7
+          horizontal: 10,vertical: 7
       ),child: screens[current],
       ),
       // Builder(builder: (context){
@@ -157,6 +157,7 @@ class _InsAdminDashboardState extends State<InsAdminDashboard> {
       //   );
       // },child: Icon(Icons.add),),
      bottomNavigationBar: BottomNavigationBar(
+       backgroundColor: Colors.white,
             selectedItemColor: Theme.of(context).primaryColor,
             unselectedItemColor: Colors.grey,
             currentIndex:current,

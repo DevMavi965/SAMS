@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:smas3/models/fac_model.dart';
 import 'package:smas3/models/ins_admin.dart';
+import 'package:smas3/models/institute.dart';
 import 'package:smas3/models/student_model.dart';
 
 import '../../models/admin_model.dart';
 class InsAdmin_ProfileCard extends StatefulWidget {
+
   final InsAdmin insAdmin;
-  const InsAdmin_ProfileCard({super.key, required this.insAdmin});
+  final Institute institute;
+  const InsAdmin_ProfileCard({super.key, required this.insAdmin, required this.institute});
 
   @override
   State<InsAdmin_ProfileCard> createState() => _InsAdmin_ProfileCardState();
@@ -67,7 +70,7 @@ class _InsAdmin_ProfileCardState extends State<InsAdmin_ProfileCard> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(widget.insAdmin.name,style: TextStyle(color: Colors.white,fontWeight: FontWeight.bold,fontSize: 18),),
-                  Text("System Administrator",style: TextStyle(color: Colors.white,fontWeight: FontWeight.w400,fontSize: 14),),
+                  Text(widget.institute.name,style: TextStyle(color: Colors.white,fontWeight: FontWeight.w400,fontSize: 14),),
                 ],
 
               )
@@ -93,25 +96,35 @@ class _InsAdmin_ProfileCardState extends State<InsAdmin_ProfileCard> {
                   ),
                   onPressed: () {
 
-                  }, child: Text(widget.insAdmin.role,style: TextStyle(fontSize: 11,color: Colors.white),)),
+                  }, child: Text(widget.insAdmin.role.split("_").join(" ").toUpperCase(),style: TextStyle(fontSize: 11,color: Colors.white),)),
               SizedBox(width: 20,),
-              OutlinedButton(
-                  style: ButtonStyle(
-                    fixedSize: MaterialStateProperty.all(Size(100, 35)),
-                    minimumSize: MaterialStateProperty.all(Size(100, 35)),
-                    padding: MaterialStateProperty.all(EdgeInsets.all(5)),
-                    shape: MaterialStateProperty.all(RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
+              Flexible(
+                child: OutlinedButton(
+                    style: ButtonStyle(
+                      fixedSize: MaterialStateProperty.all(Size(100, 35)),
+                      minimumSize: MaterialStateProperty.all(Size(100, 35)),
+                      padding: MaterialStateProperty.all(EdgeInsets.all(5)),
+                      shape: MaterialStateProperty.all(RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
 
-                    )),
-                    side: MaterialStateProperty.all(BorderSide(
-                      color: Colors.white,
-                      width: 1,
-                    )),
-                  ),
-                  onPressed: () {
+                      )),
+                      side: MaterialStateProperty.all(BorderSide(
+                        color: Colors.white,
+                        width: 1,
+                      )),
+                    ),
+                    onPressed: () {
 
-                  }, child: Text(widget.insAdmin.status,style: TextStyle(fontSize: 11,color: Colors.white),))
+                    }, child:
+                Row(
+                      children: [
+                        SizedBox(width: 3,),
+                        Icon(Icons.school_outlined,color: Colors.white,),
+                        SizedBox(width: 8,),
+                        Flexible(child: Text(widget.insAdmin.status,style: TextStyle(fontSize: 11,color: Colors.white),)),
+                      ],
+                    )),
+              )
             ],
           )
         ],

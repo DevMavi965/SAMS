@@ -26,7 +26,7 @@ class _AdminDeshboardState extends State<AdminDeshboard> {
     "Profile"
   ];
   late List<Widget> screens=[
-   AdminHome(),
+   AdminHome(admin: widget.admin,),
     UserMng(),
     AdminReports(),
     AdminAnnouncements(),
