@@ -193,6 +193,11 @@ class DbService with ChangeNotifier{
         print("invalid email or password for admin");
       }
     } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString()),),
+        );
+      }
       print(e.toString());
     } finally {
       // Sign0ut from secondary and delete the tempOrary app
@@ -283,8 +288,8 @@ class DbService with ChangeNotifier{
       });
     }catch(e){
       print(e.toString());
-      // if(context.mounted){
-      // ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString()),));}
+      if(context.mounted){
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString()),));}
     }finally{
 
       loading=false;
@@ -295,24 +300,50 @@ class DbService with ChangeNotifier{
 
 
   registerFac(String _insAdminId,String instituteId,Lecturer lecturer,String password,BuildContext context)async{
-   try {
-     UserCredential uc = await eauth.createUserWithEmailAndPassword(
-         email: lecturer.email,
-         password: password);
-     if (uc.user != null) {
-       lecturer.id = uc.user!.uid;
-       await addFaculty(context, _insAdminId, instituteId, lecturer);
+    FirebaseApp secondaryApp;
+    try {
+      secondaryApp = await Firebase.initializeApp(
+        name: 'SecondaryApp',
+        options: Firebase.app().options,
+      );
+    } catch (e) {
+      secondaryApp = Firebase.app('SecondaryApp');
+    }
 
-       // ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("successfully registered as admin"),backgroundColor: Theme.of(context).primaryColor,));
-     } else {
-       if(context.mounted) {
-       ScaffoldMessenger.of(context).showSnackBar(
-           SnackBar(content: Text("invalid email or password"),));}
-     }
-   }catch(e){
-     if(context.mounted){
-     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString()),));}
-   }
+    try {
+      final secondaryAuth = FirebaseAuth.instanceFor(app: secondaryApp);
+
+      UserCredential uc = await secondaryAuth.createUserWithEmailAndPassword(
+        email: lecturer.email,
+        password: password,
+      );
+
+      if (uc.user != null) {
+        lecturer.id = uc.user!.uid;
+        await addFaculty(context, _insAdminId, instituteId, lecturer);
+        await indexDoc.doc(lecturer.id).set({
+          "ins_admin_id": _insAdminId,
+          "institute_id": instituteId,
+          "password":password,
+          "role":lecturer.role
+        });
+        print("successfully ${lecturer.name} registered as faculty");
+      } else {
+        if(context.mounted){
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("invalid email or password"),));
+        }
+        print("invalid email or password for admin");
+      }
+    } catch (e) {
+      if(context.mounted){
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString()),));
+      }
+      print(e.toString());
+    } finally {
+      // Sign0ut from secondary and delete the tempOrary app
+      await FirebaseAuth.instanceFor(app: secondaryApp).signOut();
+      await secondaryApp.delete();
+    }
   }
   loginWithFacEmail(String _email,String _password,BuildContext context)async{
     try{
@@ -388,24 +419,45 @@ class DbService with ChangeNotifier{
 
 
   registerStudent(String _insAdminId,String instituteId,Student student,String password,BuildContext context)async{
+    FirebaseApp secondaryApp;
     try {
-      UserCredential uc = await eauth.createUserWithEmailAndPassword(
-          email: student.email,
-          password: password);
+      secondaryApp = await Firebase.initializeApp(
+        name: 'SecondaryApp',
+        options: Firebase.app().options,
+      );
+    } catch (e) {
+      secondaryApp = Firebase.app('SecondaryApp');
+    }
+
+    try {
+      final secondaryAuth = FirebaseAuth.instanceFor(app: secondaryApp);
+
+      UserCredential uc = await secondaryAuth.createUserWithEmailAndPassword(
+        email: student.email,
+        password: password,
+      );
+
       if (uc.user != null) {
-        print(uc.user!.uid);
         student.id = uc.user!.uid;
         await addStudent(context, _insAdminId, instituteId, student);
-
-        // ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("successfully registered as admin"),backgroundColor: Theme.of(context).primaryColor,));
+        await indexDoc.doc(student.id).set({
+          "ins_admin_id": _insAdminId,
+          "institute_id": instituteId,
+          "password":password,
+          "role":student.role
+        });
+        print("successfully ${student.name} registered as student");
       } else {
-        if(context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("invalid email or password"),));}
+        print("invalid email or password for admin");
       }
-    }catch(e){
+    } catch (e) {
       if(context.mounted){
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString()),));}
+      print(e.toString());
+    } finally {
+      // Sign0ut from secondary and delete the tempOrary app
+      await FirebaseAuth.instanceFor(app: secondaryApp).signOut();
+      await secondaryApp.delete();
     }
   }
   loginWithStudentEmail(String _email,String _password,BuildContext context)async{
@@ -1406,11 +1458,6 @@ class DbService with ChangeNotifier{
         "courses":lecturer.courses,
         "phone":lecturer.phone,
       });
-      await indexDoc.doc(lecturer.id).set({
-        "ins_admin_id":insAdminId,
-        "institute_id":instituteId,
-        "role":lecturer.role
-      });
       print("faculty added.............................${lecturer.id}");
       // ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("faculty Added Successfully")));
     }catch(e){print(e.toString());
@@ -1436,11 +1483,6 @@ class DbService with ChangeNotifier{
         "institute_id":instituteId,
         "semester":student.semester,
         "created_at":Timestamp.fromDate(student.created_at!),//datetime to timestamp",
-      });
-      await indexDoc.doc(student.id).set({
-        "ins_admin_id":insAdminId,
-        "institute_id":instituteId,
-        "role":student.role
       });
       print("student added.............................${student.id}");
       // ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("student Added Successfully")));
@@ -1651,14 +1693,18 @@ class DbService with ChangeNotifier{
   removeFaculty(BuildContext context,String lecturerId)async{
     try{
       final dox=await indexDoc.doc(lecturerId).get();
+      final adminRefdoc=await dbref.collection("ins_admins")
+          .doc(dox.get("ins_admin_id")).collection("institutes").doc(dox.get("institute_id")).
+      collection("faculty").doc(lecturerId).get();
+
+      String email_d=await adminRefdoc["email"];
+      String password_d=await dox["password"];
+      await deleteAuthUser(email_d, password_d);
       final facRef=await dbref.collection("ins_admins")
           .doc(dox.get("ins_admin_id")).collection("institutes").doc(dox.get("institute_id")).
-      // collection("departments").doc(departId).
-      // collection("sessions").doc(sessionId).
-      // collection("semesters").doc(semesterId).
       collection("faculty").doc(lecturerId).delete();
       await indexDoc.doc(lecturerId).delete();
-      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("faculty deleted Successfully")));
+      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Admin deleted Successfully")));
     }catch(e){
       if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
     }finally{
@@ -1666,21 +1712,25 @@ class DbService with ChangeNotifier{
     }
   }
   removeStudent(BuildContext context,String studentId)async{
-    try{
-      final dox=await indexDoc.doc(studentId).get();
-      final stdRef=await dbref.collection("ins_admins")
-          .doc(dox.get("ins_admin_id")).collection("institutes").doc(dox.get("institute_id")).
-      // collection("departments").doc(departId).
-      // collection("sessions").doc(sessionId).
-      // collection("semesters").doc(semesterId).
-      collection("students").doc(studentId).delete();
-      await indexDoc.doc(studentId).delete();
-      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("student deleted Successfully")));
-    }catch(e){
-      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
-    }finally{
+   try{
+    final dox=await indexDoc.doc(studentId).get();
+    final stdRefdoc=await dbref.collection("ins_admins")
+        .doc(dox.get("ins_admin_id")).collection("institutes").doc(dox.get("institute_id")).
+    collection("students").doc(studentId).get();
 
-    }
+    String email_d=await stdRefdoc["email"];
+    String password_d=await dox["password"];
+    await deleteAuthUser(email_d, password_d);
+    final stdRef=await dbref.collection("ins_admins")
+        .doc(dox.get("ins_admin_id")).collection("institutes").doc(dox.get("institute_id")).
+    collection("students").doc(studentId).delete();
+    await indexDoc.doc(studentId).delete();
+    if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Student deleted Successfully")));
+  }catch(e){
+  if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+  }finally{
+
+  }
   }
   removeAdmin(BuildContext context,String adminId)async{
     try{

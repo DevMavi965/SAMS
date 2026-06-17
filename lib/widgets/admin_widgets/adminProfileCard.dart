@@ -66,7 +66,7 @@ class _Admin_profile_CardState extends State<Admin_profile_Card> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(widget.admin.name,style: TextStyle(color: Colors.white,fontWeight: FontWeight.bold,fontSize: 18),),
-                  Text("System Administrator",style: TextStyle(color: Colors.white,fontWeight: FontWeight.w400,fontSize: 14),),
+                  Text(widget.admin.institute,style: TextStyle(color: Colors.white,fontWeight: FontWeight.w400,fontSize: 14),),
                 ],
 
               )

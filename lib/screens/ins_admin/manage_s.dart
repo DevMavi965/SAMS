@@ -646,12 +646,12 @@ class _ManageAdminsState extends State<ManageAdmins> {
             BoxShadow(
               offset: Offset(-1, -1),
               blurRadius: 2,
-              color: Colors.grey
+              color: Colors.grey.shade200
             ),
             BoxShadow(
               offset: Offset(1, 1),
               blurRadius: 2,
-              color: Colors.grey
+              color: Colors.grey.shade200
             )
           ],
           color: Colors.white,

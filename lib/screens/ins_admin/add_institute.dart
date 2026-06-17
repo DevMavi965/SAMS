@@ -60,6 +60,12 @@ class _AddInstituteState extends State<AddInstitute> {
                 decoration: InputDecoration(
                   labelText: "institute name",
                   prefixIcon: Icon(Icons.school),
+                  focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(
+                          color: Theme.of(context).primaryColor,
+                          width: 1
+                      )
+                  ),
                   border: OutlineInputBorder(),
                 ),
 
@@ -79,6 +85,12 @@ class _AddInstituteState extends State<AddInstitute> {
                   labelText: "institute address",
                   prefixIcon: Icon(Icons.location_on),
                   border: OutlineInputBorder(),
+                  focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(
+                          color: Theme.of(context).primaryColor,
+                          width: 1
+                      )
+                  ),
                 ),
               ),
               SizedBox(height: 20,),
@@ -98,6 +110,12 @@ class _AddInstituteState extends State<AddInstitute> {
                 decoration: InputDecoration(
                   labelText: "institute contact",
                   prefixIcon: Icon(Icons.phone),
+                  focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(
+                          color: Theme.of(context).primaryColor,
+                          width: 1
+                      )
+                  ),
                   border: OutlineInputBorder(),
                 ),
               ),
@@ -118,6 +136,12 @@ class _AddInstituteState extends State<AddInstitute> {
                 },
                 decoration: InputDecoration(
                   labelText: "institute longitude",
+                  focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(
+                          color: Theme.of(context).primaryColor,
+                          width: 1
+                      )
+                  ),
                   prefixIcon: Icon(Icons.edit_location_alt),
                   border: OutlineInputBorder(),
                 ),
@@ -138,6 +162,12 @@ class _AddInstituteState extends State<AddInstitute> {
                   return null;
                 },
                 decoration: InputDecoration(
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(
+                      color: Theme.of(context).primaryColor,
+                      width: 1
+                    )
+                  ),
                   labelText: "institute latitude",
                   prefixIcon: Icon(Icons.edit_location_alt_outlined),
                   border: OutlineInputBorder(),
