@@ -590,6 +590,10 @@ class DbService with ChangeNotifier{
               for(var semSnap in semesterSnap.docs){
                 semesters.add(Semester(
                     id: semSnap.id,
+                    ins_admin_id: insAdminId,
+                    institute_id: ins.id,
+                    department_id: depart.id,
+                    session_id: sSnap.id,
                     start_date: semSnap['start_date'].toDate(),
                     end_date: semSnap['end_date'].toDate(),
                     semester_no: semSnap['semester_no']));
@@ -954,7 +958,11 @@ class DbService with ChangeNotifier{
       .collection("semesters").add({
         "start_date":Timestamp.fromDate(semester.start_date),//datetime to timestamp",
         "end_date":Timestamp.fromDate(semester.end_date),//datetime to timestamp",
-        "semester_no":semester.semester_no
+        "semester_no":semester.semester_no,
+        "ins_admin_id":insAdminId,
+        "institute_id":instituteId,
+        "department_id":departId,
+        "session_id":sessionId,
       });
       semester.id=semesterRef.id;
       await indexDoc.doc(semester.id).set({

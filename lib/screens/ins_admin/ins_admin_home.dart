@@ -103,7 +103,7 @@ class _InsAdminHomeState extends State<InsAdminHome> {
             // manage students
             InkWell(
               onTap: (){
-                Navigator.push(context, MaterialPageRoute(builder: (_)=>StdManage()));
+                Navigator.push(context, MaterialPageRoute(builder: (_)=>Std_manage(insAdmin: widget.insAdmin, institute: widget.institute)));
               },
               child: SizedBox(
 

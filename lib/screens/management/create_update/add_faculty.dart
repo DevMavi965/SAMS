@@ -47,15 +47,6 @@ class _AddFacultyScreenState extends State<AddFacultyScreen> {
         title: Text("Add Faculty"),
         centerTitle: true,
         backgroundColor: Theme.of(context).primaryColor,
-        actions: [
-          ElevatedButton.icon(onPressed: (){
-            Provider.of<DbService>(context,listen: false).addDepartment(context, widget.insAdmin.id!, widget.institute.id!,
-                Department(name: "Computer Science", hod_name: "Madiha Saoud",created_at: DateTime.now()));
-          },
-            label: Text("Add institute",style: TextStyle(color: Theme.of(context).primaryColor),),
-            icon: Icon(Icons.add_business_rounded,color: Theme.of(context).primaryColor,),
-          )
-        ],
       ),
       body: StreamBuilder(stream: Provider.of<DbService>(context,listen: false).dbref.collection("ins_admins").doc(widget.insAdmin.id).collection("institutes")
           .doc(widget.institute.id).collection("departments").snapshots(), builder: (context,snapshot){
