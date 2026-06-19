@@ -1,8 +1,7 @@
 class Student{
   String? id;
    String name,instituteId,insAdminId;
-   String depart;
-   int semester;
+   String sessionId,departId,semesterId;
    String email,role;
    DateTime? created_at=DateTime.now();
 
@@ -12,8 +11,9 @@ class Student{
     required this.name,
     required this.insAdminId,
     required this.instituteId,
-    required this.depart,
-    required this.semester,
+    required this.departId,
+    required this.sessionId,
+    required this.semesterId,
     required this.email,
     this.created_at,
 

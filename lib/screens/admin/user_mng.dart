@@ -16,12 +16,7 @@ class _UserMngState extends State<UserMng> {
     "Students","Faculty"
   ];
   List<Student> students=[
-    Student(id: "2345", name: "hasan", depart: "Computer Science", semester: 1, email: "hasan@gmail.com", role: 'student', insAdminId: '2345678', instituteId: '234567' ),
-    Student(id: "t656", name: "noor", depart: "Information Technology", semester: 6, email: "n00r45@gmail.com", role: 'student', insAdminId: '23465345', instituteId: '23467' ),
-    Student(id: "7666", name: "hasan", depart: "Computer Science", semester: 1, email: "hasan@gmail.com", role: 'student',insAdminId: '2345678', instituteId: '234567' ),
-    Student(id: "2345", name: "hasan", depart: "Computer Science", semester: 1, email: "hasan@gmail.com", role: 'student', insAdminId: '2345678', instituteId: '234567' ),
-    Student(id: "t656", name: "noor", depart: "Information Technology", semester: 6, email: "n00r45@gmail.com", role: 'student', insAdminId: '23465345', instituteId: '23467' ),
-    Student(id: "7666", name: "hasan", depart: "Computer Science", semester: 1, email: "hasan@gmail.com", role: 'student',insAdminId: '2345678', instituteId: '234567' ),
+    Student(id: "2345", name: "hasan",  email: "hasan@gmail.com", role: 'student', insAdminId: '2345678', instituteId: '234567', departId: '87654', sessionId: '2345678', semesterId: '3456789' ),
 
 
   ];
@@ -208,7 +203,7 @@ class _UserMngState extends State<UserMng> {
                           children: [
                             Badge(label: Padding(
                               padding: const EdgeInsets.all(3.0),
-                              child: Text(students[i].depart,style: TextStyle(
+                              child: Text(students[i].departId,style: TextStyle(
                                   fontWeight: FontWeight.w800,
                                   color: Colors.black
                               ),),
@@ -216,7 +211,7 @@ class _UserMngState extends State<UserMng> {
                             SizedBox(width: 10,),
                             Badge(label: Padding(
                               padding: const EdgeInsets.all(3.0),
-                              child: Text("semester ${students[i].semester}",style: TextStyle(color: Colors.black),),
+                              child: Text("semester ${students[i].semesterId}",style: TextStyle(color: Colors.black),),
                             ),backgroundColor: Color(0xfff1f5f9),),
 
                           ],

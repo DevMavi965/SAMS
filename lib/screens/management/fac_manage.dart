@@ -4,6 +4,7 @@ import 'package:smas3/maxins/rm_functions.dart';
 import 'package:smas3/models/fac_model.dart';
 import 'package:smas3/models/ins_admin.dart';
 import 'package:smas3/models/institute.dart';
+import 'package:smas3/screens/management/create_update/add_faculty.dart';
 import 'package:smas3/services/db_service.dart';
 
 class FacManage extends StatefulWidget with RMFuncts{
@@ -183,22 +184,23 @@ class _FacManageState extends State<FacManage> {
           borderRadius: BorderRadius.circular(50)
         ),
         onPressed: (){
-          Provider.of<DbService>(context,listen: false).registerFac(
-              widget.insAdmin.id!, widget.institute.id!,
-              Lecturer(
-                  name: "Ayesha Zainab",
-                  deprt: "Physics",
-                  role: "faculty",
-                  instituteId: widget.institute.id!,
-                  insAdminId: widget.insAdmin.id!,
-                  designation: "Assistant Professor",
-                  status: "active",
-                  email: "az12@gmail.com",
-                  semesters: [4,6,8],
-                  courses: ["CS101","CS102","CS103","CS104"],
-                  created_at: DateTime.now(),
-                  phone: "32466676544")
-              , "12341234", context);
+          Navigator.push(context, MaterialPageRoute(builder: (_)=>AddFacultyScreen(insAdmin: widget.insAdmin, institute: widget.institute,)));
+          // Provider.of<DbService>(context,listen: false).registerFac(
+          //     widget.insAdmin.id!, widget.institute.id!,
+          //     Lecturer(
+          //         name: "Ayesha Zainab",
+          //         deprt: "Physics",
+          //         role: "faculty",
+          //         instituteId: widget.institute.id!,
+          //         insAdminId: widget.insAdmin.id!,
+          //         designation: "Assistant Professor",
+          //         status: "active",
+          //         email: "az12@gmail.com",
+          //         semesters: [4,6,8],
+          //         courses: ["CS101","CS102","CS103","CS104"],
+          //         created_at: DateTime.now(),
+          //         phone: "32466676544")
+          //     , "12341234", context);
       },child:
       Icon(Icons.add,color: Colors.white,fontWeight: FontWeight.bold,),
       ),

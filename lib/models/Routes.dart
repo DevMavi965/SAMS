@@ -48,9 +48,7 @@ class RouteHelper {
         instituteId: "34567890",
         insAdminId: "234567890",
         name: "Ameer",
-        depart: "Information Technology",
-        semester: 7,
-        email: "ameermuawiya472@gmail.com",
+        email: "ameermuawiya472@gmail.com", departId: '', sessionId: '', semesterId: '',
     );
         return MaterialPageRoute(
           builder: (context) => StudentDeshboard(student: student,),

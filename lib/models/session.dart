@@ -1,7 +1,9 @@
 class Session {
   String? id;
+  String name;
   DateTime start_date,end_date;
   Session({
+    required this.name,
     required this.start_date,
     required this.end_date,
     this.id,

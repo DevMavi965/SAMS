@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 class InsAdminGrid1 extends StatelessWidget {
-  final int students,noOfFaculty,noOfDeparts,noOfAdmins;
+  final int students,noOfFaculty,noOfDeparts,noOfAdmins,announcements;
   final double avg_attendance;
-  const InsAdminGrid1({super.key, required this.students, required this.noOfFaculty, required this.noOfDeparts, required this.avg_attendance, required this.noOfAdmins});
+  const InsAdminGrid1({super.key, required this.students, required this.noOfFaculty, required this.noOfDeparts, required this.avg_attendance, required this.noOfAdmins, required this.announcements});
 
   @override
   Widget build(BuildContext context) {
@@ -169,7 +169,7 @@ class InsAdminGrid1 extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Icon(PhosphorIconsBold.speakerSimpleHigh,color:Theme.of(context).primaryColor,),
-              Text("$avg_attendance%",style: TextStyle(fontSize: 13,fontWeight: FontWeight.w500),),
+              Text("$announcements",style: TextStyle(fontSize: 13,fontWeight: FontWeight.w500),),
               Flexible(child: Text("Active Announcements",style: TextStyle(color: Colors.grey,fontSize: 10),))
             ],
           ),

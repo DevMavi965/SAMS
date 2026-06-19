@@ -116,8 +116,14 @@ final auth=FirebaseAuth.instance;
         if(role=="student"){
         final instituteId=dox['institute_id'];
         final insAdminId=dox['ins_admin_id'];
+        final departmentId=dox['department_id'];
+        final sessionId=dox['session_id'];
+        final semesterId=dox['semester_id'];
         final v =await dbRef.collection("ins_admins").doc(insAdminId)
             .collection("institutes").doc(instituteId)
+            .collection("departments").doc(departmentId)
+            .collection("sessions").doc(sessionId)
+            .collection("semesters").doc(semesterId)
             .collection("students").doc(auth.currentUser!.uid).get();
         if(!v.exists){
           await Navigator.pushReplacementNamed(context, '/login');
@@ -129,8 +135,9 @@ final auth=FirebaseAuth.instance;
           name: v['name'],
           insAdminId: insAdminId,
           instituteId: instituteId,
-          depart: v['depart'],
-          semester: v['semester'],
+          departId: v['depart_id'],
+          sessionId: v['session_id'],
+          semesterId: v['semester_id'],
           email: v['email'],
           created_at: v['created_at'].toDate(),
         );

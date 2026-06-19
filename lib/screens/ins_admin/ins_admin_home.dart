@@ -33,10 +33,11 @@ class _InsAdminHomeState extends State<InsAdminHome> {
           SizedBox(height: 7,),
           Text("System Overview & Management",style: TextStyle(fontSize: 15,color: Colors.grey),),
           SizedBox(height: 20,),
-          InsAdminGrid1(students: 500, noOfFaculty: 210, noOfDeparts: 6, avg_attendance: 89, noOfAdmins: 3,),
+          InsAdminGrid1(students: 500, noOfFaculty: 210, noOfDeparts: 6, avg_attendance: 89, noOfAdmins: 3, announcements: 4,),
           SizedBox(height: 20,),
           Text("Manage Institute",style: TextStyle(fontSize: 18,fontWeight: FontWeight.w600,color: Colors.grey)),
           SizedBox(height: 10,),
+          // duties
           GridView.count(
             crossAxisCount: 2,
           crossAxisSpacing: 15,
@@ -156,7 +157,7 @@ class _InsAdminHomeState extends State<InsAdminHome> {
             // Department Management
             InkWell(
               onTap: (){
-                Navigator.push(context, MaterialPageRoute(builder: (_)=>DepartManage()));
+                Navigator.push(context, MaterialPageRoute(builder: (_)=>DepartManage(insAdmin: widget.insAdmin, institute: widget.institute,)));
               },
               child: SizedBox(
 
@@ -210,7 +211,7 @@ class _InsAdminHomeState extends State<InsAdminHome> {
             // sessions
             InkWell(
               onTap: (){
-                Navigator.push(context, MaterialPageRoute(builder: (_)=>SessionManage()));
+                Navigator.push(context, MaterialPageRoute(builder: (_)=>SessionManage(insAdmin: widget.insAdmin, institute: widget.institute,)));
               },
               child: SizedBox(
 

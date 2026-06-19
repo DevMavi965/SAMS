@@ -26,7 +26,7 @@ class InsAdminDashboard extends StatefulWidget {
 }
 
 class _InsAdminDashboardState extends State<InsAdminDashboard> {
-  int current=1;
+  int current=0;
   List<String> menus=[
     "Dashboard",
     "Manage",

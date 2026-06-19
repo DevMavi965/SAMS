@@ -136,7 +136,7 @@ class PersonalInfo extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text("Current Semster",style: TextStyle(color: Colors.grey),),
-                          Text(student.semester.toString()),
+                          Text(student.semesterId),
                         ],
                       )
                     ],

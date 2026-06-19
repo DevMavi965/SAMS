@@ -7,7 +7,8 @@ class Department with RMFuncts{
   Department({
     required this.name,
     required this.hod_name,
-    this.id
+    this.id,
+    this.created_at
 });
   getDepartCode(){
   return  RMFuncts.getFirstLetters(name);
