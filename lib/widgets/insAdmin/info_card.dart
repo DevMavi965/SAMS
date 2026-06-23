@@ -5,9 +5,12 @@ import 'package:smas3/models/ins_admin.dart';
 import 'package:smas3/screens/ins_admin/ins_selection.dart';
 
 import '../../models/admin_model.dart';
+import '../../models/institute.dart';
+import '../../screens/management/depart_manage.dart';
 class Ins_info_card extends StatefulWidget {
   final InsAdmin insAdmin;
-  const Ins_info_card({super.key, required this.insAdmin});
+  final Institute institute;
+  const Ins_info_card({super.key, required this.insAdmin, required this.institute});
 
   @override
   State<Ins_info_card> createState() => _Ins_info_cardState();
@@ -113,7 +116,7 @@ class _Ins_info_cardState extends State<Ins_info_card> {
               children: [
                 InkWell(
                   onTap: (){
-
+                    Navigator.push(context, MaterialPageRoute(builder: (_)=>DepartManage(insAdmin: widget.insAdmin, institute: widget.institute,)));
                   },
                   child: Padding(
                     padding: const EdgeInsets.all(12.0),

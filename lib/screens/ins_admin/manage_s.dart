@@ -115,16 +115,10 @@ class _ManageAdminsState extends State<ManageAdmins> {
               }return SizedBox();
             }),
         SizedBox(height: 10,),
-        OutlinedButton.icon(
+        ElevatedButton.icon(
           style: OutlinedButton.styleFrom(
-              backgroundColor: Colors.white,
-              side: BorderSide(
-                  color: Theme.of(context).primaryColor,
-                  width: 0.5
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(15),
-              )
+              backgroundColor: Theme.of(context).primaryColor,
+
           ),
           onPressed: (){
             showModalBottomSheet(
@@ -205,9 +199,7 @@ class _ManageAdminsState extends State<ManageAdmins> {
                                       return "Please enter valid email";
                                     }else if(!v.contains("com")){
                                       return "Please enter valid email";
-                                    }else if(!v.contains("gmail" )&&!v.contains("yahoo")&&!v.contains("outlook")){
-                                      return "Please enter valid email";
-                                    }
+                                    }else
                                     // method II
                                     // final emailRegex =
                                     // RegExp(r'^[\w\-\.]+@([\w\-]+\.)+[\w\-]{2,4}$');
@@ -321,7 +313,11 @@ class _ManageAdminsState extends State<ManageAdmins> {
                                 Row(
                                   children: [
                                     Expanded(
-                                      child: ElevatedButton(onPressed: (){
+                                      child: ElevatedButton(
+                                          style: ButtonStyle(
+                                            backgroundColor: MaterialStateProperty.all(Theme.of(context).primaryColor),
+                                          ),
+                                          onPressed: (){
 
                                         showDialog(context: context, builder:(context)=>AlertDialog(
                                           title: Text("Add Admin"),
@@ -369,7 +365,7 @@ class _ManageAdminsState extends State<ManageAdmins> {
                                                 }, child: Text("Yes")),
                                           ],
                                         ) );
-                                      }, child: Text("add")),
+                                      }, child: Text("add",style: TextStyle(color: Colors.white),)),
                                     ),
                                   ],
                                 ),
@@ -383,7 +379,7 @@ class _ManageAdminsState extends State<ManageAdmins> {
                     ),
                   ),
                 ));
-          }, label: Text("add admin",style: TextStyle(fontWeight: FontWeight.w500,color: Theme.of(context).primaryColor),),icon: Icon(Icons.person_add_alt_rounded,color: Theme.of(context).primaryColor,),)
+          }, label: Text("add admin",style: TextStyle(fontWeight: FontWeight.w500,color: Colors.white),),icon: Icon(Icons.person_add_alt_rounded,color:Colors.white,),)
       ],
     ));
   }
@@ -456,42 +452,7 @@ class _ManageAdminsState extends State<ManageAdmins> {
                               },
                             ),//name
                             SizedBox(height: 15,),
-                            // TextFormField(
-                            //   controller: email1,
-                            //   decoration: InputDecoration(
-                            //     labelText: "Email",
-                            //     border: OutlineInputBorder(
-                            //         borderRadius: BorderRadius.circular(10),
-                            //         borderSide: BorderSide(
-                            //             width: 0.5,
-                            //             color: Colors.grey
-                            //         )
-                            //     ),
-                            //   ),
-                            //   validator: (v){
-                            //     if(v!.isEmpty){
-                            //       return "Please enter email";
-                            //     }else if(v.length<3){
-                            //       return "Please enter valid email";
-                            //     }else if(!v.contains("@")){
-                            //       return "Please enter valid email";
-                            //     }else if(!v.contains(".")){
-                            //       return "Please enter valid email";
-                            //     }else if(!v.contains("com")){
-                            //       return "Please enter valid email";
-                            //     }else if(!v.contains("gmail" )&&!v.contains("yahoo")&&!v.contains("outlook")){
-                            //       return "Please enter valid email";
-                            //     }
-                            //     // method II
-                            //     // final emailRegex =
-                            //     // RegExp(r'^[\w\-\.]+@([\w\-]+\.)+[\w\-]{2,4}$');
-                            //     // if (!emailRegex.hasMatch(v.trim())) {
-                            //     //   return "Please enter valid email";
-                            //     // }
-                            //     return null;
-                            //   },
-                            // ),//email
-                            // SizedBox(height: 15,),
+
                             SizedBox(height: 7,),
                             Row(
                               children: [
@@ -560,12 +521,6 @@ class _ManageAdminsState extends State<ManageAdmins> {
                                           ),
                                         ),
                                       )
-                                      // IconButton(onPressed: (){
-                                      //   setState(() {
-                                      //     checked[0]=!checked[0];
-                                      //   });
-                                      // }, icon: Icon(checked[0]?Icons.check_circle:Icons.circle_outlined))
-
                                     ],
                                   )
                               ),
@@ -636,8 +591,8 @@ class _ManageAdminsState extends State<ManageAdmins> {
       child: Container(
 
         padding: EdgeInsets.only(
-          left: 5,
-          top: 8,
+          left: 15,
+          top: 12,
           bottom: 5,
           right: 12
         ),

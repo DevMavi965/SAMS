@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:smas3/screens/ins_admin/Depart_select.dart';
 import 'package:smas3/screens/management/Ann_manage.dart';
 import 'package:smas3/screens/management/Course_manage.dart';
 import 'package:smas3/screens/management/Leave_manage.dart';
@@ -49,7 +50,7 @@ class _InsAdminHomeState extends State<InsAdminHome> {
             // manage faculty
             InkWell(
               onTap: (){
-              Navigator.push(context, MaterialPageRoute(builder: (_)=>FacManage(insAdmin: widget.insAdmin, institute: widget.institute,)));
+              Navigator.push(context, MaterialPageRoute(builder: (_)=>DepartSelect(insAdmin: widget.insAdmin, institute: widget.institute,)));
               },
               child: SizedBox(
 
@@ -373,7 +374,7 @@ class _InsAdminHomeState extends State<InsAdminHome> {
             // leave applications
             InkWell(
               onTap: (){
-                Navigator.push(context, MaterialPageRoute(builder: (_)=>LeaveManage()));
+                Navigator.push(context, MaterialPageRoute(builder: (_)=>Leave_manage_r(insAdmin: widget.insAdmin, institute: widget.institute,)));
               },
               child: SizedBox(
 

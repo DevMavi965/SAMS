@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:smas3/maxins/rm_functions.dart';
+import 'package:smas3/models/department.dart';
 import 'package:smas3/models/fac_model.dart';
 import 'package:smas3/models/ins_admin.dart';
 import 'package:smas3/models/institute.dart';
@@ -10,7 +12,8 @@ import 'package:smas3/services/db_service.dart';
 class FacManage extends StatefulWidget with RMFuncts{
   final InsAdmin insAdmin;
   final Institute institute;
-  const FacManage({super.key, required this.insAdmin, required this.institute});
+  final Department department;
+  const FacManage({super.key, required this.insAdmin, required this.institute, required this.department});
 
   @override
   State<FacManage> createState() => _FacManageState();
@@ -18,6 +21,10 @@ class FacManage extends StatefulWidget with RMFuncts{
 
 class _FacManageState extends State<FacManage> {
   List<Lecturer> lecturers=[];
+  TextEditingController namex=TextEditingController();
+  TextEditingController phonex=TextEditingController();
+
+  final fkey=GlobalKey<FormState>();
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -30,6 +37,7 @@ class _FacManageState extends State<FacManage> {
       StreamBuilder(stream: Provider.of<DbService>(context,listen: false).dbref
           .collection("ins_admins").doc(widget.insAdmin.id)
           .collection("institutes").doc(widget.institute.id)
+         .collection("departments").doc(widget.department.id)
           .collection("faculty").snapshots(),
           builder: (context,snapshot){
            if(snapshot.connectionState==ConnectionState.waiting){
@@ -40,10 +48,11 @@ class _FacManageState extends State<FacManage> {
              return Center(child: Text("No data found"),);
            }else if(snapshot.hasData){
              if(snapshot.data!.docs.isEmpty){
-               return Center(child: Text("No data found"),);
+               return Center(child: Text("No faculty found,add faculty to continue"),);
              }
              lecturers.clear();
             for(var doc in snapshot.data!.docs){
+              lecturers.clear();
               lecturers.add(
                 Lecturer(
                   id: doc.id,
@@ -52,6 +61,7 @@ class _FacManageState extends State<FacManage> {
                     role: doc['role'],
                     instituteId: widget.institute.id!,
                     insAdminId: widget.insAdmin.id!,
+                    departmentId: doc['department_id'],
                     designation: doc['designation'],
                     status: doc['status'],
                     email: doc['email'],
@@ -167,8 +177,112 @@ class _FacManageState extends State<FacManage> {
                             padding: const EdgeInsets.all(8.0),
                             child: Text("${lecturers[index].courses!.length} courses",style: TextStyle(color:Theme.of(context).primaryColor,fontWeight: FontWeight.w500),),
                           ),
-                        )
-                      ],)
+                        ),
+                          SizedBox(width: 9,),
+                          IconButton(
+                              style: ButtonStyle(
+                                padding: MaterialStateProperty.all(EdgeInsets.all(0)),
+                              ),
+                              onPressed: (){
+                            namex.text=lecturers[index].name;
+                            phonex.text=lecturers[index].phone;
+                            showModalBottomSheet(
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10)
+                                ),
+                                showDragHandle: true,
+                                context: context, builder: (context)=>StatefulBuilder(builder: (context,set)=>Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 15,vertical: 10,
+                              ),child: Form(
+                                key: fkey,
+                                child: Column(children: [
+                                  Text("Update Faculty",style: TextStyle(fontSize: 20,fontWeight: FontWeight.w600),),
+                                  SizedBox(height: 15,),
+                                  TextFormField(
+                                    controller: namex,
+                                    decoration: InputDecoration(
+                                      labelText: "name",
+                                      prefixIcon: Icon(Icons.person),
+
+                                      border: OutlineInputBorder(),
+                                      focusedBorder: OutlineInputBorder(
+                                          borderSide: BorderSide(
+                                              color: Theme.of(context).primaryColor,
+                                              width: 1
+                                          )
+                                      ),
+                                    ),
+                                    validator: (v){
+                                      if(v!.isEmpty){
+                                        return "Please enter name";
+                                      }else if(v.length<4){
+                                        return "name must be at least 4 characters";
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                  SizedBox(height: 20,),
+                                  TextFormField(
+                                    controller: phonex,
+                                    decoration: InputDecoration(
+                                      labelText: "phone",
+                                      prefixIcon: Icon(Icons.call),
+
+                                      border: OutlineInputBorder(),
+                                      focusedBorder: OutlineInputBorder(
+                                          borderSide: BorderSide(
+                                              color: Theme.of(context).primaryColor,
+                                              width: 1
+                                          )
+                                      ),
+                                    ),
+                                    validator: (v){
+                                      if(v!.isEmpty){
+                                        return "Please enter phone";
+                                      }else if(v.length<10){
+                                        return "name must be at least 10 characters";
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                  SizedBox(height: 20,),
+                                  ElevatedButton.icon(onPressed: (){
+                                    if(fkey.currentState!.validate()){
+                                      Lecturer lec=Lecturer(
+                                        id: lecturers[index].id,
+                                          name: namex.text.trim(),
+                                          deprt: lecturers[index].deprt,
+                                          role: lecturers[index].role,
+                                          insAdminId:lecturers[index].insAdminId,
+                                          instituteId: lecturers[index].instituteId,
+                                          departmentId: lecturers[index].departmentId,
+                                          designation: lecturers[index].designation,
+                                          status: lecturers[index].status,
+                                          email: lecturers[index].email,
+                                          phone: phonex.text.trim(),
+                                          semesters: lecturers[index].semesters,
+                                          courses: lecturers[index].courses,
+                                          created_at: lecturers[index].created_at,
+                                      );
+                                      Provider.of<DbService>(context,listen: false).updateFaculty(context, lec);
+                                      Navigator.pop(context);
+
+                                    }else{
+                                      Navigator.pop(context);
+                                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("enter valid values")));
+                                    }
+
+
+
+
+                                  }, label: Text("Update",style: TextStyle(color: Theme.of(context).primaryColor),),),
+                                ],)),
+                            )
+                            ));
+                          }, icon: FaIcon(FontAwesomeIcons.userPen,color: Theme.of(context).primaryColor,size: 20,)),
+
+                        ],)
                     ],
                   ),
                 ),
@@ -184,7 +298,7 @@ class _FacManageState extends State<FacManage> {
           borderRadius: BorderRadius.circular(50)
         ),
         onPressed: (){
-          Navigator.push(context, MaterialPageRoute(builder: (_)=>AddFacultyScreen(insAdmin: widget.insAdmin, institute: widget.institute,)));
+          Navigator.push(context, MaterialPageRoute(builder: (_)=>AddFacultyScreen(insAdmin: widget.insAdmin, institute: widget.institute,department: widget.department)));
           // Provider.of<DbService>(context,listen: false).registerFac(
           //     widget.insAdmin.id!, widget.institute.id!,
           //     Lecturer(

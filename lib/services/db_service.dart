@@ -23,7 +23,6 @@ import '../models/admin_model.dart';
 import '../models/department.dart';
 import '../models/semester.dart';
 import '../models/session.dart';
-import '../screens/ins_admin/ins_admin_dashboard.dart';
 
 class DbService with ChangeNotifier{
 
@@ -270,7 +269,7 @@ class DbService with ChangeNotifier{
   }
 
 
-  registerFac(String _insAdminId,String instituteId,Lecturer lecturer,String password,BuildContext context)async{
+  registerFac(String _insAdminId,String instituteId,String departmentId,Lecturer lecturer,String password,BuildContext context)async{
     FirebaseApp secondaryApp;
     try {
       secondaryApp = await Firebase.initializeApp(
@@ -291,18 +290,19 @@ class DbService with ChangeNotifier{
 
       if (uc.user != null) {
         lecturer.id = uc.user!.uid;
-        await addFaculty(context, _insAdminId, instituteId, lecturer);
+        await addFaculty(context, _insAdminId, instituteId,departmentId, lecturer);
         await indexDoc.doc(lecturer.id).set({
           "ins_admin_id": _insAdminId,
           "institute_id": instituteId,
+          "department_id":lecturer.departmentId,
           "password":password,
           "role":lecturer.role
         });
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("successfully ${lecturer.name} registered as faculty"),backgroundColor: Theme.of(context).primaryColor,));
         print("successfully ${lecturer.name} registered as faculty");
       } else {
-        if(context.mounted){
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("invalid email or password"),));
-        }
+
         print("invalid email or password for admin");
       }
     } catch (e) {
@@ -332,11 +332,13 @@ class DbService with ChangeNotifier{
           }
           final insAdminId=dox['ins_admin_id'];
           final instituteId=dox['institute_id'];
+          final departmentId=dox['department_id'];
           print(dox.data());
           final doc=dbref.collection("ins_admins").doc(insAdminId);
           final v=await dbref
               .collection("ins_admins").doc(insAdminId).
           collection("institutes").doc(instituteId)
+              .collection("departments").doc(departmentId)
               .collection("faculty").doc(eauth.currentUser!.uid).get();
           if(!v.exists){
             if(context.mounted){
@@ -352,6 +354,7 @@ class DbService with ChangeNotifier{
               role: v['role'],
               instituteId: instituteId,
               insAdminId: insAdminId,
+              departmentId: departmentId,
               designation: v['designation'],
               status: v['status'],
               email: v['email'],
@@ -453,7 +456,6 @@ class DbService with ChangeNotifier{
           final sessionId=dox['session_id'];
           final semesterId=dox['semester_id'];
           print(dox.data());
-          final doc=dbref.collection("ins_admins").doc(insAdminId);
           final v=await dbref
           .collection("ins_admins").doc(insAdminId)
           .collection("institutes").doc(instituteId)
@@ -473,7 +475,7 @@ class DbService with ChangeNotifier{
               name: v['name'],
               insAdminId: insAdminId,
               instituteId: instituteId,
-              departId: v['depart_id'],
+              departId: v['department_id'],
               sessionId: v['session_id'],
               semesterId: v['semester_id'],
               email: v['email'],
@@ -571,6 +573,29 @@ class DbService with ChangeNotifier{
                 id: depart.id,
                 name: depart['name'],
                 hod_name: depart['hod_name']));
+            final facultySnap=await dbref
+                .collection("ins_admins").doc(insAdminId)
+                .collection("institutes").doc(ins.id)
+                .collection("departments").doc(depart.id)
+                .collection("faculty").get();
+            for(var faculty in facultySnap.docs){
+              lecturers.add(Lecturer(
+                  id: faculty.id,
+                  instituteId: ins.id,
+                  insAdminId: insAdminId,
+                  departmentId: depart.id,
+                  role: faculty['role'],
+                  name: faculty['name'],
+                  email: faculty['email'],
+                  deprt: faculty['depart'],
+                  designation: faculty['designation'],
+                  status: faculty['status'],
+                  phone: faculty['phone'],
+                  created_at: faculty['created_at'].toDate(),
+                  semesters: faculty['semester'],
+                  courses: faculty['courses']
+              ));
+            }
             final sessionsSnap=await dbref
                 .collection("ins_admins").doc(insAdminId)
                 .collection("institutes").doc(ins.id)
@@ -641,27 +666,7 @@ class DbService with ChangeNotifier{
             }
           }
 
-          final facultySnap=await dbref
-              .collection("ins_admins").doc(insAdminId)
-              .collection("institutes").doc(ins.id)
-              .collection("faculty").get();
-          for(var faculty in facultySnap.docs){
-            lecturers.add(Lecturer(
-                id: faculty.id,
-                instituteId: ins.id,
-                insAdminId: insAdminId,
-                role: faculty['role'],
-                name: faculty['name'],
-                email: faculty['email'],
-                deprt: faculty['depart'],
-                designation: faculty['designation'],
-                status: faculty['status'],
-                phone: faculty['phone'],
-                created_at: faculty['created_at'].toDate(),
-                semesters: faculty['semester'],
-                courses: faculty['courses']
-            ));
-          }
+
           final adminSnap=await dbref
               .collection("ins_admins").doc(insAdminId)
               .collection("institutes").doc(ins.id)
@@ -751,74 +756,6 @@ class DbService with ChangeNotifier{
       print(e.toString());
     }
   }
-  getFacultyList(String insAdminId,String instituteId){
-    try{
-      dbref.collection("ins_admins")
-          .doc(insAdminId).collection("institutes").doc(instituteId)
-          .collection("faculty")
-          .snapshots().listen((qsnapShot){
-        lecturers.clear();
-        if(qsnapShot.docs.isEmpty){
-          return null;
-        }
-        for(var faculty in qsnapShot.docs){
-          lecturers.add(Lecturer(
-              id: faculty.id,
-              insAdminId: insAdminId,
-              instituteId: instituteId,
-              role: faculty['role'],
-              name: faculty['name'],
-              email: faculty['email'],
-              deprt: faculty['depart'],
-              designation: faculty['designation'],
-              status: faculty['status'],
-              phone: faculty['phone'],
-              created_at: faculty['created_at'].toDate(),
-              semesters: faculty['semester'],
-              courses: faculty['courses']
-          ));
-        }
-      });
-      return lecturers;
-      // ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("name :${ins_admins[0].name},email:${ins_admins[0].email},id:${ins_admins[0].institute_id},created_at:${ins_admins[0].created_at},last_login:${ins_admins[0].last_login} ")));
-
-    }catch(e){
-      print(e.toString());
-    }
-  }
-  getAdminsList(String insAdminId,String instituteId){
-    try{
-      dbref.collection("ins_admins")
-          .doc(insAdminId).collection("institutes").doc(instituteId)
-          .collection("admins")
-          .snapshots().listen((qSnapShot){
-        admins.clear();
-        if(qSnapShot.docs.isEmpty){
-          return null;
-        }
-        for(var admin in qSnapShot.docs){
-          admins.add(Admin(
-            id: admin.id,
-            insAdminId: insAdminId,
-            instituteId: instituteId,
-            name: admin['name'],
-            email: admin['email'],
-            institute: admin['institute'],
-            role: admin['role'],
-            permissions: admin['permissions'],
-            status: admin['status'],));
-        }
-      });
-      return admins;
-      // ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("name :${ins_admins[0].name},email:${ins_admins[0].email},id:${ins_admins[0].institute_id},created_at:${ins_admins[0].created_at},last_login:${ins_admins[0].last_login} ")));
-
-    }catch(e){
-      print(e.toString());
-    }
-  }
-
-
-
 
   addInsAdmin(BuildContext context,InsAdmin _insAdmin)async{
     try{
@@ -1071,19 +1008,20 @@ class DbService with ChangeNotifier{
 
     }
   }
-  addFaculty(BuildContext context,String insAdminId,String instituteId,Lecturer lecturer)async{
+  addFaculty(BuildContext context,String insAdminId,String instituteId,String departId,Lecturer lecturer)async{
     try{
       final facRef=await dbref.collection("ins_admins")
           .doc(insAdminId).collection("institutes").doc(instituteId).
-      // collection("departments").doc(departId).
-      // collection("sessions").doc(sessionId).
-      // collection("semesters").doc(semesterId).
+      collection("departments").doc(departId).
       collection("faculty").doc(lecturer.id).set({
         // Lecturer(name: name, deprt: deprt, designation: designation, status: status, email: email, phone: phone)
         "name":lecturer.name,
         "email":lecturer.email,
         "depart":lecturer.deprt,
         "role":lecturer.role,
+        "ins_admin_id":insAdminId,
+        "institute_id":instituteId,
+        "department_id":lecturer.departmentId,
         "designation":lecturer.designation,
         "status":lecturer.status,
         "created_at":Timestamp.fromDate(DateTime.now()),//datetime to timestamp",
@@ -1091,6 +1029,7 @@ class DbService with ChangeNotifier{
         "courses":lecturer.courses,
         "phone":lecturer.phone,
       });
+      // Lecturer(name: name, deprt: deprt, role: role, insAdminId: insAdminId, instituteId: instituteId, departmentId: departmentId, designation: designation, status: status, email: email, phone: phone)
       print("faculty added.............................${lecturer.id}");
       // ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("faculty Added Successfully")));
     }catch(e){print(e.toString());
@@ -1156,45 +1095,44 @@ class DbService with ChangeNotifier{
 
     }
   }
-  addStudentLeaveApplication(BuildContext context,String insAdminId,String instituteId,Student student,LeaveApplication leaveApplication)async{
+  addStudentLeaveApplication(BuildContext context,String insAdminId,String instituteId,LeaveApplication leaveApplication)async{
     try{
-      final stdappRef=await dbref.collection("ins_admins")
+      final docRef = dbref.collection("ins_admins")
           .doc(insAdminId).collection("institutes").doc(instituteId)
-        .collection("departments").doc(student.departId).
-    collection("sessions").doc(student.sessionId).
-    collection("semesters").doc(student.semesterId).
-      collection("students").doc(student.id).collection("leave_applications")
-      .add({
-        // LeaveApplication(appliedDate: appliedDate, type: type, fromDate: fromDate,
-        // tillDate: tillDate, reason: reason, status: status, std_name: std_name, std_id: std_id)
-        "start_date":Timestamp.fromDate(leaveApplication.fromDate),//datetime to timestamp",
-        "end_date":Timestamp.fromDate(leaveApplication.tillDate),//datetime to timestamp",
-        "applied_date":Timestamp.fromDate(leaveApplication.appliedDate),//datetime to timestamp","
-        "std_name":leaveApplication.std_name,
-        "std_id":leaveApplication.std_id,
+          .collection("leave_applications").doc(); // generatting iD 1st
+//used_batch cause of concurrnet write operations
+      final batch = FirebaseFirestore.instance.batch();
+
+      batch.set(docRef, {
+        "start_date":Timestamp.fromDate(leaveApplication.fromDate),
+        "end_date":Timestamp.fromDate(leaveApplication.tillDate),
+        "applied_date":Timestamp.fromDate(leaveApplication.appliedDate),
+        "student_name":leaveApplication.std_name,
+        "student_id":leaveApplication.std_id,
         "type":leaveApplication.type,
         "reason":leaveApplication.reason,
         "status":leaveApplication.status,
-        "approvedby":leaveApplication.approvedby
+        "approved_by":leaveApplication.approvedby
       });
-      leaveApplication.id=stdappRef.id;
-      await indexDoc.doc(leaveApplication.id).set({
+
+      batch.set(indexDoc.doc(docRef.id), {
         "ins_admin_id":insAdminId,
         "institute_id":instituteId,
-        "department_id":student.departId,
-        "session_id":student.sessionId,
-        "semester_id":student.semesterId,
-        "student_id":student.id,
+        "student_id":leaveApplication.std_id,
       });
+
+      await batch.commit(); // both writes succed, or neither does
+
+      leaveApplication.id=docRef.id;
       notifyListeners();
       if(context.mounted){
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("student leave applied Successfully")));
       }
     }catch(e){
+      print(e.toString());
       if(context.mounted){
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));}
-    }finally{
-
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      }
     }
   }
   //removing data from db
@@ -1330,15 +1268,17 @@ class DbService with ChangeNotifier{
   removeFaculty(BuildContext context,String lecturerId)async{
     try{
       final dox=await indexDoc.doc(lecturerId).get();
-      final adminRefdoc=await dbref.collection("ins_admins")
-          .doc(dox.get("ins_admin_id")).collection("institutes").doc(dox.get("institute_id")).
+      final facRefdoc=await dbref.collection("ins_admins")
+          .doc(dox.get("ins_admin_id")).collection("institutes").doc(dox.get("institute_id")).collection("departments")
+      .doc(dox.get("department_id")).
       collection("faculty").doc(lecturerId).get();
 
-      String email_d=await adminRefdoc["email"];
+      String email_d=await facRefdoc["email"];
       String password_d=await dox["password"];
       await deleteAuthUser(email_d, password_d);
       final facRef=await dbref.collection("ins_admins")
-          .doc(dox.get("ins_admin_id")).collection("institutes").doc(dox.get("institute_id")).
+          .doc(dox.get("ins_admin_id")).collection("institutes").doc(dox.get("institute_id")).collection("departments")
+          .doc(dox.get("department_id")).
       collection("faculty").doc(lecturerId).delete();
       await indexDoc.doc(lecturerId).delete();
       if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Admin deleted Successfully")));
@@ -1400,11 +1340,8 @@ class DbService with ChangeNotifier{
     try{
       final dox=await indexDoc.doc(leaveApplicationId).get();
       final stdAppLevRef=await dbref.collection("ins_admins")
-          .doc(dox.get("ins_admin_id")).collection("institutes").doc(dox.get("institute_id")).
-      // collection("departments").doc(departId).
-      // collection("sessions").doc(sessionId).
-      // collection("semesters").doc(semesterId).
-      collection("students").doc(dox.get("student_id")).collection("leave_applications")
+          .doc(dox.get("ins_admin_id")).collection("institutes").doc(dox.get("institute_id"))
+          .collection("leave_applications")
           .doc(leaveApplicationId).delete();
       await indexDoc.doc(leaveApplicationId).delete();
       if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("student leaveApplication deleted Successfully")));
@@ -1790,7 +1727,7 @@ class DbService with ChangeNotifier{
       final facRef=await dbref.collection("ins_admins")
           .doc(dox.get("ins_admin_id")).collection("institutes")
           .doc(dox.get("institute_id")).
-      // collection("departments").doc(departId).
+      collection("departments").doc(dox.get("department_id")).
       // collection("sessions").doc(sessionId).
       // collection("semesters").doc(semesterId).
       collection("faculty").doc(lecturer.id).update({
@@ -1968,19 +1905,20 @@ class DbService with ChangeNotifier{
       // collection("departments").doc(departId).
       // collection("sessions").doc(sessionId).
       // collection("semesters").doc(semesterId).
-      collection("students").doc(dox.get("student_id")).collection("leave_applications")
+      // collection("students").doc(dox.get("student_id")).
+      collection("leave_applications")
           .doc(leaveApplication.id).update({
         // LeaveApplication(appliedDate: appliedDate, type: type, fromDate: fromDate,
         // tillDate: tillDate, reason: reason, status: status, std_name: std_name, std_id: std_id)
         "start_date":Timestamp.fromDate(leaveApplication.fromDate),//datetime to timestamp",
         "end_date":Timestamp.fromDate(leaveApplication.tillDate),//datetime to timestamp",
         "applied_date":Timestamp.fromDate(leaveApplication.appliedDate),//datetime to timestamp","
-        "std_name":leaveApplication.std_name,
-        "std_id":leaveApplication.std_id,
+        "student_name":leaveApplication.std_name,
+        "student_id":leaveApplication.std_id,
         "type":leaveApplication.type,
         "reason":leaveApplication.reason,
         "status":leaveApplication.status,
-        "approvedby":leaveApplication.approvedby,
+        "approved_by":leaveApplication.approvedby,
       });
       if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("student leave updated Successfully")));
     }catch(e){
@@ -1997,7 +1935,8 @@ class DbService with ChangeNotifier{
       // collection("departments").doc(departId).
       // collection("sessions").doc(sessionId).
       // collection("semesters").doc(semesterId).
-      collection("students").doc(dox.get("student_id")).collection("leave_applications")
+      // collection("students").doc(dox.get("student_id")).
+      collection("leave_applications")
           .doc(leaveApplication.id).update({
         // LeaveApplication(appliedDate: appliedDate, type: type, fromDate: fromDate,
         // tillDate: tillDate, reason: reason, status: status, std_name: std_name, std_id: std_id)
@@ -2009,7 +1948,7 @@ class DbService with ChangeNotifier{
         // "type":leaveApplication.type,
         // "reason":leaveApplication.reason,
         "status":"approved",
-        "approvedby":adminName,
+        "approved_by":adminName,
       });
       if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("student leave approved Successfully")));
     }catch(e){
@@ -2026,7 +1965,8 @@ class DbService with ChangeNotifier{
       // collection("departments").doc(departId).
       // collection("sessions").doc(sessionId).
       // collection("semesters").doc(semesterId).
-      collection("students").doc(dox.get("student_id")).collection("leave_applications")
+      // collection("students").doc(dox.get("student_id")).
+      collection("leave_applications")
           .doc(leaveApplication.id).update({
         // LeaveApplication(appliedDate: appliedDate, type: type, fromDate: fromDate,
         // tillDate: tillDate, reason: reason, status: status, std_name: std_name, std_id: std_id)
@@ -2038,10 +1978,11 @@ class DbService with ChangeNotifier{
         // "type":leaveApplication.type,
         // "reason":leaveApplication.reason,
         "status":"rejected",
-        "approvedby":adminName,
+        "approved_by":adminName,
       });
       if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("student leave rejected")));
     }catch(e){
+      print(e.toString());
       if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
     }finally{
 

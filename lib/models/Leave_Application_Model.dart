@@ -9,6 +9,7 @@ class LeaveApplication{
   String? approvedby;
   LeaveApplication(
     {
+      this.id,
     required this.appliedDate,
     required this.type,
     required this.fromDate,

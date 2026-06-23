@@ -20,19 +20,7 @@ class FacDeshboard extends StatefulWidget {
 
 class _FacDeshboardState extends State<FacDeshboard> {
   int current=3;
-  Lecturer lecturer=
-  Lecturer(id: "6789",
-    instituteId: "123456",
-    insAdminId: '3476987',
-    role: "faculty",
-    name:"murad ali",
-    deprt: "Computer Science",
-    designation: "Assistant Professor",
-    status: "active",
-    email: "murad@gmail.com",
-    phone: "03351094534",
-    courses: ["CS703","CS704"],
-    semesters: [1,2],);
+
   List<String> menus=[
     "Home",
     "Mark",
@@ -41,11 +29,11 @@ class _FacDeshboardState extends State<FacDeshboard> {
     "Profile"
   ];
   late List<Widget> screens=[
-    FacHomeTab(lecturer: lecturer,),
+    FacHomeTab(lecturer: widget.lecturer,),
     FacMarkAttendanceTab(),
     FacLeaveTab(),
     FacReportsTab(),
-    FacProfileTab(lecturer: lecturer,)
+    FacProfileTab(lecturer: widget.lecturer,)
 
   ];
   @override

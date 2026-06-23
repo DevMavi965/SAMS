@@ -87,6 +87,7 @@ final auth=FirebaseAuth.instance;
         if(role=="faculty"){
         final instituteId=dox['institute_id'];
         final insAdminId=dox['ins_admin_id'];
+        final departmentId=dox['department_id'];
         final v =await dbRef.collection("ins_admins").doc(insAdminId)
             .collection("institutes").doc(instituteId)
             .collection("faculty").doc(auth.currentUser!.uid).get();
@@ -101,6 +102,7 @@ final auth=FirebaseAuth.instance;
           role: v['role'],
           instituteId: instituteId,
           insAdminId: insAdminId,
+          departmentId: departmentId,
           designation: v['designation'],
           status: v['status'],
           email: v['email'],
@@ -135,7 +137,7 @@ final auth=FirebaseAuth.instance;
           name: v['name'],
           insAdminId: insAdminId,
           instituteId: instituteId,
-          departId: v['depart_id'],
+          departId: v['department_id'],
           sessionId: v['session_id'],
           semesterId: v['semester_id'],
           email: v['email'],

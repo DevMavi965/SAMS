@@ -101,7 +101,7 @@ class _LeaveTabState extends State<LeaveTab> {
       await Provider.of<DbService>(context, listen: false).addStudentLeaveApplication(context,
           widget.student.insAdminId,
           widget.student.instituteId,
-          widget.student,
+
           newLeaveApplication);
       _resetForm();
       Navigator.pop(context);

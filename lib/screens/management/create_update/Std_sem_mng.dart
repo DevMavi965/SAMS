@@ -261,134 +261,134 @@ class _Std_Sem_manageState extends State<Std_Sem_manage> {
             }
             return SizedBox();
           }),
-      floatingActionButton: FloatingActionButton(onPressed: (){
-        showDialog(context: context, builder:(context)=>StatefulBuilder(builder:
-            (_,setState2)=>AlertDialog(
-          backgroundColor: Colors.white,
-          icon: Icon(PhosphorIconsDuotone.calendarHeart,color: Theme.of(context).primaryColor,size: 33,),
-          title: Text("Add Session"),
-          content: Container(
-            padding: EdgeInsets.symmetric(horizontal: 10,vertical: 10),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(height: 10,),
-                DropdownButton(
-                    value: selectedSemester,
-                    items: [
-                      for(int i=1;i<=8;i++)
-                        if(!semesters.any((element) => element.semester_no==i))
-                          DropdownMenuItem(
-                            value: i,
-                            child: Text("Semester $i"),
-                          )
-                    ], onChanged: (v){
-                  setState2((){
-                    selectedSemester=v;
-                  });
-                }),
-                SizedBox(height: 10,),
-                Text("Start date"),
-                SizedBox(height: 10,),
-                // stratrd date
-                InkWell(
-                    onTap: ()async{
-                      await getFirstDate();
-                      setState2((){});
-                    },
-                    child:
-                    Row(
-                      children: [
-                        Icon(Icons.calendar_month,color: Theme.of(context).primaryColor,),
-                        SizedBox(width: 10,),
-                        Text(startDate==null?"select Start Date":DateFormat("dd/MM/yyyy").format(startDate!).toString().replaceAll("/", "-")
-                        ),
-                      ],
-                    )
-                )
-                ,
-                SizedBox(height: 10,),
-                Text("End date"),
-                SizedBox(height: 10,),
-                // last date
-                InkWell(
-                    onTap: ()async{
-                      await getLastDate();
-                      setState2((){});
-                    },
-                    child: Row(
-                      children: [
-                        Icon(Icons.calendar_month,color: Theme.of(context).primaryColor,),
-                        SizedBox(width: 10,),
-                        Text(endDate==null?"select Start Date":DateFormat("dd/MM/yyyy").format(endDate!).replaceAll("/", "-")
-                        ),
-                      ],
-                    )),
-                SizedBox(height: 10,),
-              ],
-            ),
-          ),
-          actions: [
-            FilledButton(onPressed: (){
-              if(startDate!=null && endDate!=null){
-                // making session name like cs2022-26
-                if(startDate!.isBefore(endDate!)){
-                  //   session  must be at least 6 months long
-                  if(endDate!.difference(startDate!).inDays>=180){
-                    if(selectedSemester!=null){
-                      Provider.of<DbService>(context,listen: false).addSemester(context, widget.insAdmin.id!, widget.institute.id!, widget.department.id!, widget.session.id!,
-                          Semester(
-                              institute_id: widget.institute.id!,
-                              ins_admin_id: widget.insAdmin.id!,
-                              department_id: widget.department.id!,
-                              session_id: widget.session.id!,
-                              semester_no: selectedSemester!,
-                              start_date: startDate!,
-                              end_date: endDate!
-                          )
-                      );
-                      Navigator.pop(context);
-                      setState2((){
-                        startDate=null;
-                        endDate=null;
-                        selectedSemester=null;
-                      });
-                    }else{
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("please select semester"),));
-                    }
-                  }else if(startDate!.isBefore(widget.session.start_date) || startDate!.isAfter(widget.session.end_date)){
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("semester must be within session start and end date"),));
-                  }
-                  else if(endDate!.difference(startDate!).inDays<180){
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("semester must be at least 6 months long"),));
-                  }else if(endDate!.difference(startDate!).inDays>400){
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("semester must be at most 1 years long"),));
-                  }
-                  else{
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("semester must be at least 6 months long"),));
-                  }
-                }else{
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("start date must be before end date"),));
-                }
-              }else{
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("please select start and end date"),));
-              }
-
-
-            }, child: Text("Add"),),
-            FilledButton(onPressed: (){
-              Navigator.pop(context);
-            }, child: Text("Cancel"),),
-          ],
-        )
-        ));
-      },
-        backgroundColor: Theme.of(context).primaryColor,
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(100)
-        ),
-        child: Icon(Icons.add,color: Colors.white,),),
+      // floatingActionButton: FloatingActionButton(onPressed: (){
+      //   showDialog(context: context, builder:(context)=>StatefulBuilder(builder:
+      //       (_,setState2)=>AlertDialog(
+      //     backgroundColor: Colors.white,
+      //     icon: Icon(PhosphorIconsDuotone.calendarHeart,color: Theme.of(context).primaryColor,size: 33,),
+      //     title: Text("Add Session"),
+      //     content: Container(
+      //       padding: EdgeInsets.symmetric(horizontal: 10,vertical: 10),
+      //       child: Column(
+      //         mainAxisSize: MainAxisSize.min,
+      //         crossAxisAlignment: CrossAxisAlignment.start,
+      //         children: [
+      //           SizedBox(height: 10,),
+      //           DropdownButton(
+      //               value: selectedSemester,
+      //               items: [
+      //                 for(int i=1;i<=8;i++)
+      //                   if(!semesters.any((element) => element.semester_no==i))
+      //                     DropdownMenuItem(
+      //                       value: i,
+      //                       child: Text("Semester $i"),
+      //                     )
+      //               ], onChanged: (v){
+      //             setState2((){
+      //               selectedSemester=v;
+      //             });
+      //           }),
+      //           SizedBox(height: 10,),
+      //           Text("Start date"),
+      //           SizedBox(height: 10,),
+      //           // stratrd date
+      //           InkWell(
+      //               onTap: ()async{
+      //                 await getFirstDate();
+      //                 setState2((){});
+      //               },
+      //               child:
+      //               Row(
+      //                 children: [
+      //                   Icon(Icons.calendar_month,color: Theme.of(context).primaryColor,),
+      //                   SizedBox(width: 10,),
+      //                   Text(startDate==null?"select Start Date":DateFormat("dd/MM/yyyy").format(startDate!).toString().replaceAll("/", "-")
+      //                   ),
+      //                 ],
+      //               )
+      //           )
+      //           ,
+      //           SizedBox(height: 10,),
+      //           Text("End date"),
+      //           SizedBox(height: 10,),
+      //           // last date
+      //           InkWell(
+      //               onTap: ()async{
+      //                 await getLastDate();
+      //                 setState2((){});
+      //               },
+      //               child: Row(
+      //                 children: [
+      //                   Icon(Icons.calendar_month,color: Theme.of(context).primaryColor,),
+      //                   SizedBox(width: 10,),
+      //                   Text(endDate==null?"select Start Date":DateFormat("dd/MM/yyyy").format(endDate!).replaceAll("/", "-")
+      //                   ),
+      //                 ],
+      //               )),
+      //           SizedBox(height: 10,),
+      //         ],
+      //       ),
+      //     ),
+      //     actions: [
+      //       FilledButton(onPressed: (){
+      //         if(startDate!=null && endDate!=null){
+      //           // making session name like cs2022-26
+      //           if(startDate!.isBefore(endDate!)){
+      //             //   session  must be at least 6 months long
+      //             if(endDate!.difference(startDate!).inDays>=180){
+      //               if(selectedSemester!=null){
+      //                 Provider.of<DbService>(context,listen: false).addSemester(context, widget.insAdmin.id!, widget.institute.id!, widget.department.id!, widget.session.id!,
+      //                     Semester(
+      //                         institute_id: widget.institute.id!,
+      //                         ins_admin_id: widget.insAdmin.id!,
+      //                         department_id: widget.department.id!,
+      //                         session_id: widget.session.id!,
+      //                         semester_no: selectedSemester!,
+      //                         start_date: startDate!,
+      //                         end_date: endDate!
+      //                     )
+      //                 );
+      //                 Navigator.pop(context);
+      //                 setState2((){
+      //                   startDate=null;
+      //                   endDate=null;
+      //                   selectedSemester=null;
+      //                 });
+      //               }else{
+      //                 ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("please select semester"),));
+      //               }
+      //             }else if(startDate!.isBefore(widget.session.start_date) || startDate!.isAfter(widget.session.end_date)){
+      //               ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("semester must be within session start and end date"),));
+      //             }
+      //             else if(endDate!.difference(startDate!).inDays<180){
+      //               ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("semester must be at least 6 months long"),));
+      //             }else if(endDate!.difference(startDate!).inDays>400){
+      //               ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("semester must be at most 1 years long"),));
+      //             }
+      //             else{
+      //               ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("semester must be at least 6 months long"),));
+      //             }
+      //           }else{
+      //             ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("start date must be before end date"),));
+      //           }
+      //         }else{
+      //           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("please select start and end date"),));
+      //         }
+      //
+      //
+      //       }, child: Text("Add"),),
+      //       FilledButton(onPressed: (){
+      //         Navigator.pop(context);
+      //       }, child: Text("Cancel"),),
+      //     ],
+      //   )
+      //   ));
+      // },
+      //   backgroundColor: Theme.of(context).primaryColor,
+      //   shape: RoundedRectangleBorder(
+      //       borderRadius: BorderRadius.circular(100)
+      //   ),
+      //   child: Icon(Icons.add,color: Colors.white,),),
     );
 
   }

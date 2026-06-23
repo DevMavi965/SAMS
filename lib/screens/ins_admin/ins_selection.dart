@@ -61,7 +61,8 @@ class _InsSelectionState extends State<InsSelection> {
                     )
                   );
                 }
-                return !snapshot.hasData?Center(child: Text("no data,"),): ListView.builder(
+                return !snapshot.hasData?Center(child: Text("no data,"),):
+                ListView.builder(
                   itemCount: institutes_list.length,
                   itemBuilder: (BuildContext context, int index) {
                     return FutureBuilder<InstituteStats>(
@@ -112,21 +113,22 @@ class _InsSelectionState extends State<InsSelection> {
   }
 
   Future<InstituteStats> getStats(String instituteId) async {
+
     final studentsFuture = FirebaseFirestore.instance
         .collection("SAMS")
-        .doc("SAMS_DB").collection("ins_admins").doc(widget.insAdmin.id)
-        .collection("institutes")
-        .doc(instituteId)
-        .collection("students")
+        .doc("SAMS_DB")
+        .collection("index")
+        .where("institute_id", isEqualTo: instituteId)
+        .where("role", isEqualTo: "student")
         .count()
         .get();
 
+
     final facultyFuture = FirebaseFirestore.instance
-        .collection("SAMS")
-        .doc("SAMS_DB").collection("ins_admins").doc(widget.insAdmin.id)
-        .collection("institutes")
-        .doc(instituteId)
-        .collection("faculty")
+        .collection("SAMS") .doc("SAMS_DB")
+        .collection("index")
+        .where("institute_id", isEqualTo: instituteId)
+        .where("role", isEqualTo: "faculty")
         .count()
         .get();
 

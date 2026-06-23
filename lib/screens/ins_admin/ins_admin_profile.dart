@@ -34,7 +34,7 @@ class _insAdminProfileState extends State<insAdminProfile> {
         SizedBox(height: 25,),
         Text("System Settings",style: TextStyle(fontSize: 16,fontWeight: FontWeight.w500),),
         SizedBox(height: 10,),
-        Ins_info_card(insAdmin: widget.insAdmin,),
+        Ins_info_card(insAdmin: widget.insAdmin,institute: widget.institute,),
         SizedBox(height: 25,),
         Text("Preferences",style: TextStyle(fontSize: 16,fontWeight: FontWeight.w500),),
         SizedBox(height: 10,),

@@ -129,10 +129,11 @@ class _LoginScreenState extends State<LoginScreen> {
 
       }else
       if(role=="faculty"){
-        final instituteId=dox['institute_id'];
-        final insAdminId=dox['ins_admin_id'];
-        final v =await dbRef.collection("ins_admins").doc(insAdminId)
-            .collection("institutes").doc(instituteId)
+        final institute_Id=dox['institute_id'];
+        final insAdmin_Id=dox['ins_admin_id'];
+        final department_Id=dox['department_id'];
+        final v =await dbRef.collection("ins_admins").doc(insAdmin_Id)
+            .collection("institutes").doc(institute_Id)
             .collection("faculty").doc(userCredential.user!.uid).get();
         if(!v.exists){
           await Navigator.pushReplacementNamed(context, '/login');
@@ -143,8 +144,9 @@ class _LoginScreenState extends State<LoginScreen> {
           name: v['name'],
           deprt: v['depart'],
           role: v['role'],
-          instituteId: instituteId,
-          insAdminId: insAdminId,
+          instituteId: institute_Id,
+          insAdminId: insAdmin_Id,
+          departmentId: department_Id,
           designation: v['designation'],
           status: v['status'],
           email: v['email'],

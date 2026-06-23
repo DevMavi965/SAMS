@@ -33,17 +33,17 @@ class _UserMngState extends State<UserMng> {
       email: "murad@gmail.com",
       phone: "03351094534",
       courses: ["CS703","CS704"],
-      semesters: [1,2],),
+      semesters: [1,2], departmentId: '34567890',),
     Lecturer(id: "6789", role: "faculty",
         insAdminId: '4567890',
         instituteId: '4567890',name:"murad ali", deprt: "Computer Science",
         designation: "Assistant Professor", status: "active", email: "murad@gmail.com",
-        phone: "03351094534", courses:["CS703","CS704"]),
+        phone: "03351094534", courses:["CS703","CS704"], departmentId: '3456789'),
     Lecturer(id: "9876",role: "faculty",
         insAdminId: '4567890',
         instituteId: '4567890', name:"murad ali", deprt: "Physics",
         designation: "Assistant Professor", status: "active",
-        email: "murad@gmail.com", phone: "03351094534", courses: ["CS703","CS704"]),
+        email: "murad@gmail.com", phone: "03351094534", courses: ["CS703","CS704"], departmentId: '345678'),
   ];
   int selected_opt=0;
   @override

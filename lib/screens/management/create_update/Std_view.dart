@@ -1,4 +1,6 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:smas3/maxins/rm_functions.dart';
 import 'package:smas3/models/student_model.dart';
@@ -9,6 +11,7 @@ import '../../../models/institute.dart';
 import '../../../models/semester.dart';
 import '../../../models/session.dart';
 import '../../../services/db_service.dart';
+import 'add_student.dart';
 
 class StdView extends StatefulWidget {
   final InsAdmin insAdmin;
@@ -23,6 +26,8 @@ class StdView extends StatefulWidget {
 }
 
 class _StdViewState extends State<StdView> {
+  TextEditingController name=TextEditingController();
+  final fkey=GlobalKey<FormState>();
   List<Student> students=[];
   @override
   Widget build(BuildContext context) {
@@ -66,67 +71,179 @@ class _StdViewState extends State<StdView> {
               );
             }
             return students.isEmpty?Center(child: Text("no students found,Add first"),):
-            ListView.builder(itemBuilder: (_,i){
-              return Container(
-                margin: EdgeInsets.symmetric(
-                    horizontal: 5,vertical: 5
-                ),
-                padding: EdgeInsets.symmetric(horizontal: 15,vertical: 10),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(7),
+            ListView.builder(
+                itemCount: students.length,
+                itemBuilder: (_,i){
+              return Card(
+                color: Colors.white,
+                child: Container(
+                  width: MediaQuery.of(context).size.width,
+                  margin: EdgeInsets.symmetric(
+                      horizontal: 5,vertical: 5
+                  ),
+                  padding: EdgeInsets.symmetric(horizontal: 10,vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(7),
 
 
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    CircleAvatar(
-                      backgroundColor: Theme.of(context).primaryColor.withAlpha(70),
-                      radius:28,
-                      child: Text(RMFuncts.getFirstLetters(students[i].name),style: TextStyle(
-                        color: Theme.of(context).primaryColor,
-                      ),),
-                    ),
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(students[i].name,style: TextStyle(fontWeight: FontWeight.w600),),
-                        SizedBox(height: 3,),
-                        Text(students[i].email,style: TextStyle(color: Colors.grey),),
-                        SizedBox(height: 10,),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Flexible(
+                        flex: 2,
+                        child: CircleAvatar(
+                          backgroundColor: Theme.of(context).primaryColor,
+                          radius:28,
+                          child: Text(RMFuncts.getFirstLetters(students[i].name),style: TextStyle(
+                            color: Colors.white,
+                          ),),
+                        ),
+                      ),
+                      SizedBox(width: 10,),
+                      Flexible(
+                        flex: 7,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Badge(label: Padding(
-                              padding: const EdgeInsets.all(3.0),
-                              child: Text(students[i].departId,style: TextStyle(
-                                  fontWeight: FontWeight.w800,
-                                  color: Colors.black
-                              ),),
-                            ),backgroundColor: Colors.grey.withAlpha(70),),
-                            SizedBox(width: 10,),
-                            Badge(label: Padding(
-                              padding: const EdgeInsets.all(3.0),
-                              child: Text("semester ${students[i].semesterId}",style: TextStyle(color: Colors.black),),
-                            ),backgroundColor: Color(0xfff1f5f9),),
+                            Text(students[i].name,style: TextStyle(fontWeight: FontWeight.w600),),
+                            SizedBox(height: 3,),
+                            Text(students[i].email,style: TextStyle(color: Colors.grey),),
+                            SizedBox(height: 10,),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: Badge(label: Padding(
+                                    padding: const EdgeInsets.all(3.0),
+                                    child: Text(widget.department.name,style: TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.black,
+                                      fontSize: 10
+                                    ),),
+                                  ),backgroundColor: Color(0xfff1f5f9),),
+                                ),
+                                SizedBox(width: 10,),
+                                Expanded(
+                                  child: Badge(label: Padding(
+                                    padding: const EdgeInsets.all(3.0),
+                                    child: Text(widget.session.name,style: TextStyle(color: Colors.black),),
+                                  ),backgroundColor:Color(0xfff1f5f9),),
+                                ),
+                                SizedBox(width: 10,),
+                                Expanded(
+                                  child: Badge(label: Padding(
+                                    padding: const EdgeInsets.all(3.0),
+                                    child: Text("semester ${widget.semester.semester_no}",style: TextStyle(color: Colors.black),),
+                                  ),backgroundColor: Color(0xfff1f5f9),),
+                                ),
 
+                              ],
+                            )
+                          ],),
+                      ),
+                      Expanded(
+                        flex: 1,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            IconButton(onPressed: (){//delete button
+
+                              showDialog(context: context, builder: (_)=>AlertDialog(
+                                backgroundColor: Colors.white,
+                                icon: Icon(Icons.delete,color: Theme.of(context).primaryColor,size: 33,),
+                                title: Text("Delete Student"),
+                                content: Text("Are you sure you want to delete this student?"),
+                                actions: [
+                                  FilledButton(onPressed: (){
+                                    Navigator.pop(context);
+                                  },style: ButtonStyle(backgroundColor: MaterialStateProperty.all(Theme.of(context).primaryColor),
+                                  ),child: Text("Cancel",style: TextStyle(color: Colors.white),),),
+                                  FilledButton(onPressed: () async {
+
+                                    await Provider.of<DbService>(context,listen: false).removeStudent(context, students[i].id!);
+                                   Navigator.pop(context);
+                                  },style: ButtonStyle(backgroundColor:MaterialStateProperty.all(Colors.red), ),
+                                    child: Text("Yes",style: TextStyle(color: Colors.white),),)
+                                ],
+                              ));
+                            },icon: Icon(Icons.delete,color: Colors.red,),),
+                            SizedBox(height: 10,),
+                            IconButton(onPressed: (){
+                              name.text=students[i].name;
+                              showModalBottomSheet(
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10)
+                                  ),
+                                  showDragHandle: true,
+                                  context: context, builder: (context)=>StatefulBuilder(builder: (context,set)=>Container(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 15,vertical: 10,
+                              ),child: Form(
+                                  key: fkey,
+                                  child: Column(children: [
+                                    Text("Update Student",style: TextStyle(fontSize: 20,fontWeight: FontWeight.w600),),
+                                    SizedBox(height: 15,),
+                                    TextFormField(
+                                  controller: name,
+                                  decoration: InputDecoration(
+                                    labelText: "name",
+                                    prefixIcon: Icon(Icons.person),
+
+                                    border: OutlineInputBorder(),
+                                    focusedBorder: OutlineInputBorder(
+                                        borderSide: BorderSide(
+                                            color: Theme.of(context).primaryColor,
+                                            width: 1
+                                        )
+                                    ),
+                                  ),
+                                  validator: (v){
+                                    if(v!.isEmpty){
+                                      return "Please enter name";
+                                    }else if(v.length<4){
+                                      return "name must be at least 4 characters";
+                                    }
+                                    return null;
+                                  },
+                                ),
+                                    SizedBox(height: 20,),
+                                    ElevatedButton.icon(onPressed: (){
+                                      if(fkey.currentState!.validate()){
+                                        Student std=Student(
+                                          id: students[i].id,
+                                          role: students[i].role,
+                                          name: name.text.trim(),
+                                          insAdminId: students[i].insAdminId,
+                                          instituteId: students[i].instituteId,
+                                          departId: students[i].departId,
+                                          sessionId: students[i].sessionId,
+                                          semesterId: students[i].semesterId,
+                                          email: students[i].email,
+                                          created_at: students[i].created_at,);
+                                        Provider.of<DbService>(context,listen: false).updateStudent(context, std);
+                                        Navigator.pop(context);
+
+                                      }else{
+                                        Navigator.pop(context);
+                                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("enter valid values")));
+                                      }
+
+
+
+
+                                    }, label: Text("Update",style: TextStyle(color: Theme.of(context).primaryColor),),),
+                              ],)),
+                              )
+                              ));
+                            }, icon: FaIcon(FontAwesomeIcons.userPen,color: Theme.of(context).primaryColor,size: 20,)),
                           ],
-                        )
-                      ],),
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        Badge(label: Padding(
-                          padding: const EdgeInsets.all(3.0),
-                          child: Text(students[i].id!,style: TextStyle(color: Colors.black),),
-                        ),backgroundColor:Color(0xfff1f5f9),),
-                        SizedBox(height: 10,),
-                        Icon(Icons.more_vert,color: Colors.grey,),
-                      ],
-                    )
-                  ],),
+                        ),
+                      )
+                    ],),
+                ),
               );
             });
           }
@@ -137,9 +254,8 @@ class _StdViewState extends State<StdView> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(200)
         ),
-
         onPressed: (){
-
+          Navigator.push(context, MaterialPageRoute(builder: (_)=>AddStudent(insAdmin: widget.insAdmin, institute: widget.institute, department: widget.department, session: widget.session, semester: widget.semester,)));
         },child: Icon(Icons.person_add_alt_1_rounded,color: Colors.white,),),
     );
   }
