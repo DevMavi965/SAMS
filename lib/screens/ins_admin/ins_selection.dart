@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:lottie/lottie.dart';
 import 'package:provider/provider.dart';
@@ -212,8 +213,9 @@ class _InstituteCardState extends State<InstituteCard> {
                 children: [
                   CircleAvatar(
                     radius: 32,
-                    backgroundColor: Theme.of(context).primaryColor.withOpacity(0.25),
-                    child: Icon(Icons.school,color: Theme.of(context).primaryColor,size: 32),
+                    backgroundColor: Theme.of(context).primaryColor.withOpacity(1),
+                    // fontawseome icon
+                    child: FaIcon(FontAwesomeIcons.buildingColumns,size: 28,color: Colors.white,)
                   ),
 
                   const SizedBox(width: 14),

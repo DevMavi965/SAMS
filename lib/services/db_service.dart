@@ -925,15 +925,21 @@ class DbService with ChangeNotifier{
       .collection("departments").doc(departId)
       .collection("sessions").doc(sessionId)
       .collection("semesters").doc(semesterId)
-      .collection("lectures")
+      .collection("courses")
       .add({
         // Subject(name: name, course_code: course_code, lecturer: lecturer, credit_hours: credit_hours, no_of_lectures: no_of_lectures, type: type)
        "name":course.name,
         "course_code":course.course_code,
-        "lecturer":course.lecturer,
+        "lecturer_id":course.lecturer_id,
+        "lecturer_name":course.lecturer_name,
         "credit_hours":course.credit_hours,
         "no_of_lectures":course.no_of_lectures,
         "type":course.type,
+        "ins_admin_id":insAdminId,
+        "institute_id":instituteId,
+        "department_id":departId,
+        "session_id":sessionId,
+        "semester_id":semesterId,
         "created_at":Timestamp.fromDate(course.created_at!),//datetime to timestamp",
       });
       course.id=courseRef.id;
@@ -943,6 +949,8 @@ class DbService with ChangeNotifier{
         "department_id":departId,
         "session_id":sessionId,
         "semester_id":semesterId,
+        "lecturer_id":course.lecturer_id,
+        "lecturer_name":course.lecturer_name,
       });
       if(context.mounted){
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Course Added Successfully")));}
@@ -977,7 +985,7 @@ class DbService with ChangeNotifier{
           .collection("departments").doc(departId)
           .collection("sessions").doc(sessionId)
           .collection("semesters").doc(semesterId)
-          .collection("lectures")
+          .collection("courses")
           .doc(courseId).collection("lectures")
           .add({
             "dated":Timestamp.fromDate(lectureModel.dated),//datetime to timestamp",
@@ -1234,7 +1242,7 @@ class DbService with ChangeNotifier{
           .collection("departments").doc(dox.get("department_id"))
           .collection("sessions").doc(dox.get("session_id"))
           .collection("semesters").doc(dox.get("semester_id"))
-          .collection("lectures")
+          .collection("courses")
           .doc(courseId).delete();
       await indexDoc.doc(courseId).delete();
       if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Course deleted Successfully")));
@@ -1483,11 +1491,16 @@ class DbService with ChangeNotifier{
           .collection("departments").doc(dox.get("department_id"))
           .collection("sessions").doc(dox.get("session_id"))
           .collection("semesters").doc(dox.get("semester_id"))
-          .collection("lectures")
+          .collection("courses")
           .doc(course.id).update({
         "name":course.name,
+        "ins_admin_id":course.insAdminId,
+        "institute_id":course.institute_id,
+        "department_id":course.department_id,
+        "session_id":course.session_id,
         "course_code":course.course_code,
-        "lecturer":course.lecturer,
+        "lecturer_id":course.lecturer_id,
+        "lecturer_name":course.lecturer_name,
         "credit_hours":course.credit_hours,
         "no_of_lectures":course.no_of_lectures,
         "type":course.type,

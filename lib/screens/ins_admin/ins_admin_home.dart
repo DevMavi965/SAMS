@@ -266,7 +266,7 @@ class _InsAdminHomeState extends State<InsAdminHome> {
             //courses
             InkWell(
               onTap: (){
-                Navigator.push(context, MaterialPageRoute(builder: (_)=>CourseManage()));
+                Navigator.push(context, MaterialPageRoute(builder: (_)=>CourseManage(insAdmin: widget.insAdmin,institute: widget.institute,)));
               },
               child: SizedBox(
 

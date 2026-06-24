@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
@@ -52,7 +53,6 @@ class _FacManageState extends State<FacManage> {
              }
              lecturers.clear();
             for(var doc in snapshot.data!.docs){
-              lecturers.clear();
               lecturers.add(
                 Lecturer(
                   id: doc.id,
@@ -175,7 +175,17 @@ class _FacManageState extends State<FacManage> {
                           label:
                           Padding(
                             padding: const EdgeInsets.all(8.0),
-                            child: Text("${lecturers[index].courses!.length} courses",style: TextStyle(color:Theme.of(context).primaryColor,fontWeight: FontWeight.w500),),
+                           child: FutureBuilder(future: getCourseCountByLecturer(lecturers[index].id!), builder: (context,snapshot){
+                              if(snapshot.connectionState==ConnectionState.waiting){
+                                return Text("Loading...");
+                              }else if(snapshot.hasError){
+                                return Text("Error: ${snapshot.error}");
+                              }else if(!snapshot.hasData){
+                                return Text("No data found");
+                              }else{
+                                return Text("${snapshot.data} Courses",style: TextStyle(color:Theme.of(context).primaryColor,fontWeight: FontWeight.w500),);
+                              }
+                           }),
                           ),
                         ),
                           SizedBox(width: 9,),
@@ -319,5 +329,21 @@ class _FacManageState extends State<FacManage> {
       Icon(Icons.add,color: Colors.white,fontWeight: FontWeight.bold,),
       ),
     );
+  }
+  Future<int> getCourseCountByLecturer(String lecturerId) async {
+    try {
+      final result = await FirebaseFirestore.instance
+          .collectionGroup('courses')
+          .where("ins_admin_id", isEqualTo: widget.insAdmin.id)
+          .where('institute_id', isEqualTo: widget.institute.id)
+          .where('department_id', isEqualTo: widget.department.id)
+          .where('lecturer_id', isEqualTo: lecturerId)
+          .count()
+          .get();
+      return result.count ?? 0;
+    } catch (e) {
+      print(e.toString());
+      return 0;
+    }
   }
 }

@@ -28,7 +28,7 @@ class _Leave_manage_rState extends State<Leave_manage_r> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Leave Management"),
+        title: Text("Leave Management",style: TextStyle(color: Colors.white),),
         centerTitle: true,
         backgroundColor: Theme.of(context).primaryColor,
       ),
@@ -84,7 +84,7 @@ class _Leave_manage_rState extends State<Leave_manage_r> {
           Container(
             margin: EdgeInsets.symmetric(horizontal: 10),
             decoration: BoxDecoration(
-              color: Theme.of(context).primaryColor.withOpacity(0.7),
+              color: Theme.of(context).primaryColor.withOpacity(0.1),
               border: Border.all(
                 width: 0.5,
                 color: Theme.of(context).primaryColor.withOpacity(0.1),
@@ -226,7 +226,7 @@ class _Leave_manage_rState extends State<Leave_manage_r> {
           color: leaveApplication.status == "rejected"
               ? Color.fromARGB(40, 255, 0, 0)
               : (leaveApplication.status == "approved"
-                    ? Color.fromARGB(40, 0, 153, 136)
+                    ? Theme.of(context).primaryColor.withOpacity(0.1)
                     : Colors.brown.shade50),
           borderRadius: BorderRadius.circular(10),
           border: Border(
@@ -234,7 +234,7 @@ class _Leave_manage_rState extends State<Leave_manage_r> {
               color: leaveApplication.status == "rejected"
                   ? Colors.red
                   : (leaveApplication.status == "approved"
-                        ? Color.fromARGB(255, 0, 153, 136)
+                        ? Theme.of(context).primaryColor
                         : Colors.brown),
               width: 3,
             ),
@@ -317,7 +317,7 @@ class _Leave_manage_rState extends State<Leave_manage_r> {
                     color: leaveApplication.status == "rejected"
                         ? Colors.red
                         : (leaveApplication.status == "approved"
-                              ? Color.fromARGB(255, 0, 153, 136)
+                              ? Theme.of(context).primaryColor
                               : Colors.brown),
                     size: 25,
                   ),
@@ -347,7 +347,7 @@ class _Leave_manage_rState extends State<Leave_manage_r> {
                         color: leaveApplication.status == "rejected"
                             ? Colors.red
                             : (leaveApplication.status == "approved"
-                                  ? Color.fromARGB(255, 0, 153, 136)
+                                  ? Theme.of(context).primaryColor
                                   : Colors.brown),
                       ),
                     ),
@@ -429,7 +429,7 @@ class _Leave_manage_rState extends State<Leave_manage_r> {
                           backgroundColor: leaveApplication.status == "rejected"
                               ? Colors.red
                               : (leaveApplication.status == "approved"
-                                    ? Color.fromARGB(255, 0, 153, 136)
+                                    ? Theme.of(context).primaryColor
                                     : Colors.brown),
                         ),
                       ],
