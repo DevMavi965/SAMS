@@ -1,11 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:smas3/models/announcement_model.dart';
 import 'package:smas3/widgets/admin_widgets/admin_ann_card.dart';
 import 'package:smas3/widgets/admin_widgets/admin_ann_grid.dart';
-
-import '../../models/admin_announcement.dart';
-
 class AdminAnnouncements extends StatefulWidget {
   const AdminAnnouncements({super.key});
 
@@ -14,13 +12,32 @@ class AdminAnnouncements extends StatefulWidget {
 }
 
 class _AdminAnnouncementsState extends State<AdminAnnouncements> {
-  List<AdminAnnouncement> announcements=[
-    AdminAnnouncement(id: "124575", title: "system upgrade", content: "system going to update in upcoming days ", type: "urgent", target: "all users", created_at: DateTime.now()),
-    AdminAnnouncement(id: "564441", title: "new registrations", content: "open for addminssionns now ", type: "general", target: "all students", created_at: DateTime.now()),
-    AdminAnnouncement(id: "124676", title: "Annual Tech Fest 2025", content: "system going to update in upcoming days ", type: "event", target: "all users", created_at: DateTime.now()),
-
-
-  ];
+ List<Announcement> announcements=[
+   Announcement(
+       id: "124575",
+       an_title: "system upgrade",
+       an_message: "system going to update in upcoming days ",
+       an_type: "urgent",
+       target_aud: "all users",
+      created_at: DateTime.now()
+   ),
+   Announcement(
+       id: "124575",
+       an_title: "system upgrade",
+       an_message: "system going to update in upcoming days ",
+       an_type: "urgent",
+       target_aud: "all users",
+       created_at: DateTime.now()
+   ),
+   Announcement(
+       id: "124575",
+       an_title: "system upgrade",
+       an_message: "system going to update in upcoming days ",
+       an_type: "urgent",
+       target_aud: "all users",
+       created_at: DateTime.now()
+   )
+ ];
   @override
   Widget build(BuildContext context) {
     return SafeArea(child: ListView(

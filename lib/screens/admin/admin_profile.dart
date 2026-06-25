@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:smas3/models/admin_model.dart';
 import 'package:smas3/services/db_service.dart';
@@ -25,9 +26,61 @@ class _AdminProfileState extends State<AdminProfile> {
         SizedBox(height: 10,),
         Admin_profile_Card(admin: widget._admin),
         SizedBox(height: 25,),
-        Text("System Settings",style: TextStyle(fontSize: 16,fontWeight: FontWeight.w500),),
+        Text("My Duties",style: TextStyle(fontSize: 16,fontWeight: FontWeight.w500),),
         SizedBox(height: 10,),
-        admin_info_card(admin: widget._admin),
+        // admin_info_card(admin: widget._admin),
+        Container(
+          clipBehavior: Clip.hardEdge,
+          // height: 265,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(10),
+            // border: Border.all(
+            //   color: Colors.grey,
+            //   width: 0.2,
+            // ),
+          ),
+          child: Table(
+            border:
+          TableBorder.all(
+            color: Colors.grey,
+            width: 0.2,
+          ),
+            children: [
+              for(int i=0;i<widget._admin.permissions!.length;i++)
+                TableRow(
+                    children: [
+                       Padding(
+                          padding: const EdgeInsets.all(12.0),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 45,
+                                height: 45,
+                                decoration: BoxDecoration(
+                                  color: Colors.green.shade50,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(PhosphorIconsBold.scroll,size: 25,color: Theme.of(context).primaryColor,),
+                              ),
+                              SizedBox(width: 10,),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(widget._admin.permissions![i].split("_").join(" "),),
+                                  Text("Manage ${widget._admin.permissions![i].split("_").join(" ")} operations",style: TextStyle(color: Colors.grey),),
+                                ],
+                              ),
+
+                            ],
+                          ),
+                        ),
+
+                    ]
+                ),
+            ],
+          ),
+        ),
         SizedBox(height: 25,),
         Text("Preferences",style: TextStyle(fontSize: 16,fontWeight: FontWeight.w500),),
         SizedBox(height: 10,),

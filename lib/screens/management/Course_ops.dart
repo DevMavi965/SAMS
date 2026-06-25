@@ -267,7 +267,6 @@ class _CourseOpsState extends State<CourseOps> {
                                   listen: false,
                                 ).removeCourse(context, course.id!);
                                 Navigator.pop(context);
-                                Navigator.pop(context);
                               },
                               child: Text("Yes",style: TextStyle(color: Colors.white)),
                             ),

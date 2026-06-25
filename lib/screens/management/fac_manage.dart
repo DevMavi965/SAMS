@@ -119,29 +119,34 @@ class _FacManageState extends State<FacManage> {
                           Expanded(
                               flex: 1,
                               child: Column(children: [
-                            IconButton(onPressed: (){
-                              showDialog(context: context, builder: (_)=>AlertDialog(
-                                title: Text("Delete Faculty"),
-                                content: Text("Are you sure you want to delete this faculty?"),
-                                icon: Icon(Icons.delete,color: Colors.red,size: 35,),
-                                actions: [
-                                  FilledButton(
-                                      style: ButtonStyle(
-                                        backgroundColor: MaterialStateProperty.all(Theme.of(context).primaryColor),
-                                      ),
-                                      onPressed: (){
-                                    Navigator.pop(context);
-                                  }, child: Text("Cancel",style: TextStyle(color: Colors.white),)),
-                                  FilledButton(
-                                      style: ButtonStyle(
-                                        backgroundColor: MaterialStateProperty.all(Colors.red),
-                                      ),
-                                      onPressed: (){
-                                    Provider.of<DbService>(context,listen: false).removeFaculty(context, lecturers[index].id!);
-                                    Navigator.pop(context);
-                                  }, child: Text("Yes",style: TextStyle(color: Colors.white),)),
-                                ],
-                              ));
+                            IconButton(onPressed: ()async{
+                              final course_count=await getCourseCountByLecturer(lecturers[index].id!);
+                              if(course_count==0){
+                                showDialog(context: context, builder: (_)=>AlertDialog(
+                                  title: Text("Delete Faculty"),
+                                  content: Text("Are you sure you want to delete this faculty?"),
+                                  icon: Icon(Icons.delete,color: Colors.red,size: 35,),
+                                  actions: [
+                                    FilledButton(
+                                        style: ButtonStyle(
+                                          backgroundColor: MaterialStateProperty.all(Theme.of(context).primaryColor),
+                                        ),
+                                        onPressed: (){
+                                          Navigator.pop(context);
+                                        }, child: Text("Cancel",style: TextStyle(color: Colors.white),)),
+                                    FilledButton(
+                                        style: ButtonStyle(
+                                          backgroundColor: MaterialStateProperty.all(Colors.red),
+                                        ),
+                                        onPressed: (){
+                                          Provider.of<DbService>(context,listen: false).removeFaculty(context, lecturers[index].id!);
+                                          Navigator.pop(context);
+                                        }, child: Text("Yes",style: TextStyle(color: Colors.white),)),
+                                  ],
+                                ));
+                              }else{
+                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Faculty has courses,cannot be deleted"),backgroundColor: Colors.red,));
+                              }
                             }, icon: Icon(Icons.delete,color: Colors.red,))
                           ],))
                         ],
@@ -332,14 +337,8 @@ class _FacManageState extends State<FacManage> {
   }
   Future<int> getCourseCountByLecturer(String lecturerId) async {
     try {
-      final result = await FirebaseFirestore.instance
-          .collectionGroup('courses')
-          .where("ins_admin_id", isEqualTo: widget.insAdmin.id)
-          .where('institute_id', isEqualTo: widget.institute.id)
-          .where('department_id', isEqualTo: widget.department.id)
-          .where('lecturer_id', isEqualTo: lecturerId)
-          .count()
-          .get();
+      // getting all the courses of the lecturer,having type 'course' and lectureId=lecturerId
+      final result = await Provider.of<DbService>(context, listen: false).indexDoc.where('type', isEqualTo: 'course').where('lecturer_id', isEqualTo: lecturerId).count().get();
       return result.count ?? 0;
     } catch (e) {
       print(e.toString());

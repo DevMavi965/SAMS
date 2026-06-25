@@ -95,8 +95,11 @@ class _SemesterOpsState extends State<SemesterOps> {
                  ),
                  Expanded(child: Column(
                    children: [
-                     IconButton(onPressed: (){//delete button
-
+                     IconButton(onPressed: () async {//delete button
+                        int studentCount=await getStudentsCount(context, semesters[count].id!);
+                        if(studentCount>0){
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Cannot delete semester with students"),backgroundColor: Colors.red,));
+                        }else{
                        showDialog(context: context, builder: (_)=>AlertDialog(
                          backgroundColor: Colors.white,
                          icon: Icon(Icons.delete,color: Theme.of(context).primaryColor,size: 33,),
@@ -114,7 +117,7 @@ class _SemesterOpsState extends State<SemesterOps> {
                            },style: ButtonStyle(backgroundColor:MaterialStateProperty.all(Colors.red), ),
                              child: Text("Yes",style: TextStyle(color: Colors.white),),)
                          ],
-                       ));
+                       ));}
                      },icon: Icon(Icons.delete,color: Colors.red,),),
                      SizedBox(height: 5,),
                      //update semester
@@ -266,7 +269,7 @@ class _SemesterOpsState extends State<SemesterOps> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SizedBox(height: 10,),
+                SizedBox(height: 10,),//delete
                 DropdownButton(
                     value: selectedSemester,
                     items: [
@@ -426,5 +429,23 @@ class _SemesterOpsState extends State<SemesterOps> {
         firstDate: firstDate,
         initialDate: DateTime.now().add(Duration(days: 185)),
         lastDate: lastDate);
+  }
+  Future<int> getStudentsCount(BuildContext context,String semesterID) async {
+    try{
+      final counter = await Provider.of<DbService>(context,listen: false)
+          .dbref.collection("ins_admins").doc(widget.insAdmin.id)
+          .collection("institutes").doc(widget.institute.id)
+          .collection("departments").doc(widget.department.id)
+          .collection("sessions").doc(widget.session.id)
+          .collection("semesters").doc(semesterID)
+          .collection("students")
+          .count().get();
+
+
+      return counter.count??0;
+    }catch(e){
+      print(e.toString());
+      return 0;
+    }
   }
 }

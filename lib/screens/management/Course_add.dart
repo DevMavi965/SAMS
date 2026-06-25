@@ -173,7 +173,6 @@ class _CourseAddState extends State<CourseAdd> {
                    }
                    lecturers.clear();
                    for(var doc in snapshot.data!.docs){
-                     lecturers.clear();
                      lecturers.add(
                          Lecturer(
                            id: doc.id,

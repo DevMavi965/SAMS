@@ -98,26 +98,30 @@ class _AddUpdateSessionState extends State<AddUpdateSession> {
                           ),
                         ),
                         Expanded(child: Column(children: [
-                          IconButton(onPressed: (){//delete button
+                          IconButton(onPressed: () async {//delete button
+                             int semesterCount=await getSemesterCount(context, sessions[count].id!);
+                             if(semesterCount>0){
+                               ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Cannot delete session with semesters"),backgroundColor: Colors.red,));
+                             }else{
+                               showDialog(context: context, builder: (_)=>AlertDialog(
+                                 backgroundColor: Colors.white,
+                                 icon: Icon(Icons.delete,color: Theme.of(context).primaryColor,size: 33,),
+                                 title: Text("Delete Session"),
+                                 content: Text("Are you sure you want to delete this session?"),
+                                 actions: [
+                                   FilledButton(onPressed: (){
+                                     Navigator.pop(context);
+                                   },style: ButtonStyle(backgroundColor: MaterialStateProperty.all(Theme.of(context).primaryColor),
+                                   ),child: Text("Cancel",style: TextStyle(color: Colors.white),),),
+                                   FilledButton(onPressed: (){
+                                     Navigator.pop(context);
+                                     Provider.of<DbService>(context,listen: false).removeSession(context, sessions[count].id!);
 
-                            showDialog(context: context, builder: (_)=>AlertDialog(
-                              backgroundColor: Colors.white,
-                              icon: Icon(Icons.delete,color: Theme.of(context).primaryColor,size: 33,),
-                              title: Text("Delete Session"),
-                              content: Text("Are you sure you want to delete this session?"),
-                              actions: [
-                                FilledButton(onPressed: (){
-                                  Navigator.pop(context);
-                                },style: ButtonStyle(backgroundColor: MaterialStateProperty.all(Theme.of(context).primaryColor),
-                                ),child: Text("Cancel",style: TextStyle(color: Colors.white),),),
-                                FilledButton(onPressed: (){
-                                  Navigator.pop(context);
-                                  Provider.of<DbService>(context,listen: false).removeSession(context, sessions[count].id!);
-
-                                },style: ButtonStyle(backgroundColor:MaterialStateProperty.all(Colors.red), ),
-                                  child: Text("Yes",style: TextStyle(color: Colors.white),),)
-                              ],
-                            ));
+                                   },style: ButtonStyle(backgroundColor:MaterialStateProperty.all(Colors.red), ),
+                                     child: Text("Yes",style: TextStyle(color: Colors.white),),)
+                                 ],
+                               ));
+                             }
                           },icon: Icon(Icons.delete,color: Colors.red,),),
                           SizedBox(height: 5,),
                           // update button
@@ -361,5 +365,22 @@ class _AddUpdateSessionState extends State<AddUpdateSession> {
     // i need 2nd
     String result="$initial$year1-${year2[2]}${year2[3]}".toUpperCase();
     return result;
+  }
+  Future<int> getSemesterCount(BuildContext context,String sessionID) async {
+    try{
+      final counter = await Provider.of<DbService>(context,listen: false)
+          .dbref.collection("ins_admins").doc(widget.insAdmin.id)
+          .collection("institutes").doc(widget.institute.id)
+          .collection("departments").doc(widget.department.id)
+          .collection("sessions").doc(sessionID)
+          .collection("semesters")
+          .count().get();
+
+
+      return counter.count??0;
+    }catch(e){
+      print(e.toString());
+      return 0;
+    }
   }
 }

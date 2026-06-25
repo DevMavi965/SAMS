@@ -33,10 +33,14 @@ class _ManageAdminsState extends State<ManageAdmins> {
     "student_management",
     "faculty_management",
     "department_management",//includes adding/removing departments & sessions & semesters
+    "course_management",
+    "session_management",
   ];
   List<bool> checked=[
     false,
     false,
+    false,
+    false,//
     false,
     false,
     false,
@@ -49,7 +53,9 @@ class _ManageAdminsState extends State<ManageAdmins> {
     "Approving/Rejecting leave requests",
     "Adding/removing/Editing students records",
     "Managing faculty",
-    "Adding/removing departments & sessions & semesters & courses",
+    "Adding/removing departments",
+    "Adding/removing courses",
+    "Adding/removing sessions & semesters",
   ];
   void _resetForm() {
     name.clear();
@@ -738,6 +744,12 @@ class _ManageAdminsState extends State<ManageAdmins> {
         break;
       case 5:
         return Icon(PhosphorIconsBold.buildingApartment,color: Theme.of(context).primaryColor,);
+        break;
+      case 6:
+        return Icon(PhosphorIconsBold.books,color: Theme.of(context).primaryColor,);
+        break;
+      case 7:
+        return Icon(PhosphorIconsBold.desktop,color: Theme.of(context).primaryColor,);
         break;
     }
   }

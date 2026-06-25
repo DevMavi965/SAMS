@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -205,31 +206,39 @@ class _DepartManageState extends State<DepartManage> {
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
                 // delete department
-                IconButton(onPressed: (){
-                  showDialog(context: context, builder: (_)=>AlertDialog(
-                    backgroundColor: Colors.white,
-                    icon: Icon(Icons.delete,color: Colors.red,size: 33,),
-                    title: Text("Delete Department"),
-                    content: Text("Are you sure you want to delete this department?"),
-                    actions: [
-                      FilledButton(
-                        style: ButtonStyle(
-                          backgroundColor: MaterialStateProperty.all(Colors.red)
-                        ),
-                        onPressed: (){
-                        Provider.of<DbService>(context,listen: false).removeDepartment(context, department.id!);
-                        Navigator.pop(context);
-                      }, child: Text("Yes",style: TextStyle(color: Colors.white),),),
-                      FilledButton(
-                        style: ButtonStyle(
-                          backgroundColor: MaterialStateProperty.all(Colors.green)
-                        ),
-                        onPressed: (){
-                        Navigator.pop(context);
-                      }, child: Text("No",style: TextStyle(color: Colors.white),),)
-                    ],
-                  ));
-                }, icon: Icon(Icons.delete,color:Colors.red,),),
+                IconButton(
+                  // if(sessionCount(context, department.id!)>0)
+                  onPressed: () async {
+                    int sessionCount=await getSessionCount(context, department.id!);
+                  if(sessionCount>0){
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Cannot delete department with sessions"),backgroundColor: Colors.red,));
+                  }else{
+                    showDialog(context: context, builder: (_)=>AlertDialog(
+                      backgroundColor: Colors.white,
+                      icon: Icon(Icons.delete,color: Colors.red,size: 33,),
+                      title: Text("Delete Department"),
+                      content: Text("Are you sure you want to delete this department?"),
+                      actions: [
+                        FilledButton(
+                          style: ButtonStyle(
+                              backgroundColor: MaterialStateProperty.all(Colors.red)
+                          ),
+                          onPressed: (){
+                            Provider.of<DbService>(context,listen: false).removeDepartment(context, department.id!);
+                            Navigator.pop(context);
+                          }, child: Text("Yes",style: TextStyle(color: Colors.white),),),
+                        FilledButton(
+                          style: ButtonStyle(
+                              backgroundColor: MaterialStateProperty.all(Colors.green)
+                          ),
+                          onPressed: (){
+                            Navigator.pop(context);
+                          }, child: Text("No",style: TextStyle(color: Colors.white),),)
+                      ],
+                    ));
+                  }
+                },
+                  icon: Icon(Icons.delete,color:Colors.red,),),
                 SizedBox(height: 5,),
                 // update department
                 IconButton(onPressed: (){
@@ -311,5 +320,21 @@ class _DepartManageState extends State<DepartManage> {
         ),
       ),
     );
+  }
+
+  Future<int> getSessionCount(BuildContext context,String departmentId) async {
+    try{
+      final counter = await Provider.of<DbService>(context,listen: false)
+          .dbref.collection("ins_admins").doc(widget.insAdmin.id).
+      collection("institutes").doc(widget.institute.id).collection("departments").doc(departmentId)
+          .collection("sessions")
+          .count().get();
+
+
+      return counter.count??0;
+    }catch(e){
+      print(e.toString());
+      return 0;
+    }
   }
 }

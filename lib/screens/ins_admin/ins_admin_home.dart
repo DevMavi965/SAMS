@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:provider/provider.dart';
 import 'package:smas3/screens/ins_admin/Depart_select.dart';
 import 'package:smas3/screens/management/Ann_manage.dart';
 import 'package:smas3/screens/management/Course_manage.dart';
@@ -13,6 +14,7 @@ import 'package:smas3/screens/management/std_manage.dart';
 
 import '../../models/ins_admin.dart';
 import '../../models/institute.dart';
+import '../../services/db_service.dart';
 import '../../widgets/insAdmin/IsAdminGrid.dart';
 
 class InsAdminHome extends StatefulWidget {
@@ -34,7 +36,7 @@ class _InsAdminHomeState extends State<InsAdminHome> {
           SizedBox(height: 7,),
           Text("System Overview & Management",style: TextStyle(fontSize: 15,color: Colors.grey),),
           SizedBox(height: 20,),
-          InsAdminGrid1(students: 500, noOfFaculty: 210, noOfDeparts: 6, avg_attendance: 89, noOfAdmins: 3, announcements: 4,),
+          InsAdminGrid1(insAdmin: widget.insAdmin, institute: widget.institute),
           SizedBox(height: 20,),
           Text("Manage Institute",style: TextStyle(fontSize: 18,fontWeight: FontWeight.w600,color: Colors.grey)),
           SizedBox(height: 10,),
@@ -94,7 +96,7 @@ class _InsAdminHomeState extends State<InsAdminHome> {
                        ],),
                        SizedBox(height: 5,),
                        Row(children: [
-                         Text("23 members",style: TextStyle(color: Colors.grey),)
+                         Text("faculty operations",style: TextStyle(color: Colors.grey),)
                        ],)
                      ],
                    ),
@@ -148,7 +150,7 @@ class _InsAdminHomeState extends State<InsAdminHome> {
                       ],),
                       SizedBox(height: 5,),
                       Row(children: [
-                        Text("500 enrolled",style: TextStyle(color: Colors.grey),)
+                        Text("students operations",style: TextStyle(color: Colors.grey),)
                       ],)
                     ],
                   ),
@@ -202,7 +204,7 @@ class _InsAdminHomeState extends State<InsAdminHome> {
                       ],),
                       SizedBox(height: 5,),
                       Row(children: [
-                        Text("4 departments",style: TextStyle(color: Colors.grey),)
+                        Text("departmental operations",style: TextStyle(color: Colors.grey),)
                       ],)
                     ],
                   ),
@@ -255,9 +257,11 @@ class _InsAdminHomeState extends State<InsAdminHome> {
                         Text("Sessions",style: TextStyle(fontSize: 14,fontWeight: FontWeight.w500),)
                       ],),
                       SizedBox(height: 5,),
-                      Row(children: [
-                        Text("managing batches",style: TextStyle(color: Colors.grey),)
-                      ],)
+                      Flexible(
+                        child: Row(children: [
+                          Flexible(child: Text("batches & semester",style: TextStyle(color: Colors.grey),))
+                        ],),
+                      )
                     ],
                   ),
                 ),
@@ -428,7 +432,7 @@ class _InsAdminHomeState extends State<InsAdminHome> {
             //announcements
             InkWell(
               onTap: (){
-                Navigator.push(context, MaterialPageRoute(builder: (_)=>AnnManage()));
+                Navigator.push(context, MaterialPageRoute(builder: (_)=>AnnManage(institute: widget.institute,insAdmin: widget.insAdmin,)));
               },
               child: SizedBox(
 
@@ -481,9 +485,39 @@ class _InsAdminHomeState extends State<InsAdminHome> {
             ),
 
           ],
-          )
+          ),
+          SizedBox(height: 20,),
         ],
       ))
     );
+  }
+
+  Future<int> getStudentCount() async {
+    try{
+   final counter = await Provider.of<DbService>(context,listen: false)
+       .indexDoc.where('type', isEqualTo: 'student')
+       .where('ins_admin_id', isEqualTo: widget.insAdmin.id)
+       .where('institute_id', isEqualTo: widget.institute.id)
+       .count().get();
+
+    return counter.count??0;
+    }catch(e){
+      print(e.toString());
+      return 0;
+    }
+  }
+  Future<int> getFacCount() async {
+    try{
+      final counter = await Provider.of<DbService>(context,listen: false)
+          .indexDoc.where('type', isEqualTo: 'faculty')
+          .where('institute_id', isEqualTo: widget.institute.id)
+          .where('institute_id', isEqualTo: widget.institute.id)
+          .count().get();
+
+      return counter.count??0;
+    }catch(e){
+      print(e.toString());
+      return 0;
+    }
   }
 }

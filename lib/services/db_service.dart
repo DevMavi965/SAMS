@@ -662,6 +662,34 @@ class DbService with ChangeNotifier{
                     ));
                   }
                 }
+                final courseSnap=await dbref
+                    .collection("ins_admins").doc(insAdminId)
+                    .collection("institutes").doc(ins.id)
+                    .collection("departments").doc(depart.id)
+                    .collection("sessions").doc(sSnap.id)
+                    .collection("semesters").doc(semSnap.id)
+                    .collection("courses").get();
+                for(var course1 in courseSnap.docs){
+                  courses.add(
+                    Course(
+                      id: course1.id,
+                      name: course1['name'],
+                      course_code: course1['course_code'],
+                      credit_hours: course1['credit_hours'],
+                      no_of_lectures: course1['no_of_lectures'],
+                      type: course1['type'],
+                      lecturer_id: course1['lecturer_id'],
+                      lecturer_name: course1['lecturer_name'],
+                      created_at: course1['created_at'].toDate(),
+                      insAdminId: course1['ins_admin_id'],
+                      institute_id: course1['institute_id'],
+                      department_id: course1['department_id'],
+                      session_id: course1['session_id'],
+                      semester_id: course1['semester_id'],
+                    )
+                  );
+
+                }
               }
             }
           }
@@ -833,7 +861,7 @@ class DbService with ChangeNotifier{
 
     }
   }
-  addAnnouncement(BuildContext context,String insAdminId,String instituteId,Announcement announcement)async{
+  addAnnouncement(BuildContext context,String insAdminId,String instituteId,Announcement an1)async{
     try{
       final announceRef=await dbref
           .collection("ins_admins").doc(insAdminId)
@@ -841,14 +869,14 @@ class DbService with ChangeNotifier{
           .collection("announcements")
           .add({
         // Announcement(an_title: an_title, an_message: an_message, an_type: an_type, target_aud: target_aud)
-           "an_title":announcement.an_title,
-           "an_message":announcement.an_message,
-           "an_type":announcement.an_type,
-           "target_aud":announcement.target_aud,
-           "created_at":Timestamp.fromDate(announcement.created_at!),//datetime to timestamp
+           "title":an1.an_title,
+           "content":an1.an_message,
+           "type":an1.an_type,
+           "target":an1.target_aud,
+           "created_at":Timestamp.fromDate(an1.created_at!),//datetime to timestamp
           });
-      announcement.id=announceRef.id;
-      await indexDoc.doc(announcement.id).set({
+      an1.id=announceRef.id;
+      await indexDoc.doc(an1.id).set({
         "ins_admin_id":insAdminId,
         "institute_id":instituteId,
       });
@@ -942,8 +970,10 @@ class DbService with ChangeNotifier{
         "semester_id":semesterId,
         "created_at":Timestamp.fromDate(course.created_at!),//datetime to timestamp",
       });
+
       course.id=courseRef.id;
       await indexDoc.doc(course.id).set({
+        "type":"course",
         "ins_admin_id":insAdminId,
         "institute_id":instituteId,
         "department_id":departId,
@@ -1432,10 +1462,10 @@ class DbService with ChangeNotifier{
           .collection("announcements")
           .doc(announcement.id).update({
         // Announcement(an_title: an_title, an_message: an_message, an_type: an_type, target_aud: target_aud)
-        "an_title":announcement.an_title,
-        "an_message":announcement.an_message,
-        "an_type":announcement.an_type,
-        "target_aud":announcement.target_aud,
+        "title":announcement.an_title,
+        "content":announcement.an_message,
+        "type":announcement.an_type,
+        "target":announcement.target_aud,
         "created_at":Timestamp.fromDate(announcement.created_at!),//datetime to timestamp
       });
       if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("announcement updated Successfully")));
@@ -1505,6 +1535,10 @@ class DbService with ChangeNotifier{
         "no_of_lectures":course.no_of_lectures,
         "type":course.type,
         "created_at":Timestamp.fromDate(course.created_at!),//datetime to timestamp",
+      });
+      await indexDoc.doc(course.id).update({
+        "lecturer_id":course.lecturer_id,
+        "lecturer_name":course.lecturer_name,
       });
       if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Course updated Successfully")));
     }catch(e){
