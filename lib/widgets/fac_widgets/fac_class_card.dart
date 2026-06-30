@@ -66,7 +66,7 @@ class _FacClassCardState extends State<FacClassCard> {
             children: [
               SizedBox(),
               Text("Attendance ",style: TextStyle(color: Colors.grey,fontSize: 12),),
-              Text("${widget.lectureModel.status=="upcoming" ?0:widget.lectureModel.present!.length}/${widget.lectureModel.students!.length} students",style: TextStyle(color: Colors.grey,fontSize: 12),)
+              Text("${widget.lectureModel.status=="upcoming" ?0:807}%%% students",style: TextStyle(color: Colors.grey,fontSize: 12),)
             ],
           ),
           SizedBox(height: 10,),
@@ -80,7 +80,7 @@ class _FacClassCardState extends State<FacClassCard> {
               minHeight: 10,
               backgroundColor: Theme.of(context).primaryColor.withOpacity(0.2),
               borderRadius: BorderRadiusGeometry.circular(12),
-              value:widget.lectureModel.status=="upcoming" ?0: widget.lectureModel.present!.length/widget.lectureModel.students!.length,
+              value:widget.lectureModel.status=="upcoming" ?0: 455,
               valueColor: AlwaysStoppedAnimation(Theme.of(context).primaryColor),
             ),
           ),

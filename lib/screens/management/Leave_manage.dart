@@ -216,7 +216,19 @@ class _Leave_manage_rState extends State<Leave_manage_r> {
 
     return InkWell(
       onDoubleTap: (){
-        Provider.of<DbService>(context,listen: false).removeStudentLeaveApplication(context, leaveApplication.id!);
+        showDialog(context: context, builder: (context)=>AlertDialog(
+          title: Text("Delete Leave Application"),
+          content: Text("Are you sure you want to delete this leave application?"),
+          actions: [
+            OutlinedButton(onPressed: (){
+              Navigator.pop(context);
+            }, child: Text("Cancel")),
+            FilledButton(onPressed: (){
+              Provider.of<DbService>(context,listen: false).removeStudentLeaveApplication(context, leaveApplication.id!);
+             Navigator.pop(context);
+            }, child: Text("Yes"))
+          ],
+        ));
       },
       child: Container(
         margin: EdgeInsets.only(top: 10, bottom: 7),

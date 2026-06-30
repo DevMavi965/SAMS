@@ -6,15 +6,15 @@ import 'package:smas3/models/announcement_model.dart';
 
 import '../../services/db_service.dart';
 
-class AdminAnnCard extends StatefulWidget {
+class InsAdminAnnCard extends StatefulWidget {
   final Announcement adminAnnouncement;
-  const AdminAnnCard({super.key, required this.adminAnnouncement});
+  const InsAdminAnnCard({super.key, required this.adminAnnouncement});
 
   @override
-  State<AdminAnnCard> createState() => _AdminAnnCardState();
+  State<InsAdminAnnCard> createState() => _InsAdminAnnCardState();
 }
 
-class _AdminAnnCardState extends State<AdminAnnCard> {
+class _InsAdminAnnCardState extends State<InsAdminAnnCard> {
   @override
   Widget build(BuildContext context) {
     return Card(
@@ -78,7 +78,30 @@ class _AdminAnnCardState extends State<AdminAnnCard> {
                     ),
                   ],)
                 ],),
-              SizedBox(),
+              IconButton(onPressed:(){
+                showDialog(context: context, builder: (context)=>AlertDialog(
+                  title: Text("Delete Announcement"),
+                  content: Text("Are you sure you want to delete this announcement?"),
+                  actions: [
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                      ),
+                      onPressed: (){
+                        Navigator.pop(context);
+                      },child: Text("Cancel",style: TextStyle(color: Colors.white),),),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Theme.of(context).primaryColor,
+                      ),
+                      onPressed: (){
+                        Provider.of<DbService>(context,listen: false).removeAnnouncement(context, widget.adminAnnouncement.id!);
+                        Navigator.pop(context);
+                      },child: Text("Yes",style: TextStyle(color: Colors.white),),),
+                  ],
+                ));
+              } ,
+                  icon: Icon(CupertinoIcons.delete,color: Colors.red,size: 18,))
             ],),
           SizedBox(height: 7,),
           Row(

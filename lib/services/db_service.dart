@@ -1021,12 +1021,11 @@ class DbService with ChangeNotifier{
             "dated":Timestamp.fromDate(lectureModel.dated),//datetime to timestamp",
             "start_time":Timestamp.fromDate(start_time_date),//datetime to timestamp",
             "end_time":Timestamp.fromDate(end_time_date),//datetime to timestamp",
-            "students":lectureModel.students,
             "present":lectureModel.present,
             "absent":lectureModel.absent,
             "room":lectureModel.room,
-            "course_name":courseId,//will take course_name using id back in ui
-            "status":lectureModel.status,
+            "course_name":lectureModel.course,
+            "status":"upcoming",
           });
          lectureModel.id=lectureRef.id;
          await indexDoc.doc(lectureModel.id).set({
@@ -1036,7 +1035,9 @@ class DbService with ChangeNotifier{
            "session_id":sessionId,
            "semester_id":semesterId,
            "course_id":courseId,
+           "type":"lecture"
          });
+         print("lecture Added Successfully of ${lectureModel.course}");
          if(context.mounted){
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("lecture Added Successfully")));}
     }catch(e){
@@ -1292,7 +1293,7 @@ class DbService with ChangeNotifier{
           .collection("departments").doc(dox.get("department_id"))
           .collection("sessions").doc(dox.get("session_id"))
           .collection("semesters").doc(dox.get("semester_id"))
-          .collection("lectures")
+          .collection("courses")
           .doc(dox.get("course_id")).collection("lectures")
           .doc(lectureModelId).delete();
       await indexDoc.doc(lectureModelId).delete();
@@ -1572,13 +1573,12 @@ class DbService with ChangeNotifier{
           .collection("departments").doc(dox.get("department_id"))
           .collection("sessions").doc(dox.get("session_id"))
           .collection("semesters").doc(dox.get("semester_id"))
-          .collection("lectures")
+          .collection("courses")
           .doc(dox.get("course_id")).collection("lectures")
           .doc(lectureModel.id).update({
         "dated":Timestamp.fromDate(lectureModel.dated),//datetime to timestamp",
         "start_time":Timestamp.fromDate(start_time_date),//datetime to timestamp",
         "end_time":Timestamp.fromDate(end_time_date),//datetime to timestamp",
-        "students":lectureModel.students,
         "present":lectureModel.present,
         "absent":lectureModel.absent,
         "room":lectureModel.room,
@@ -1625,7 +1625,6 @@ class DbService with ChangeNotifier{
         "dated":Timestamp.fromDate(lectureModel.dated),//datetime to timestamp",
         "start_time":Timestamp.fromDate(start_time_date),//datetime to timestamp",
         "end_time":Timestamp.fromDate(end_time_date),//datetime to timestamp",
-        "students":lectureModel.students,
         "present":students_,
         "absent":lectureModel.absent,
         "room":lectureModel.room,

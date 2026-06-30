@@ -61,7 +61,7 @@ class _AdminSettingCardState extends State<AdminSettingCard> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text("Push Notifications",),
-                          Text("03351094534",style: TextStyle(color: Colors.grey),),
+                          Text("manage notifications",style: TextStyle(color: Colors.grey),),
                         ],
                       ),
                       Spacer(),

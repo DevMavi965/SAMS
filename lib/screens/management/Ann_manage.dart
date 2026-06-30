@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:smas3/models/announcement_model.dart';
 import 'package:smas3/widgets/admin_widgets/admin_ann_card.dart';
 import 'package:smas3/widgets/admin_widgets/admin_ann_grid.dart';
+import 'package:smas3/widgets/insAdmin/insAdminAnnCard.dart';
 
 import '../../models/ins_admin.dart';
 import '../../models/institute.dart';
@@ -30,29 +31,7 @@ class _AnnManageState extends State<AnnManage> {
  String? selectedType1,selectedTarget1;
  List<String> types=["general","urgent","event"];
  List<String> targets=["students","staff","all_users"];
-List<Announcement> announcements=[
-  Announcement(
-      an_title: "new registrations",
-      an_message: "open for admissions now ",
-      id: "1234567",
-      an_type: "general",
-      target_aud: "all students",
-      created_at: DateTime.now()),
-  Announcement(
-      an_title: "new registrations",
-      an_message: "open for admissions now ",
-      id: "1234567",
-      an_type: "general",
-      target_aud: "all students",
-      created_at: DateTime.now()),
-  Announcement(
-      an_title: "new registrations",
-      an_message: "open for admissions now ",
-      id: "1234567",
-      an_type: "general",
-      target_aud: "all students",
-      created_at: DateTime.now())
-];
+List<Announcement> announcements=[];
 @override
   void dispose() {
   selectedTarget=selectedType=null;
@@ -70,7 +49,8 @@ List<Announcement> announcements=[
         iconTheme: IconThemeData(color: Colors.white),
         backgroundColor: Theme.of(context).primaryColor,
       ),
-      body: SafeArea(child: Container(
+      body:
+      SafeArea(child: Container(
         padding: EdgeInsets.symmetric(
           horizontal: 5,
           vertical: 5,
@@ -114,7 +94,7 @@ List<Announcement> announcements=[
             int total=announcements.length;
             int urgent=announcements.where((element) => element.an_type=="urgent").length;
             int events=announcements.where((element) => element.an_type=="event").length;
-            return Column(
+            return ListView(
               children: [
                 SizedBox(height: 20,),
                 AdminAnnGrid(total: total, urgent:urgent, events: events),
@@ -259,7 +239,7 @@ List<Announcement> announcements=[
                         ));
 
                       },
-                        child: AdminAnnCard(adminAnnouncement: announcements[index]))),
+                        child: InsAdminAnnCard(adminAnnouncement: announcements[index]))),
               ],
             );
           }

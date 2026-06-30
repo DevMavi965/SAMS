@@ -8,6 +8,7 @@ import 'package:smas3/models/admin_model.dart';
 import 'package:smas3/models/deprt_alert.dart';
 import 'package:smas3/models/ins_admin.dart';
 import 'package:smas3/models/institute.dart';
+import 'package:smas3/screens/management/Timetable_sel.dart';
 import 'package:smas3/services/db_service.dart';
 import 'package:smas3/widgets/admin_widgets/Admin_home_grid.dart';
 import 'package:smas3/widgets/admin_widgets/admin_custom_lineCart.dart';
@@ -24,8 +25,10 @@ import '../management/depart_manage.dart';
 import '../management/std_manage.dart';
 
 class AdminHome extends StatefulWidget {
+  final InsAdmin insAdmin;
+  final Institute institute;
   final Admin admin;
-  const AdminHome({super.key, required this.admin});
+  const AdminHome({super.key, required this.admin, required this.insAdmin, required this.institute});
 
   @override
   State<AdminHome> createState() => _AdminHomeState();
@@ -33,36 +36,6 @@ class AdminHome extends StatefulWidget {
 
 class _AdminHomeState extends State<AdminHome> {
 
-  InsAdmin? insAdmin;
-  Institute? institute;
-  getR() async{
-    try{
-      final doc=await Provider.of<DbService>(context,listen: false).dbref.collection("ins_admins").doc(widget.admin.insAdminId).get();
-      insAdmin=InsAdmin(
-          id: doc.id,
-          role: doc["role"],
-          name: doc["name"],
-          email: doc["email"],
-          status: doc["status"],
-        created_at: doc["created_at"].toDate(),
-        last_login: doc["last_login"].toDate(),
-      );
-      final ins=await Provider.of<DbService>(context,listen: false).dbref.collection("ins_admins").doc(widget.admin.insAdminId)
-          .collection("institutes").doc(widget.admin.instituteId).get();
-          institute=Institute(
-              id: ins.id,
-              insAdminId: widget.admin.insAdminId,
-              name: ins['name'],
-              address: ins['address'],
-              contact: ins['contact'],
-              logo: ins['logo'],
-              created_at: ins['created_at'].toDate(),
-              location: ins['location']
-          );
-    }catch(e){
-      print(e);
-    }
-  }
   List<String> duties=[
     "Timetable",
     "Announcements",
@@ -81,19 +54,13 @@ class _AdminHomeState extends State<AdminHome> {
 
   ];
   @override
-  void initState() {
-    getR();
-    // TODO: implement initState
-    super.initState();
-  }
-  @override
   Widget build(BuildContext context) {
     return SafeArea(child: ListView(children: [
       Text("Welcome ${widget.admin.name}!",style: TextStyle(fontSize: 20,fontWeight: FontWeight.w600)),
       SizedBox(height: 7,),
       Text("System Overview & Management",style: TextStyle(fontSize: 15,color: Colors.grey),),
       SizedBox(height: 20,),
-      AdminHomeGrid(total: 500, noOfFaculty: 210, noOfDeparts: 6, avg_attendance: 89),
+      AdminHomeGrid(insAdmin: widget.insAdmin,institute: widget.institute,),
       SizedBox(height: 20,),
       Row(children: [Text("You have following ${widget.admin.permissions!.length} duties:",style: TextStyle(fontWeight: FontWeight.w600,fontSize: 16,color: Colors.black87),)],),
       SizedBox(height: 15,),
@@ -110,7 +77,7 @@ class _AdminHomeState extends State<AdminHome> {
           InkWell(
             onTap: (){
               if(widget.admin.permissions!.contains("faculty_management")){
-                Navigator.push(context, MaterialPageRoute(builder: (_)=>DepartSelect(insAdmin: insAdmin!, institute: institute!,)));
+                Navigator.push(context, MaterialPageRoute(builder: (_)=>DepartSelect(insAdmin: widget.insAdmin, institute: widget.institute,)));
               }else{
                 ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("You don't have permission to manage faculty"),backgroundColor: Theme.of(context).primaryColor,));
               }
@@ -177,7 +144,7 @@ class _AdminHomeState extends State<AdminHome> {
           InkWell(
             onTap: (){
               if(widget.admin.permissions!.contains("student_management")){
-                Navigator.push(context, MaterialPageRoute(builder: (_)=>Std_manage(insAdmin: insAdmin!, institute: institute!)));
+                Navigator.push(context, MaterialPageRoute(builder: (_)=>Std_manage(insAdmin: widget.insAdmin, institute: widget.institute)));
               }else{
                 ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("You don't have permission to manage students"),backgroundColor: Theme.of(context).primaryColor,));
               }
@@ -243,7 +210,7 @@ class _AdminHomeState extends State<AdminHome> {
           InkWell(
             onTap: (){
             if(widget.admin.permissions!.contains("department_management")){
-              Navigator.push(context, MaterialPageRoute(builder: (_)=>DepartManage(insAdmin:insAdmin!, institute: institute!,)));
+              Navigator.push(context, MaterialPageRoute(builder: (_)=>DepartManage(insAdmin:widget.insAdmin, institute: widget.institute,)));
             }else{
               ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("You don't have permission to manage departments"),backgroundColor: Theme.of(context).primaryColor,));
             }
@@ -309,7 +276,7 @@ class _AdminHomeState extends State<AdminHome> {
           InkWell(
             onTap: (){
             if(widget.admin.permissions!.contains("session_management")){
-              Navigator.push(context, MaterialPageRoute(builder: (_)=>SessionManage(insAdmin:insAdmin!, institute: institute!,)));
+              Navigator.push(context, MaterialPageRoute(builder: (_)=>SessionManage(insAdmin:widget.insAdmin, institute: widget.institute,)));
             }else{
               ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("You don't have permission to manage sessions"),backgroundColor: Theme.of(context).primaryColor,));
             }
@@ -375,7 +342,7 @@ class _AdminHomeState extends State<AdminHome> {
           InkWell(
             onTap: (){
               if(widget.admin.permissions!.contains("course_management")){
-                Navigator.push(context, MaterialPageRoute(builder: (_)=>CourseManage(insAdmin:insAdmin!,institute: institute!,)));
+                Navigator.push(context, MaterialPageRoute(builder: (_)=>CourseManage(insAdmin:widget.insAdmin,institute: widget.institute,)));
               }else{
                 ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("You don't have permission to manage courses"),backgroundColor: Theme.of(context).primaryColor,));
               }
@@ -441,7 +408,7 @@ class _AdminHomeState extends State<AdminHome> {
           InkWell(
             onTap: (){
               if(widget.admin.permissions!.contains("Timetable")){
-                Navigator.push(context, MaterialPageRoute(builder: (_)=>TimetableMng()));
+                Navigator.push(context, MaterialPageRoute(builder: (_)=>TimetableSel(insAdmin: widget.insAdmin,institute: widget.institute,)));
               }else{
                 ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("You don't have permission to manage timetables"),backgroundColor: Theme.of(context).primaryColor,));
               }
@@ -507,7 +474,7 @@ class _AdminHomeState extends State<AdminHome> {
           InkWell(
             onTap: (){
               if(widget.admin.permissions!.contains("Leave_management")){
-                Navigator.push(context, MaterialPageRoute(builder: (_)=>Leave_manage_r(insAdmin: insAdmin!, institute: institute!,)));
+                Navigator.push(context, MaterialPageRoute(builder: (_)=>Leave_manage_r(insAdmin: widget.insAdmin, institute: widget.institute,)));
               }else{
                 ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("You don't have permission to manage leave applications"),backgroundColor: Theme.of(context).primaryColor,));
               }
@@ -573,7 +540,7 @@ class _AdminHomeState extends State<AdminHome> {
           InkWell(
             onTap: (){
               if(widget.admin.permissions!.contains("Announcements")){
-                Navigator.push(context, MaterialPageRoute(builder: (_)=>AnnManage(institute:institute!,insAdmin: insAdmin!,)));
+                Navigator.push(context, MaterialPageRoute(builder: (_)=>AnnManage(institute:widget.institute,insAdmin: widget.insAdmin,)));
               }else{
                 ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("You don't have permission to manage announcements"),backgroundColor: Theme.of(context).primaryColor,));
               }

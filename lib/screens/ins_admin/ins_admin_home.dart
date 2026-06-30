@@ -8,6 +8,7 @@ import 'package:smas3/screens/management/Course_manage.dart';
 import 'package:smas3/screens/management/Leave_manage.dart';
 import 'package:smas3/screens/management/Session_manage.dart';
 import 'package:smas3/screens/management/TimeTable_mng.dart';
+import 'package:smas3/screens/management/Timetable_sel.dart';
 import 'package:smas3/screens/management/depart_manage.dart';
 import 'package:smas3/screens/management/fac_manage.dart';
 import 'package:smas3/screens/management/std_manage.dart';
@@ -324,7 +325,7 @@ class _InsAdminHomeState extends State<InsAdminHome> {
             //timetable
             InkWell(
               onTap: (){
-                Navigator.push(context, MaterialPageRoute(builder: (_)=>TimetableMng()));
+                Navigator.push(context, MaterialPageRoute(builder: (_)=>TimetableSel(insAdmin: widget.insAdmin,institute: widget.institute,)));
               },
               child: SizedBox(
 

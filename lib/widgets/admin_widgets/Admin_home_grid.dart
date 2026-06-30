@@ -1,10 +1,16 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:provider/provider.dart';
+import 'package:smas3/models/ins_admin.dart';
+import 'package:smas3/models/institute.dart';
+
+import '../../services/db_service.dart';
 class AdminHomeGrid extends StatelessWidget {
-  final int total,noOfFaculty,noOfDeparts;
-  final double avg_attendance;
-  const AdminHomeGrid({super.key, required this.total, required this.noOfFaculty, required this.noOfDeparts, required this.avg_attendance});
+  // final int students,noOfFaculty,noOfDeparts,noOfAdmins,announcements;
+  // final double avg_attendance;
+  final InsAdmin insAdmin;
+  final Institute institute;
+  const AdminHomeGrid({super.key, required this.insAdmin, required this.institute, });
 
   @override
   Widget build(BuildContext context) {
@@ -19,17 +25,34 @@ class AdminHomeGrid extends StatelessWidget {
           margin: EdgeInsets.all(10),
           padding: EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(10),
-
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(10),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.5),
+                  spreadRadius: 2,
+                  blurRadius: 5,
+                  offset: Offset(0, 3), // changes position of shadow
+                ),
+              ]
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Icon(Icons.people_alt_outlined,color: Theme.of(context).primaryColor,),
-              Text("$total",style: TextStyle(fontSize: 15,fontWeight: FontWeight.w500),),
-              Text("Total Students",style: TextStyle(color: Colors.grey,fontSize: 12),)
+              FutureBuilder(future: getStudentCount(context, insAdmin.id!, institute.id!), builder: (context,snap){
+                if(snap.connectionState==ConnectionState.waiting){
+                  return Text("Loading...");
+                }else if(snap.hasError){
+                  return Text("Error: ${snap.error}");
+                }else if(!snap.hasData || snap.data==null){
+                  return Text("0");
+                }else if(snap.hasData){
+                  return Text("${snap.data}",style: TextStyle(fontSize: 13,fontWeight: FontWeight.w500),);
+                }return Text("0");
+              }),
+              Text("Total Students",style: TextStyle(color: Colors.grey,fontSize: 10),)
             ],
           ),
         ),
@@ -42,15 +65,31 @@ class AdminHomeGrid extends StatelessWidget {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(10),
-
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.5),
+                spreadRadius: 2,
+                blurRadius: 5,
+                offset: Offset(0, 3), // changes position of shadow
+              ),],
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Icon(Icons.school_outlined,color: Colors.lightBlue,),
-              Text("$noOfFaculty",style: TextStyle(fontSize: 15,fontWeight: FontWeight.w500),),
-              Text("Total Faculty",style: TextStyle(color: Colors.grey,fontSize: 12),)
+              FutureBuilder(future: getFacCount(context, insAdmin.id!, institute.id!), builder: (context,snap){
+                if(snap.connectionState==ConnectionState.waiting){
+                  return Text("Loading...");
+                }else if(snap.hasError){
+                  return Text("Error: ${snap.error}");
+                }else if(!snap.hasData || snap.data==null){
+                  return Text("0");
+                }else if(snap.hasData){
+                  return Text("${snap.data}",style: TextStyle(fontSize: 13,fontWeight: FontWeight.w500),);
+                }return Text("0");
+              }),
+              Text("Total Faculty",style: TextStyle(color: Colors.grey,fontSize: 10),)
             ],
           ),
         ),
@@ -61,16 +100,32 @@ class AdminHomeGrid extends StatelessWidget {
           margin: EdgeInsets.all(10),
           padding: EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(10),
-
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(10),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.5),
+                  spreadRadius: 2,
+                  blurRadius: 5,
+                  offset: Offset(0, 3), // changes position of shadow
+                ),]
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Icon(PhosphorIconsBold.buildingApartment,color: Colors.purple,),
-              Text("$noOfDeparts",style: TextStyle(fontSize: 15,fontWeight: FontWeight.w500),),
+              FutureBuilder(future: getDepCount(context, insAdmin.id!, institute.id!), builder: (context,snap){
+                if(snap.connectionState==ConnectionState.waiting){
+                  return Text("Loading...");
+                }else if(snap.hasError){
+                  return Text("Error: ${snap.error}");
+                }else if(!snap.hasData || snap.data==null){
+                  return Text("0");
+                }else if(snap.hasData){
+                  return Text("${snap.data}",style: TextStyle(fontSize: 13,fontWeight: FontWeight.w500),);
+                }return Text("0");
+              }),
               Text("Total Departments",style: TextStyle(color: Colors.grey,fontSize: 12),)
             ],
           ),
@@ -82,23 +137,82 @@ class AdminHomeGrid extends StatelessWidget {
           margin: EdgeInsets.all(10),
           padding: EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(10),
-
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(10),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.5),
+                  spreadRadius: 2,
+                  blurRadius: 5,
+                  offset: Offset(0, 3), // changes position of shadow
+                ),]
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Icon(PhosphorIconsBold.trendUp,color:Theme.of(context).primaryColor,),
-              Text("$avg_attendance%",style: TextStyle(fontSize: 15,fontWeight: FontWeight.w500),),
-              Text("Overall Attendance",style: TextStyle(color: Colors.grey,fontSize: 12),)
+              Text("87%",style: TextStyle(fontSize: 13,fontWeight: FontWeight.w500),),
+              Text("Overall Attendance",style: TextStyle(color: Colors.grey,fontSize: 10),)
             ],
           ),
-        ),
-        
-
+        ),//overall attendance
       ],
     );
+  }
+  Future<int> getStudentCount(BuildContext context,String insAdminId,String instituteId) async {
+    try{
+      final counter = await Provider.of<DbService>(context,listen: false)
+          .indexDoc.where('role', isEqualTo: 'student')
+          .where('ins_admin_id', isEqualTo: insAdminId)
+          .where('institute_id', isEqualTo: instituteId)
+          .count().get();
+
+      return counter.count??0;
+    }catch(e){
+      print(e.toString());
+      return 0;
+    }
+  }
+  Future<int> getAdminCount(BuildContext context,String insAdminId,String instituteId) async {
+    try{
+      final counter = await Provider.of<DbService>(context,listen: false)
+          .indexDoc.where('role', isEqualTo: 'admin')
+          .where('ins_admin_id', isEqualTo: insAdminId)
+          .where('institute_id', isEqualTo: instituteId)
+          .count().get();
+
+      return counter.count??0;
+    }catch(e){
+      print(e.toString());
+      return 0;
+    }
+  }
+  Future<int> getFacCount(BuildContext context,String insAdminId,String instituteId) async {
+    try{
+      final counter = await Provider.of<DbService>(context,listen: false)
+          .indexDoc.where('role', isEqualTo: 'faculty')
+          .where('ins_admin_id', isEqualTo: insAdminId)
+          .where('institute_id', isEqualTo: instituteId)
+          .count().get();
+
+      return counter.count??0;
+    }catch(e){
+      print(e.toString());
+      return 0;
+    }
+  }
+  Future<int> getDepCount(BuildContext context,String insAdminId,String instituteId) async {
+    try{
+      final counter = await Provider.of<DbService>(context,listen: false)
+          .dbref.collection("ins_admins").doc(insAdminId).
+      collection("institutes").doc(instituteId).collection("departments").count().get();
+
+
+      return counter.count??0;
+    }catch(e){
+      print(e.toString());
+      return 0;
+    }
   }
 }
