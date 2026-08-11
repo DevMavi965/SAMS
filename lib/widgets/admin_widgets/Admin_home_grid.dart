@@ -14,7 +14,7 @@ class AdminHomeGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GridView.count(crossAxisCount: 2,
+    return GridView.count(crossAxisCount:MediaQuery.of(context).size.width > 700 ? 4 : 2,
       shrinkWrap: true,
       physics: NeverScrollableScrollPhysics(),
       children: [

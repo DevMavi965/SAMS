@@ -236,9 +236,11 @@ class _InstituteCardState extends State<InstituteCard> {
                         const SizedBox(height: 4),
 
                         Text(
-                          "ID: ${widget.institute.id}",
+                          "${getCapName(widget.insAdmin.name)} (Institute Admin)",
                           style: TextStyle(
-                            color: Colors.grey.shade600,
+                            color: Theme.of(context).primaryColor.withOpacity(0.8),
+                            fontWeight: FontWeight.w700,
+                            fontSize: 15
                           ),
                         ),
                       ],
@@ -329,7 +331,7 @@ class _InstituteCardState extends State<InstituteCard> {
                 MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    "Created on :${DateFormat('dd MMM yyyy').format(widget.institute.created_at)}",
+                    "active since :${DateFormat('dd MMM yyyy').format(widget.institute.created_at)}",
                     style: TextStyle(
                       color: Colors.grey.shade600,
                     ),
@@ -379,6 +381,15 @@ class _InstituteCardState extends State<InstituteCard> {
         ),
       ],
     );
+  }
+
+  getCapName(String name) {
+    var x=name.split(" ");
+    var part1=x[0];
+    var part2=x[1];
+    String s1=part1[0].toUpperCase();
+    String s2=part2[0].toUpperCase();
+    return "${part1.replaceFirst(part1[0], s1)} ${part2.replaceFirst(part2[0], s2)}";
   }
 }
 class InstituteStats {

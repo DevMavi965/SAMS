@@ -172,7 +172,7 @@ class _InsAdminDashboardState extends State<InsAdminDashboard> {
             items: [
               for(int i=0;i<menus.length;i++)
                 BottomNavigationBarItem(
-                    icon: Icon(i==0?Icons.home:(i==1?Icons.manage_accounts:(i==2?Icons.bar_chart:Icons.person))),
+                    icon: Icon(i==0?Icons.home:(i==1?Icons.manage_accounts:(i==2?PhosphorIconsBold.chartBar:Icons.person))),
                   // icon:
                   // (i==3?Icon(PhosphorIconsBold.megaphone):
                   // (i==2?Icon(PhosphorIconsBold.chartBar):

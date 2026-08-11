@@ -759,7 +759,7 @@ class _DailyScheduleState extends State<DailySchedule> {
                             present: lecture.present,
                             absent: lecture.absent,
                             room: room.text.trim(),
-                            status: lecture.status,
+                            status: getStatus(lecture.dated, startTime!, endTime!),
                           );
                           await db.updateLecture(context, updated);
                         } else {
@@ -773,7 +773,7 @@ class _DailyScheduleState extends State<DailySchedule> {
                             present: [],
                             absent: [],
                             room: room.text.trim(),
-                            status: "upcoming"
+                            status: getStatus(widget.date, startTime!, endTime!)
                           );
                           await db.addLecture(
                             context,
@@ -821,6 +821,19 @@ class _DailyScheduleState extends State<DailySchedule> {
       'Thursday', 'Friday', 'Saturday', 'Sunday'
     ];
     return days[date.weekday];
+  }
+
+  String? getStatus(DateTime date, TimeOfDay timeOfDay, TimeOfDay timeOfDay2) {
+    final now = DateTime.now();
+    final startTime = DateTime(date.year, date.month, date.day, timeOfDay.hour, timeOfDay.minute);
+    final endTime = DateTime(date.year, date.month, date.day, timeOfDay2.hour, timeOfDay2.minute);
+    if (startTime.isBefore(now) && endTime.isAfter(now)) {
+      return "Ongoing";
+    } else if (startTime.isAfter(now)) {
+      return "Upcoming";
+    } else {
+      return "Completed";
+    }
   }
 }
 

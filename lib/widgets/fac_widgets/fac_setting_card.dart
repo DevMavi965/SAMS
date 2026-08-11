@@ -97,7 +97,7 @@ class _FacSettingCardState extends State<FacSettingCard> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text("Push Notifications",),
-                          Text("03351094534",style: TextStyle(color: Colors.grey),),
+                          Text("manage your notifications",style: TextStyle(color: Colors.grey),),
                         ],
                       ),
                       Spacer(),

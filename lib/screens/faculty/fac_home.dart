@@ -1,69 +1,124 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:provider/provider.dart';
 import 'package:smas3/models/fac_model.dart';
 import 'package:smas3/models/lecture.dart';
 import 'package:smas3/widgets/fac_widgets/fac_class_card.dart';
 import 'package:smas3/widgets/fac_widgets/fac_home_grid.dart';
+
+import '../../models/department.dart';
+import '../../models/ins_admin.dart';
+import '../../models/institute.dart';
+import '../../services/db_service.dart';
 class FacHomeTab extends StatefulWidget {
+  final InsAdmin insAdmin;
+  final Institute institute;
+  final Department department;
+
   final Lecturer lecturer;
-  const FacHomeTab({super.key, required this.lecturer});
+  const FacHomeTab({super.key, required this.lecturer, required this.insAdmin, required this.institute, required this.department});
 
   @override
   State<FacHomeTab> createState() => _FacHomeTabState();
 }
 
 class _FacHomeTabState extends State<FacHomeTab> {
-  List<LectureModel> lectures=[
-    LectureModel(
-        dated: DateTime.now(),
-        start_time: TimeOfDay(hour: 9, minute: 00),
-        end_time: TimeOfDay(hour: 10, minute: 00),
-        present:["2537889","2537891","2537892"],
-        absent: ["2537888","25378"] ,
-        room: "14-B",
-        status: "upcoming",
-        course: "Data Mining"
-    ),
-    LectureModel(
-        dated: DateTime.now(),
-        start_time: TimeOfDay(hour: 10, minute: 00),
-        end_time: TimeOfDay(hour: 12, minute: 00),
-        present:["2537888","2537889","2537890","2537891"],
-        absent: ["2537892"] ,
-        room: "8-A",
-        status: "upcoming",
-        course: "Microprocessors"
-    ),
-    LectureModel(
-        dated: DateTime.now(),
-        start_time: TimeOfDay(hour: 10, minute: 00),
-        end_time: TimeOfDay(hour: 12, minute: 00),
-        present:["2537888","2537889","2537890","2537891"],
-        absent: ["2537892"] ,
-        room: "Lab-2",
-        status: "upcoming",
-        course: "System-Design Lab"
-    ),
-    LectureModel(
-        dated: DateTime.now(),
-        start_time: TimeOfDay(hour: 10, minute: 00),
-        end_time: TimeOfDay(hour: 12, minute: 00),
-        present:["2537888","2537889","2537890","2537891"],
-        absent: ["2537892"] ,
-        room: "13-C",
-        status: "upcoming",
-        course: "Microprocessors"
-    ),
-    // Lecture(
-    //     course: Course(name: "DSA", lecturer:"Dr Asif", room:"13C", time: DateTime.now(), status: "upcoming"),
-    //     total_std:50,
-    //     absent_std:2,
-    //     late_std: 2,
-    //     present_std: 48,
-    //     status: "completed"),
 
-  ];
+  List<LectureModel> lectures=[];
+  Future<List<LectureModel>> getTodaysLectures() async {
+    try {
+      final dbService = Provider.of<DbService>(context, listen: false);
+      final now = DateTime.now();
+
+      // Step 1: find every course this lecturer teaches.
+      final myCourses = await dbService.indexDoc
+          .where("type", isEqualTo: "course")
+          .where("ins_admin_id", isEqualTo: widget.insAdmin.id)
+          .where("institute_id", isEqualTo: widget.institute.id)
+          .where("lecturer_id", isEqualTo: widget.lecturer.id)
+          .get();
+
+      if (myCourses.docs.isEmpty) return [];
+
+      final courseIds = myCourses.docs.map((doc) => doc.id).toList();
+
+      List<LectureModel> todaysLectures = [];
+
+      for (var i = 0; i < courseIds.length; i += 30) {
+        final batch = courseIds.sublist(
+          i,
+          i + 30 > courseIds.length ? courseIds.length : i + 30,
+        );
+
+        // Equality-only — no composite index needed.
+        final lecturesIndexSnap = await dbService.indexDoc
+            .where("type", isEqualTo: "lecture")
+            .where("course_id", whereIn: batch)
+            .get();
+
+        print("Found ${lecturesIndexSnap.docs.length} total lecture index docs for these courses");
+
+        for (var idxDoc in lecturesIndexSnap.docs) {
+          final idx = idxDoc.data();
+
+          final datedRaw = idx['dated'];
+          if (datedRaw is! Timestamp) {
+            print("Skipping ${idxDoc.id}: 'dated' missing or wrong type (${datedRaw.runtimeType})");
+            continue;
+          }
+          final datedDate = datedRaw.toDate();
+
+          final isToday = DateUtils.isSameDay(datedDate, now);
+          print("Lecture ${idxDoc.id}: dated=$datedDate, isToday=$isToday");
+
+          if (!isToday) continue;
+
+          final lectureDoc = await dbService.dbref
+              .collection("ins_admins").doc(widget.insAdmin.id)
+              .collection("institutes").doc(widget.institute.id)
+              .collection("departments").doc(idx['department_id'])
+              .collection("sessions").doc(idx['session_id'])
+              .collection("semesters").doc(idx['semester_id'])
+              .collection("courses").doc(idx['course_id'])
+              .collection("lectures").doc(idxDoc.id)
+              .get();
+
+          if (!lectureDoc.exists) continue;
+
+          final data = lectureDoc.data()!;
+
+          final datedTs = data['dated'] as Timestamp;
+          final startTs = data['start_time'] as Timestamp;
+          final endTs = data['end_time'] as Timestamp;
+
+          todaysLectures.add(LectureModel(
+            id: lectureDoc.id,
+            dated: datedTs.toDate(),
+            start_time: TimeOfDay.fromDateTime(startTs.toDate()),
+            end_time: TimeOfDay.fromDateTime(endTs.toDate()),
+            present: List<String>.from(data['present'] ?? []),
+            absent: List<String>.from(data['absent'] ?? []),
+            room: data['room'],
+            status: data['status'],
+            course: data['course_name'],
+          ));
+        }
+      }
+
+      print("Final todaysLectures count: ${todaysLectures.length}");
+      return todaysLectures;
+    } catch (e) {
+      print(e.toString());
+      return [];
+    }
+  }  @override
+  void initState() {
+    getTodaysLectures();
+    // TODO: implement initState
+    super.initState();
+  }
   @override
   Widget build(BuildContext context) {
     return SafeArea(child:
@@ -73,7 +128,7 @@ class _FacHomeTabState extends State<FacHomeTab> {
         SizedBox(height: 7,),
         Text("Manage Your Classes and Attendance",style: TextStyle(fontSize: 15,color: Colors.grey),),
         SizedBox(height: 20,),
-        FacHomeGrid(total: 210, present: 183, pending_classes: 3, avg_attendance: 81.3),
+        FacHomeGrid(insAdmin:widget.insAdmin, institute: widget.institute, department: widget.department,lecturer: widget.lecturer,),
         SizedBox(height: 10,),
         _MarkAttendanceCard(context),
         SizedBox(height: 25,),
@@ -81,114 +136,500 @@ class _FacHomeTabState extends State<FacHomeTab> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text("Today's classes",style: TextStyle(fontSize: 18,fontWeight: FontWeight.w500),),
-           Container(
-             padding: EdgeInsets.all(6),
-             decoration: BoxDecoration(
-               borderRadius: BorderRadius.circular(14),
-               border: Border.all(
-                 width: 0.5,
-                 color: Colors.grey
-               )
-             ),
-             child: Text("3 classes",style: TextStyle(fontSize: 11,fontWeight: FontWeight.w700),),
-           )
+            Text("Today's lectures",style: TextStyle(fontSize: 18,fontWeight: FontWeight.w500),),
+          Badge(
+            backgroundColor: Theme.of(context).primaryColor.withOpacity(0.9),
+            label: Padding(
+              padding: const EdgeInsets.all(4.0),
+              child: FutureBuilder(
+                future: getTodaysLectures(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return Text("Loading...");
+                  } else if (snapshot.hasError) {
+                    return Text("Error: ${snapshot.error}");
+                  } else if (!snapshot.hasData || snapshot.data == null) {
+                    return Text("0");
+                  }
+                  return Text(
+                    "${snapshot.data!.length} lectures",
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                  );
+                },
+              ),
+            ),
+          )
           ],
         ),
         SizedBox(height: 7,),
         //classes (completed or pending)
-        if(lectures.isNotEmpty)...[
-        for(int i=0;i<lectures.length;i++)
-          FacClassCard(lectureModel:lectures[i]),],
+        FutureBuilder(
+          future: getTodaysLectures(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return Text("Loading...");
+            } else if (snapshot.hasError) {
+              return Text("Error: ${snapshot.error}");
+            } else if (!snapshot.hasData || snapshot.data == null) {
+              return Text("0");
+            }
+            return ListView.builder(
+              shrinkWrap: true,
+              physics: NeverScrollableScrollPhysics(),
+              itemCount: snapshot.data!.length,
+              itemBuilder: (context, index) {
+                final lecture = snapshot.data![index];
+                return FacClassCard( lectureModel:snapshot.data![index],);
+              },
+            );
+          },
+        ),
         SizedBox(height: 15,),
-        Container(
-           padding: EdgeInsets.all(13),
-          height: 260,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-              width: 0.5,
-              color: Colors.grey
-            )
-          ),
-          child: Column(
-            children: [
-              Text("${widget.lecturer.deprt}-This Week",style: TextStyle(fontSize: 17,fontWeight: FontWeight.w400),),
-              SizedBox(height: 25,),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text("classes conducted"),
-                  Text("12/15")
-                ],
-              ),
-              SizedBox(height: 5,),
-              LinearProgressIndicator(
-                value: 12/15,
-                backgroundColor: Theme.of(context).primaryColor.withOpacity(0.2),
-                valueColor: AlwaysStoppedAnimation(Theme.of(context).primaryColor),
-                minHeight: 7,
-                borderRadius: BorderRadius.circular(10),
+        Card(
+          color: Colors.white,
+          child: Container(
+            margin: EdgeInsets.symmetric(
+              horizontal: 10,vertical: 10
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text("${widget.lecturer.deprt}-This Week",style: TextStyle(fontSize: 17,fontWeight: FontWeight.w400),),
+                SizedBox(height: 25,),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text("classes conducted"),
+                    SizedBox(width: 10,),
+                    Row(
+                      children: [
+                        FutureBuilder(
+                          future: getDepartmentCompletedLecturesThisWeekCount(context, widget.insAdmin.id!, widget.institute.id!, widget.department.id!, widget.department.id!),
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState == ConnectionState.waiting) {
+                              return Text("Loading...");
+                            } else if (snapshot.hasError) {
+                              return Text("Error: ${snapshot.error}");
+                            } else if (!snapshot.hasData || snapshot.data == null) {
+                              return Text("0");
+                            }
+                            return Text(snapshot.data.toString());
+                          },
+                        ),
+                        Text("/"),
+                        FutureBuilder(
+                          future: getDepartmentLecturesThisWeekCount(context, widget.insAdmin.id!, widget.institute.id!, widget.department.id!, widget.department.id!),
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState == ConnectionState.waiting) {
+                              return Text("Loading...");
+                            } else if (snapshot.hasError) {
+                              return Text("Error: ${snapshot.error}");
+                            } else if (!snapshot.hasData || snapshot.data == null) {
+                              return Text("0");
+                            }
+                            return Text(snapshot.data.toString());
+                          },
+                        ),
+                      ],
+                    )
+                  ],
+                ),
+                SizedBox(height: 5,),
+                Flexible(
+                  child: FutureBuilder(
+                    future: getPercentageConductedLecturesThisWeek(context, widget.insAdmin.id!, widget.institute.id!, widget.department.id!, widget.department.id!),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return Text("Loading...");
+                      } else if (snapshot.hasError) {
+                        return Text("Error: ${snapshot.error}");
+                      } else if (!snapshot.hasData || snapshot.data == null) {
+                        return Text("0");
+                      }
+                      return LinearProgressIndicator(
+                        value: snapshot.data! / 100,
+                        backgroundColor: Theme.of(context).primaryColor.withOpacity(0.2),
+                        valueColor: AlwaysStoppedAnimation(Theme.of(context).primaryColor),
+                        minHeight: 7,
+                        borderRadius: BorderRadius.circular(10),
 
-              ),
-              SizedBox(height: 20,),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text("Avg Attendance"),
-                  Text("87%")
-                ],
-              ),
-              SizedBox(height: 5,),
-              LinearProgressIndicator(
-                value: 0.87,
-                backgroundColor: Theme.of(context).primaryColor.withOpacity(0.2),
-                valueColor: AlwaysStoppedAnimation(Theme.of(context).primaryColor),
-                minHeight: 7,
-                borderRadius: BorderRadius.circular(10),
+                      );
+                    },
+                  ),
+                ),
 
-              ),
-              SizedBox(height: 7,),
-              Divider(
-                thickness: 0.5,
-                color: Colors.grey,
-              ),
-              SizedBox(height: 7,),
-              Flex(direction: Axis.horizontal,
-                children: [
-                  Expanded(child: Column(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      Icon(CupertinoIcons.check_mark_circled,color: Theme.of(context).primaryColor,size: 30,),
-                      Text("421",style: TextStyle(fontWeight: FontWeight.w600,),),
-                      Text("Present",style: TextStyle(color: Colors.grey),)
-                    ],
-                  )),
-                  Expanded(child: Column(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      Icon(CupertinoIcons.clock,color: Colors.brown,size: 30,),
-                      Text("43",style: TextStyle(fontWeight: FontWeight.w600,),),
-                      Text("Late",style: TextStyle(color: Colors.grey),)
-                    ],
-                  )),
-                  Expanded(child: Column(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      Icon(CupertinoIcons.xmark_circle,color: Colors.red,size: 30,),
-                      Text("24",style: TextStyle(fontWeight: FontWeight.w600,),),
-                      Text("Absent",style: TextStyle(color: Colors.grey),)
-                    ],
-                  ))
-                ],
-              )
+                SizedBox(height: 20,),
+                FutureBuilder(
+                  future: getDepartmentAvgAttendanceThisWeek(context, widget.insAdmin.id!, widget.institute.id!, widget.department.id!, widget.department.id!),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return Text("Loading...");
+                    } else if (snapshot.hasError) {
+                      return Text("Error: ${snapshot.error}");
+                    } else if (!snapshot.hasData || snapshot.data == null) {
+                      return Text("0");
+                    }
+                    return Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text("Avg Attendance"),
+                            Text("${(snapshot.data!['avg_attendance']*100).toStringAsFixed(1)}%")
+                          ],
+                        ),
+                        SizedBox(height: 5,),
+                        LinearProgressIndicator(
+                          value: snapshot.data!['avg_attendance'],
+                          backgroundColor: Theme.of(context).primaryColor.withOpacity(0.2),
+                          valueColor: AlwaysStoppedAnimation(Theme.of(context).primaryColor),
+                          minHeight: 7,
+                          borderRadius: BorderRadius.circular(10),
 
-            ],
+                        ),
+                      ],
+                    );
+                  },
+                ),
+
+                SizedBox(height: 7,),
+                Divider(
+                  thickness: 0.5,
+                  color: Colors.grey,
+                ),
+                SizedBox(height: 7,),
+                Flex(direction: Axis.horizontal,
+                  children: [
+                    Expanded(child: Column(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        Icon(CupertinoIcons.check_mark_circled,color: Theme.of(context).primaryColor,size: 30,),
+                        FutureBuilder(
+                          future: getDepartmentTotalPresentThisWeek(context, widget.insAdmin.id!, widget.institute.id!, widget.department.id!, widget.department.id!),
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState == ConnectionState.waiting) {
+                              return Text("Loading...");
+                            } else if (snapshot.hasError) {
+                              return Text("Error: ${snapshot.error}");
+                            } else if (!snapshot.hasData || snapshot.data == null) {
+                              return Text("0");
+                            }
+                            return Text(snapshot.data.toString(),style: TextStyle(fontWeight: FontWeight.w600,));
+                          },
+                        ),
+                        Text("Present",style: TextStyle(color: Colors.grey),)
+                      ],
+                    )),
+                    Expanded(child: Column(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        Icon(CupertinoIcons.clock,color: Colors.brown,size: 30,),
+                        Text("3",style: TextStyle(fontWeight: FontWeight.w600,),),
+                        Text("Late",style: TextStyle(color: Colors.grey),)
+                      ],
+                    )),
+                    Expanded(child: Column(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        Icon(CupertinoIcons.xmark_circle,color: Colors.red,size: 30,),
+                        FutureBuilder(
+                          future: getDepartmentTotalAbsentThisWeek(context, widget.insAdmin.id!, widget.institute.id!, widget.department.id!, widget.department.id!),
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState == ConnectionState.waiting) {
+                              return Text("Loading...");
+                            } else if (snapshot.hasError) {
+                              return Text("Error: ${snapshot.error}");
+                            } else if (!snapshot.hasData || snapshot.data == null) {
+                              return Text("0");
+                            }
+                            return Text(snapshot.data.toString(),style: TextStyle(fontWeight: FontWeight.w600,));
+                          },
+                        ),
+                        Text("Absent",style: TextStyle(color: Colors.grey),)
+                      ],
+                    ))
+                  ],
+                )
+
+              ],
+            ),
           ),
         )
       ],
     ));
   }
+  Future<int> getDepartmentLecturesThisWeekCount(BuildContext context, String insAdminId, String instituteId, String departmentId, String s) async {
+    try {
+      final dbService = Provider.of<DbService>(context, listen: false);
+
+      final now = DateTime.now();
+      // Week starts Monday, ends Sunday (inclusive).
+      final startOfWeek = DateTime(now.year, now.month, now.day)
+          .subtract(Duration(days: now.weekday - 1));
+      final endOfWeek = startOfWeek.add(Duration(days: 7)); // exclusive upper bound
+
+      // Equality-only query — no composite index needed.
+      final lecturesIndexSnap = await dbService.indexDoc
+          .where("type", isEqualTo: "lecture")
+          .where("ins_admin_id", isEqualTo: insAdminId)
+          .where("institute_id", isEqualTo: instituteId)
+          .where("department_id", isEqualTo: departmentId)
+          .get();
+
+      int totalThisWeek = 0;
+
+      for (var idxDoc in lecturesIndexSnap.docs) {
+        final idx = idxDoc.data();
+
+        final datedRaw = idx['dated'];
+        if (datedRaw is! Timestamp) continue;
+        final datedDate = datedRaw.toDate();
+
+        final isThisWeek = !datedDate.isBefore(startOfWeek) && datedDate.isBefore(endOfWeek);
+        if (isThisWeek) {
+          totalThisWeek++;
+        }
+      }
+
+      return totalThisWeek;
+    } catch (e) {
+      print(e.toString());
+      return 0;
+    }
+  }
+  Future<int> getDepartmentCompletedLecturesThisWeekCount(BuildContext context, String insAdminId, String instituteId, String departmentId, String s) async {
+    try {
+      final dbService = Provider.of<DbService>(context, listen: false);
+
+      final now = DateTime.now();
+      // Week starts Monday, ends Sunday (inclusive).
+      final startOfWeek = DateTime(now.year, now.month, now.day)
+          .subtract(Duration(days: now.weekday - 1));
+      final endOfWeek = startOfWeek.add(Duration(days: 7)); // exclusive upper bound
+
+      // Equality-only query — no composite index needed.
+      final lecturesIndexSnap = await dbService.indexDoc
+          .where("type", isEqualTo: "lecture")
+          .where("ins_admin_id", isEqualTo: insAdminId)
+          .where("institute_id", isEqualTo: instituteId)
+          .where("department_id", isEqualTo: departmentId)
+          .where("status", isEqualTo: "completed")
+          .get();
+
+      int totalCompletedThisWeek = 0;
+
+      for (var idxDoc in lecturesIndexSnap.docs) {
+        final idx = idxDoc.data();
+
+        final datedRaw = idx['dated'];
+        if (datedRaw is! Timestamp) continue;
+        final datedDate = datedRaw.toDate();
+
+        final isThisWeek = !datedDate.isBefore(startOfWeek) && datedDate.isBefore(endOfWeek);
+        if (isThisWeek) {
+          totalCompletedThisWeek++;
+        }
+      }
+
+      return totalCompletedThisWeek;
+    } catch (e) {
+      print(e.toString());
+      return 0;
+    }
+  }
+  Future<Map<String, dynamic>> getDepartmentAvgAttendanceThisWeek(BuildContext context, String insAdminId, String instituteId, String departmentId, String s) async {
+    try {
+      final dbService = Provider.of<DbService>(context, listen: false);
+
+      final now = DateTime.now();
+      // Week starts Monday, ends Sunday (inclusive).
+      final startOfWeek = DateTime(now.year, now.month, now.day)
+          .subtract(Duration(days: now.weekday - 1));
+      final endOfWeek = startOfWeek.add(Duration(days: 7)); // exclusive upper bound
+
+      // Equality-only query — no composite index needed.
+      final lecturesIndexSnap = await dbService.indexDoc
+          .where("type", isEqualTo: "lecture")
+          .where("ins_admin_id", isEqualTo: insAdminId)
+          .where("institute_id", isEqualTo: instituteId)
+          .where("department_id", isEqualTo: departmentId)
+          .get();
+
+      int totalPresent = 0;
+      int lectureCount = 0;
+
+      for (var idxDoc in lecturesIndexSnap.docs) {
+        final idx = idxDoc.data();
+
+        final datedRaw = idx['dated'];
+        if (datedRaw is! Timestamp) continue;
+        final datedDate = datedRaw.toDate();
+
+        final isThisWeek = !datedDate.isBefore(startOfWeek) && datedDate.isBefore(endOfWeek);
+        if (!isThisWeek) continue;
+
+        // Need the actual lecture document to read its "present" array —
+        // indexDoc only stores pointers, not the attendance data itself.
+        final lectureDoc = await dbService.dbref
+            .collection("ins_admins").doc(insAdminId)
+            .collection("institutes").doc(instituteId)
+            .collection("departments").doc(departmentId)
+            .collection("sessions").doc(idx['session_id'])
+            .collection("semesters").doc(idx['semester_id'])
+            .collection("courses").doc(idx['course_id'])
+            .collection("lectures").doc(idxDoc.id)
+            .get();
+
+        if (!lectureDoc.exists) continue;
+
+        final presentList = lectureDoc.data()?['present'];
+        if (presentList is List) {
+          totalPresent += presentList.length;
+        }
+        lectureCount++;
+      }
+
+      final avgAttendance = lectureCount > 0 ? (totalPresent / lectureCount) : 0.0;
+
+      return {
+        "total_present": totalPresent,
+        "lecture_count": lectureCount,
+        "avg_attendance": avgAttendance,
+      };
+    } catch (e) {
+      print(e.toString());
+      return {
+        "total_present": 0,
+        "lecture_count": 0,
+        "avg_attendance": 0.0,
+      };
+    }
+  }
+  Future<num> getPercentageConductedLecturesThisWeek(BuildContext context, String insAdminId, String instituteId, String departmentId, String s) async {
+    try {
+      final conductedLectures = await getDepartmentCompletedLecturesThisWeekCount(context, insAdminId, instituteId, departmentId, s);
+      final totalLectures = await getDepartmentLecturesThisWeekCount(context, insAdminId, instituteId, departmentId, s);
+      if (totalLectures == 0) return 0;
+      return (conductedLectures / totalLectures) * 100;
+    } catch (e) {
+      print(e.toString());
+      return 0;
+    }
+  }
+  Future<int> getDepartmentTotalPresentThisWeek(BuildContext context, String insAdminId, String instituteId, String departmentId, String s) async {
+    try {
+      final dbService = Provider.of<DbService>(context, listen: false);
+
+      final now = DateTime.now();
+      // Week starts Monday, ends Sunday (inclusive).
+      final startOfWeek = DateTime(now.year, now.month, now.day)
+          .subtract(Duration(days: now.weekday - 1));
+      final endOfWeek = startOfWeek.add(Duration(days: 7)); // exclusive upper bound
+
+      // Equality-only query — no composite index needed.
+      final lecturesIndexSnap = await dbService.indexDoc
+          .where("type", isEqualTo: "lecture")
+          .where("ins_admin_id", isEqualTo: insAdminId)
+          .where("institute_id", isEqualTo: instituteId)
+          .where("department_id", isEqualTo: departmentId)
+          .get();
+
+      int totalPresent = 0;
+
+      for (var idxDoc in lecturesIndexSnap.docs) {
+        final idx = idxDoc.data();
+
+        final datedRaw = idx['dated'];
+        if (datedRaw is! Timestamp) continue;
+        final datedDate = datedRaw.toDate();
+
+        final isThisWeek = !datedDate.isBefore(startOfWeek) && datedDate.isBefore(endOfWeek);
+        if (!isThisWeek) continue;
+
+        // Need the actual lecture document to read its "present" array —
+        // indexDoc only stores pointers, not the attendance data itself.
+        final lectureDoc = await dbService.dbref
+            .collection("ins_admins").doc(insAdminId)
+            .collection("institutes").doc(instituteId)
+            .collection("departments").doc(departmentId)
+            .collection("sessions").doc(idx['session_id'])
+            .collection("semesters").doc(idx['semester_id'])
+            .collection("courses").doc(idx['course_id'])
+            .collection("lectures").doc(idxDoc.id)
+            .get();
+
+        if (!lectureDoc.exists) continue;
+
+        final presentList = lectureDoc.data()?['present'];
+        if (presentList is List) {
+          totalPresent += presentList.length;
+        }
+      }
+
+      return totalPresent;
+    } catch (e) {
+      print(e.toString());
+      return 0;
+    }
+  }
+  Future<int> getDepartmentTotalAbsentThisWeek(BuildContext context, String insAdminId, String instituteId, String departmentId, String s) async {
+    try {
+      final dbService = Provider.of<DbService>(context, listen: false);
+
+      final now = DateTime.now();
+      // Week starts Monday, ends Sunday (inclusive).
+      final startOfWeek = DateTime(now.year, now.month, now.day)
+          .subtract(Duration(days: now.weekday - 1));
+      final endOfWeek = startOfWeek.add(Duration(days: 7)); // exclusive upper bound
+
+      // Equality-only query — no composite index needed.
+      final lecturesIndexSnap = await dbService.indexDoc
+          .where("type", isEqualTo: "lecture")
+          .where("ins_admin_id", isEqualTo: insAdminId)
+          .where("institute_id", isEqualTo: instituteId)
+          .where("department_id", isEqualTo: departmentId)
+          .get();
+
+      int totalPresent = 0;
+
+      for (var idxDoc in lecturesIndexSnap.docs) {
+        final idx = idxDoc.data();
+
+        final datedRaw = idx['dated'];
+        if (datedRaw is! Timestamp) continue;
+        final datedDate = datedRaw.toDate();
+
+        final isThisWeek = !datedDate.isBefore(startOfWeek) && datedDate.isBefore(endOfWeek);
+        if (!isThisWeek) continue;
+
+        // Need the actual lecture document to read its "present" array —
+        // indexDoc only stores pointers, not the attendance data itself.
+        final lectureDoc = await dbService.dbref
+            .collection("ins_admins").doc(insAdminId)
+            .collection("institutes").doc(instituteId)
+            .collection("departments").doc(departmentId)
+            .collection("sessions").doc(idx['session_id'])
+            .collection("semesters").doc(idx['semester_id'])
+            .collection("courses").doc(idx['course_id'])
+            .collection("lectures").doc(idxDoc.id)
+            .get();
+
+        if (!lectureDoc.exists) continue;
+
+        final absentList = lectureDoc.data()?['absent'];
+        if (absentList is List) {
+          totalPresent += absentList.length;
+        }
+      }
+
+      return totalPresent;
+    } catch (e) {
+      print(e.toString());
+      return 0;
+    }
+  }
+  
   Widget _MarkAttendanceCard(BuildContext context){
     return Container(
       padding: EdgeInsets.symmetric(

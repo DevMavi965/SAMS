@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -27,6 +28,7 @@ class CourseAdd extends StatefulWidget {
 
 class _CourseAddState extends State<CourseAdd> {
   final fkey=GlobalKey<FormState>();
+
   TextEditingController name=TextEditingController();
   TextEditingController course_code=TextEditingController();
   TextEditingController credit_hours=TextEditingController();
@@ -146,70 +148,94 @@ class _CourseAddState extends State<CourseAdd> {
               },
             ),
             SizedBox(height: 10,),
-             Container(
-               decoration: BoxDecoration(
-                   color: Colors.white
-               ),
-               margin: EdgeInsets.symmetric(
-                 horizontal: 15,
-               ),
-               child: StreamBuilder(
-                   stream:Provider.of<DbService>(context,listen: false).dbref
-                   .collection("ins_admins").doc(widget.insAdmin.id)
-                   .collection("institutes").doc(widget.institute.id)
-                   .collection("departments").doc(widget.department.id)
-                   .collection("faculty").snapshots() ,
-                   builder: (context,snapshot){
-                 if(snapshot.connectionState==ConnectionState.waiting){
-                   return Center(child: CircularProgressIndicator(),);
-                 }else if(snapshot.hasError){
-                   return Center(child: Text(snapshot.error.toString()),);
-                 }else if(!snapshot.hasData){
-                   return Center(child: Text("No data found"),);
-                 }else if(snapshot.hasData){
-                   if(snapshot.data!.docs.isEmpty) {
-                     return Center(
-                       child: Text("No faculty found,add faculty to continue"),);
-                   }
-                   lecturers.clear();
-                   for(var doc in snapshot.data!.docs){
-                     lecturers.add(
-                         Lecturer(
-                           id: doc.id,
-                           name: doc['name'],
-                           deprt: doc['depart'],
-                           role: doc['role'],
-                           instituteId: widget.institute.id!,
-                           insAdminId: widget.insAdmin.id!,
-                           departmentId: doc['department_id'],
-                           designation: doc['designation'],
-                           status: doc['status'],
-                           email: doc['email'],
-                           phone: doc['phone'],
-                           semesters: List<int>.from(doc['semester']),
-                           courses: List<String>.from(doc['courses']),
-                           created_at: doc['created_at'].toDate(),
-                         )
-                     );
-                   }
-                   return DropdownButton(
-                     value: selectedFac,
-                       hint: Text("Select Faculty"),
-                       isExpanded: true,
-                       icon: Icon(Icons.person),
-                       items: [
-                         for(var lec in lecturers)
-                           DropdownMenuItem(value: lec.id,child: Text(lec.name),),
-                       ],
-                       onChanged: (v){
-                         setState(() {
-                           selectedFac=v;
-                         });
-                   });
-                 }
-                 return SizedBox();
-               }),
-             ),
+            Container(
+              decoration: BoxDecoration(color: Colors.white),
+              margin: EdgeInsets.symmetric(horizontal: 15),
+              child: StreamBuilder<QuerySnapshot>(
+                stream: FirebaseFirestore.instance
+                    .collection("SAMS").doc("SAMS_DB").collection("index")
+                    .where("institute_id", isEqualTo: widget.institute.id)
+                    .where("role", isEqualTo: "faculty") // confirm this matches lecturer.role's actual value
+                    .snapshots(),
+                builder: (context, indexSnapshot) {
+                  if (indexSnapshot.connectionState == ConnectionState.waiting) {
+                    return Center(child: CircularProgressIndicator());
+                  } else if (indexSnapshot.hasError) {
+                    return Center(child: Text(indexSnapshot.error.toString()));
+                  } else if (!indexSnapshot.hasData || indexSnapshot.data!.docs.isEmpty) {
+                    return Center(child: Text("No faculty found, add faculty to continue"));
+                  }
+
+                  final indexDocs = indexSnapshot.data!.docs;
+
+                  return FutureBuilder<List<Lecturer>>(
+                    future: Future.wait(indexDocs.map((idx) async {
+                      final departmentId = idx['department_id'];
+                      final doc = await FirebaseFirestore.instance
+                          .collection("SAMS").doc("SAMS_DB")
+                          .collection("ins_admins").doc(widget.insAdmin.id)
+                          .collection("institutes").doc(widget.institute.id)
+                          .collection("departments").doc(departmentId)
+                          .collection("faculty").doc(idx.id)
+                          .get();
+                      return Lecturer(
+                        id: doc.id,
+                        name: doc['name'],
+                        deprt: doc['depart'],
+                        role: doc['role'],
+                        instituteId: widget.institute.id!,
+                        insAdminId: widget.insAdmin.id!,
+                        departmentId: departmentId,
+                        designation: doc['designation'],
+                        status: doc['status'],
+                        email: doc['email'],
+                        phone: doc['phone'],
+                        semesters: List<int>.from(doc['semester']),
+                        courses: List<String>.from(doc['courses']),
+                        created_at: doc['created_at'].toDate(),
+                      );
+                    })),
+                    builder: (context, facSnapshot) {
+                      if (facSnapshot.connectionState == ConnectionState.waiting) {
+                        return Center(child: CircularProgressIndicator());
+                      } else if (facSnapshot.hasError) {
+                        return Center(child: Text(facSnapshot.error.toString()));
+                      }
+
+                      lecturers
+                        ..clear()
+                        ..addAll(facSnapshot.data!);
+
+                      return DropdownButton(
+                        value: selectedFac,
+                        hint: Text("Select Faculty"),
+                        isExpanded: true,
+                        icon: Icon(Icons.person),
+                        items: [
+                          for (var lec in lecturers)
+                            DropdownMenuItem(
+                              value: lec.id,
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(lec.name),
+                                  SizedBox(width: 10),
+                                  Text("${lec.deprt} department"),
+                                ],
+                              ),
+                            ),
+                        ],
+                        onChanged: (v) {
+                          setState(() {
+                            selectedFac = v;
+                          });
+                        },
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
              SizedBox(height: 10,),
              Container(
              decoration: BoxDecoration(

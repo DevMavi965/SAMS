@@ -993,22 +993,22 @@ class DbService with ChangeNotifier{
   }
   addLecture(BuildContext context,String insAdminId,String instituteId,String departId,String sessionId,String semesterId,String courseId,LectureModel lectureModel)async{
     try{
- DateTime start_time_date=DateTime(
-   lectureModel.dated.year,
-   lectureModel.dated.month,
-   lectureModel.dated.day,
-   lectureModel.start_time.hour,
-   lectureModel.start_time.minute,
+      DateTime start_time_date=DateTime(
+        lectureModel.dated.year,
+        lectureModel.dated.month,
+        lectureModel.dated.day,
+        lectureModel.start_time.hour,
+        lectureModel.start_time.minute,
 
- );
- DateTime end_time_date=DateTime(
-   lectureModel.dated.year,
-   lectureModel.dated.month,
-   lectureModel.dated.day,
-   lectureModel.end_time.hour,
-   lectureModel.end_time.minute,
+      );
+      DateTime end_time_date=DateTime(
+        lectureModel.dated.year,
+        lectureModel.dated.month,
+        lectureModel.dated.day,
+        lectureModel.end_time.hour,
+        lectureModel.end_time.minute,
 
- );
+      );
       final lectureRef=await dbref.
       collection("ins_admins").doc(insAdminId)
           .collection("institutes").doc(instituteId)
@@ -1018,7 +1018,7 @@ class DbService with ChangeNotifier{
           .collection("courses")
           .doc(courseId).collection("lectures")
           .add({
-            "dated":Timestamp.fromDate(lectureModel.dated),//datetime to timestamp",
+            "dated":Timestamp.fromDate(lectureModel.dated),//datetime
             "start_time":Timestamp.fromDate(start_time_date),//datetime to timestamp",
             "end_time":Timestamp.fromDate(end_time_date),//datetime to timestamp",
             "present":lectureModel.present,
@@ -1035,7 +1035,9 @@ class DbService with ChangeNotifier{
            "session_id":sessionId,
            "semester_id":semesterId,
            "course_id":courseId,
-           "type":"lecture"
+           "type":"lecture",
+           "status":"upcoming",
+           "dated":lectureModel.dated,
          });
          print("lecture Added Successfully of ${lectureModel.course}");
          if(context.mounted){
@@ -1174,6 +1176,7 @@ class DbService with ChangeNotifier{
       }
     }
   }
+
   //removing data from db
   removeInsAdmin(BuildContext context,String insAdminId)async{
     try{
@@ -1550,22 +1553,7 @@ class DbService with ChangeNotifier{
   }
   updateLecture(BuildContext context,LectureModel lectureModel)async{
     try{
-      DateTime start_time_date=DateTime(
-        lectureModel.dated.year,
-        lectureModel.dated.month,
-        lectureModel.dated.day,
-        lectureModel.start_time.hour,
-        lectureModel.start_time.minute,
 
-      );
-      DateTime end_time_date=DateTime(
-        lectureModel.dated.year,
-        lectureModel.dated.month,
-        lectureModel.dated.day,
-        lectureModel.end_time.hour,
-        lectureModel.end_time.minute,
-
-      );
       final dox=await indexDoc.doc(lectureModel.id).get();
       final lecRef=await dbref.
       collection("ins_admins").doc(dox.get("ins_admin_id"))
@@ -1576,9 +1564,9 @@ class DbService with ChangeNotifier{
           .collection("courses")
           .doc(dox.get("course_id")).collection("lectures")
           .doc(lectureModel.id).update({
-        "dated":Timestamp.fromDate(lectureModel.dated),//datetime to timestamp",
-        "start_time":Timestamp.fromDate(start_time_date),//datetime to timestamp",
-        "end_time":Timestamp.fromDate(end_time_date),//datetime to timestamp",
+        "dated":lectureModel.dated,//datetime to timestamp",
+        "start_time":lectureModel.start_time,//datetime to timestamp",
+        "end_time":lectureModel.end_time,//datetime to timestamp",
         "present":lectureModel.present,
         "absent":lectureModel.absent,
         "room":lectureModel.room,
@@ -1594,24 +1582,9 @@ class DbService with ChangeNotifier{
   }
   markAttendancePresent(BuildContext context,LectureModel lectureModel,String studentId)async{
     try{
+
       List<String> students_=lectureModel.present!;
       students_.add(studentId);
-      DateTime start_time_date=DateTime(
-        lectureModel.dated.year,
-        lectureModel.dated.month,
-        lectureModel.dated.day,
-        lectureModel.start_time.hour,
-        lectureModel.start_time.minute,
-
-      );
-      DateTime end_time_date=DateTime(
-        lectureModel.dated.year,
-        lectureModel.dated.month,
-        lectureModel.dated.day,
-        lectureModel.end_time.hour,
-        lectureModel.end_time.minute,
-
-      );
       final dox=await indexDoc.doc(lectureModel.id).get();
       final lecRef=await dbref.
       collection("ins_admins").doc(dox.get("ins_admin_id"))
@@ -1622,9 +1595,9 @@ class DbService with ChangeNotifier{
           .collection("lectures")
           .doc(dox.get("course_id")).collection("lectures")
           .doc(lectureModel.id).update({
-        "dated":Timestamp.fromDate(lectureModel.dated),//datetime to timestamp",
-        "start_time":Timestamp.fromDate(start_time_date),//datetime to timestamp",
-        "end_time":Timestamp.fromDate(end_time_date),//datetime to timestamp",
+        "dated":lectureModel.dated,//datetime to timestamp",
+        "start_time":lectureModel.start_time,//datetime to timestamp",
+        "end_time":lectureModel.end_time,//datetime to timestamp",
         "present":students_,
         "absent":lectureModel.absent,
         "room":lectureModel.room,

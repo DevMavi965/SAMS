@@ -147,6 +147,8 @@ class _DepartManageState extends State<DepartManage> {
                 }else{
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Please fill all fields"),));
                 }
+                _name.clear();
+                _hod.clear();
               }, child: Text("Add Department"))
             ],
           ));
@@ -241,7 +243,8 @@ class _DepartManageState extends State<DepartManage> {
                   icon: Icon(Icons.delete,color:Colors.red,),),
                 SizedBox(height: 5,),
                 // update department
-                IconButton(onPressed: (){
+                IconButton(
+                  onPressed: (){
                   name.text=department.name;
                   hod.text=department.hod_name;
                   showDialog(context: context, builder: (_)=>AlertDialog(
@@ -301,6 +304,8 @@ class _DepartManageState extends State<DepartManage> {
                           }else{
                             ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Please fill all fields"),));
                           }
+                          hod.clear();
+                          name.clear();
                           Navigator.pop(context);
                         }, child: Text("Yes",style: TextStyle(color: Colors.white),),),
                       FilledButton(
@@ -309,6 +314,8 @@ class _DepartManageState extends State<DepartManage> {
                         ),
                         onPressed: (){
                           Navigator.pop(context);
+                          hod.clear();
+                          name.clear();
                         }, child: Text("No",style: TextStyle(color: Colors.white),),)
                     ],
                   ));

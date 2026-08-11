@@ -78,7 +78,7 @@ class InsAdminGrid1 extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.people_alt_outlined,color: Theme.of(context).primaryColor,),
+              Icon(PhosphorIconsBold.student,color: Theme.of(context).primaryColor,),
               FutureBuilder(future: getStudentCount(context, insAdmin.id!, institute.id!), builder: (context,snap){
                 if(snap.connectionState==ConnectionState.waiting){
                   return Text("Loading...");
@@ -115,7 +115,7 @@ class InsAdminGrid1 extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.school_outlined,color: Colors.lightBlue,),
+              Flexible(child: Image.asset("assets/icons/scr.png",width: 22,height: 22,)),
               FutureBuilder(future: getFacCount(context, insAdmin.id!, institute.id!), builder: (context,snap){
                 if(snap.connectionState==ConnectionState.waiting){
                   return Text("Loading...");

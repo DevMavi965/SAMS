@@ -94,6 +94,8 @@ class _AddUpdateSessionState extends State<AddUpdateSession> {
                               SizedBox(height: 10,),
                               Text("End Date: ${sessions[count].end_date.day}/${sessions[count].end_date.month}/${sessions[count].end_date.year}",style: TextStyle(color: Colors.black.withAlpha(130)),),
                               SizedBox(height: 10,),
+                              Text("Duration: ${RMFuncts.getDuration(sessions[count].start_date,sessions[count].end_date)}",style: TextStyle(color: Colors.black.withAlpha(130)),),
+                              SizedBox(height: 10,),
                             ],
                           ),
                         ),
@@ -183,17 +185,25 @@ class _AddUpdateSessionState extends State<AddUpdateSession> {
                                     // making session name like cs2022-26
                                     String name=getDepartmentName(widget.department.name,startDate1!,endDate1!);
                                     if(startDate1!.isBefore(endDate1!)){
-                                      if(endDate1!.difference(startDate1!).inDays>=180){
-                                        Provider.of<DbService>(context,listen: false).updateSession(context,
+                                      if(endDate1!.difference(startDate1!).inDays<=180){
+                                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("session must be at least 6 months long"),));
+
+                                      }else if(endDate1!.difference(startDate1!).inDays>365*5){
+                                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("session must be at most 5 years long"),));
+                                      }else {
+                                        Provider
+                                            .of<DbService>(
+                                            context, listen: false)
+                                            .updateSession(context,
                                             Session(
                                                 id: sessions[count].id,
                                                 name: name,
-                                                start_date:startDate1! ,
+                                                start_date: startDate1!,
                                                 end_date: endDate1!));
                                         Navigator.pop(context);
-                                        setState1((){
-                                          startDate1=null;
-                                          endDate1=null;
+                                        setState1(() {
+                                          startDate1 = null;
+                                          endDate1 = null;
                                         });
                                       }
                                     }else{
@@ -285,16 +295,28 @@ class _AddUpdateSessionState extends State<AddUpdateSession> {
                   String name=getDepartmentName(widget.department.name,startDate!,endDate!);
                   if(startDate!.isBefore(endDate!)){
                   //   session  must be at least 6 months long
-                    if(endDate!.difference(startDate!).inDays>=180){
-                      Provider.of<DbService>(context,listen: false).addSession(context, widget.insAdmin.id!, widget.institute.id!, widget.department.id!,
-                          Session(name: name, start_date:startDate! , end_date: endDate!));
-                      Navigator.pop(context);
-                      setState2((){
-                        startDate=null;
-                        endDate=null;
-                      });
-                    }else{
+                    if(endDate!.difference(startDate!).inDays<180){
                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("session must be at least 6 months long"),));
+                    }else if(endDate!.difference(startDate!).inDays>=365*5){
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("session must be at most 5 years long"),));
+                    }else{
+                      if(sessions.map((e) => e.name).toList().contains(name)){
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("session already exists"),));
+                      }else {
+                        Provider
+                            .of<DbService>(context, listen: false)
+                            .addSession(
+                            context, widget.insAdmin.id!, widget.institute.id!,
+                            widget.department.id!,
+                            Session(name: name,
+                                start_date: startDate!,
+                                end_date: endDate!));
+                        Navigator.pop(context);
+                        setState2(() {
+                          startDate = null;
+                          endDate = null;
+                        });
+                      }
                     }
                   }else{
                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("start date must be before end date"),));
@@ -317,8 +339,8 @@ class _AddUpdateSessionState extends State<AddUpdateSession> {
   }
   getFirstDate() async {
     // can be three+ year session so we need to checkit
-    DateTime firstDate=DateTime.now().subtract(Duration(days: 395*4));
-    DateTime lastDate=DateTime.now();
+    DateTime firstDate=DateTime.now().subtract(Duration(days: 395*5));
+    DateTime lastDate=DateTime.now().add(Duration(days: 365*2));
     startDate=await showDatePicker(
         context: context,
         firstDate: firstDate,
@@ -327,8 +349,8 @@ class _AddUpdateSessionState extends State<AddUpdateSession> {
   }
   getFirstDate1() async {
     // can be three+ year session so we need to checkit
-    DateTime firstDate=DateTime.now().subtract(Duration(days: 395*4));
-    DateTime lastDate=DateTime.now();
+    DateTime firstDate=DateTime.now().subtract(Duration(days: 395*5));
+    DateTime lastDate=DateTime.now().add(Duration(days: 365*2));
     startDate1=await showDatePicker(
         context: context,
         firstDate: firstDate,
@@ -337,8 +359,8 @@ class _AddUpdateSessionState extends State<AddUpdateSession> {
   }
   getLastDate() async {
 
-    DateTime firstDate=DateTime.now();
-    // can be three+ year session so we need to checkit
+    DateTime firstDate=DateTime.now().subtract(Duration(days: 395*1));
+    // can be three+ year session so we need to checkIt
     DateTime lastDate=DateTime.now().add(Duration(days: 365*6));
     endDate=await showDatePicker(
         context: context,
@@ -348,8 +370,8 @@ class _AddUpdateSessionState extends State<AddUpdateSession> {
   }
   getLastDate1() async {
 
-    DateTime firstDate=DateTime.now();
-    // can be three+ year session so we need to checkit
+    DateTime firstDate=DateTime.now().subtract(Duration(days: 395*1));
+    // can be three+ year session so we need to checkIt
     DateTime lastDate=DateTime.now().add(Duration(days: 365*6));
     endDate1=await showDatePicker(
         context: context,
@@ -383,4 +405,6 @@ class _AddUpdateSessionState extends State<AddUpdateSession> {
       return 0;
     }
   }
+
+
 }

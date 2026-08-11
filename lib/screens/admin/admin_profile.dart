@@ -96,11 +96,41 @@ class _AdminProfileState extends State<AdminProfile> {
             ),
           ),
           onPressed: (){
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                backgroundColor: Colors.red
-                ,content: Text("Logging out as ${widget._admin.name}")));
-               Provider.of<DbService>(context,listen: false).signOut(context);
-            Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+            showDialog(context: context, builder: (_)=>
+                AlertDialog(
+                  icon: Icon(Icons.logout,size: 28,color: Theme.of(context).primaryColor,),
+                  title: Text("Are you sure you want to logout?",style: TextStyle(fontSize: 16),),
+                  actions: [
+                    Row(
+                      children: [
+                        OutlinedButton(onPressed: (){
+                          Navigator.pop(context);
+                        },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.white60,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(7),
+                              ),),
+                            child: Text("Cancel",style: TextStyle(color: Colors.black),)),
+                        Spacer(),
+                        ElevatedButton(onPressed: (){
+                          Provider.of<DbService>(context,listen: false).signOut(context);
+                          Navigator.pop(context);
+                          Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+                        },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.red,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(7),
+                                side: BorderSide(color: Colors.red,width: 0.5),
+                              ),),
+                            child: Text("Logout",style: TextStyle(color: Colors.white),)),
+                      ],
+                    ),
+
+                  ],
+                )
+            );
           },
           label: Text("Logout"),
           icon: Icon(Icons.logout),

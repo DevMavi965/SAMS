@@ -301,7 +301,7 @@ class _CourseUpdState extends State<CourseUpd> {
                   }
 
                   // Provider.of<DbService>(context,listen: false).addCourse(context, widget.insAdmin.id!, widget.institute.id!, widget.department.id!, widget.session.id!, widget.semester.id!, course);
-                }, child: Text("Add"))
+                }, child: Text("update"))
           ],
         ),
       ),

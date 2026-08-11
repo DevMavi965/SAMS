@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:smas3/maxins/rm_functions.dart';
 import 'package:smas3/models/student_model.dart';
@@ -96,9 +97,7 @@ class _StdViewState extends State<StdView> {
                         child: CircleAvatar(
                           backgroundColor: Theme.of(context).primaryColor,
                           radius:28,
-                          child: Text(RMFuncts.getFirstLetters(students[i].name),style: TextStyle(
-                            color: Colors.white,
-                          ),),
+                          child: Icon(PhosphorIconsDuotone.student,color: Colors.white,size: 32,),
                         ),
                       ),
                       SizedBox(width: 10,),
@@ -115,16 +114,6 @@ class _StdViewState extends State<StdView> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Expanded(
-                                  child: Badge(label: Padding(
-                                    padding: const EdgeInsets.all(3.0),
-                                    child: Text(widget.department.name,style: TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.black,
-                                      fontSize: 10
-                                    ),),
-                                  ),backgroundColor: Color(0xfff1f5f9),),
-                                ),
                                 SizedBox(width: 10,),
                                 Expanded(
                                   child: Badge(label: Padding(

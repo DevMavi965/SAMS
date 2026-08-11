@@ -63,4 +63,21 @@ mixin RMFuncts{
     int years = (difference.inDays / 365).floor();
     return '$years year${years > 1 ? 's' : ''} ago';
   }
+  static String getDuration(DateTime start_date, DateTime end_date) {
+    int years = end_date.year - start_date.year;
+    int months = end_date.month - start_date.month;
+    int days = end_date.day - start_date.day;
+
+    if (days < 0) {
+      months -= 1;
+      final prevMonth = DateTime(end_date.year, end_date.month, 0); // last day of month before end_date's month
+      days += prevMonth.day;
+    }
+    if (months < 0) {
+      years -= 1;
+      months += 12;
+    }
+
+    return "$years year${years == 1 ? '' : 's'} $months month${months == 1 ? '' : 's'} $days day${days == 1 ? '' : 's'}";
+  }
 }

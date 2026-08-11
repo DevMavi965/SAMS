@@ -216,7 +216,6 @@ class _AdminHomeState extends State<AdminHome> {
             }
             },
             child: SizedBox(
-
               // height: MediaQuery.of(context).size.height*0.15,
               child: Stack(
                 children: [
@@ -264,7 +263,7 @@ class _AdminHomeState extends State<AdminHome> {
                       ],
                     ),
                   ),
-                  widget.admin.permissions!.contains("Department_management")?SizedBox():  Positioned(
+                  widget.admin.permissions!.contains("department_management")?SizedBox():  Positioned(
                       right: 10,
                       top: 10,
                       child: Icon(CupertinoIcons.lock_circle_fill,size: 50,color: Theme.of(context).primaryColor.withOpacity(0.7),))

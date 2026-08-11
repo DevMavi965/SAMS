@@ -90,6 +90,7 @@ final auth=FirebaseAuth.instance;
         final departmentId=dox['department_id'];
         final v =await dbRef.collection("ins_admins").doc(insAdminId)
             .collection("institutes").doc(instituteId)
+            .collection("departments").doc(departmentId)
             .collection("faculty").doc(auth.currentUser!.uid).get();
         if(!v.exists){
           await Navigator.pushReplacementNamed(context, '/login');
