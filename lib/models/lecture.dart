@@ -9,7 +9,7 @@ class LectureModel {
   List<String>? present;//student ids here.
   List<String>? absent;//student ids here.
   String room;
-  String? status="upcoming";//upcoming,late,present,absent
+  String? status="upcoming";//upcoming,completed,ongoing,
   LectureModel({
     this.id,
     required this.course,

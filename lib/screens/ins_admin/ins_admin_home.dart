@@ -50,114 +50,6 @@ class _InsAdminHomeState extends State<InsAdminHome> {
           childAspectRatio: 1.4,
           physics: NeverScrollableScrollPhysics(),
           children: [
-            // manage faculty
-            InkWell(
-              onTap: (){
-              Navigator.push(context, MaterialPageRoute(builder: (_)=>DepartSelect(insAdmin: widget.insAdmin, institute: widget.institute,)));
-              },
-              child: SizedBox(
-
-                // height: MediaQuery.of(context).size.height*0.15,
-                child: Container(
-                  padding: EdgeInsets.only(
-                    left: 20,
-                    top: 15
-                  ),
-                   decoration: BoxDecoration(
-                     color: Colors.white,
-                     borderRadius: BorderRadius.circular(10),
-                     boxShadow: [
-                       BoxShadow(
-                         color: Colors.grey.withOpacity(0.2),
-                         spreadRadius: 2,
-                         blurRadius: 1,
-                         offset: Offset(0, 0), // changes position of shadow
-                       ),
-                     ]
-
-                   ),
-                   child: Column(
-                     mainAxisSize: MainAxisSize.min,
-                     children: [
-                       Row(
-                         children: [
-                           Container(
-                             padding: EdgeInsets.all(10),
-                             margin: EdgeInsets.all(8),
-                               decoration: BoxDecoration(
-                                   color: Colors.blue.withOpacity(0.15),
-                                   borderRadius: BorderRadius.circular(6)
-                               ),
-                               child: Icon(Icons.school,size: 27,color: Colors.blue,))
-                         ],
-                       ),
-                       SizedBox(height: 5,),
-                       Row(children: [
-                         Text("Manage Faculty",style: TextStyle(fontSize: 14,fontWeight: FontWeight.w500),)
-                       ],),
-                       SizedBox(height: 5,),
-                       Row(children: [
-                         Text("faculty operations",style: TextStyle(color: Colors.grey),)
-                       ],)
-                     ],
-                   ),
-                 ),
-              ),
-            ),
-            // manage students
-            InkWell(
-              onTap: (){
-                Navigator.push(context, MaterialPageRoute(builder: (_)=>Std_manage(insAdmin: widget.insAdmin, institute: widget.institute)));
-              },
-              child: SizedBox(
-
-                // height: MediaQuery.of(context).size.height*0.15,
-                child: Container(
-                  padding: EdgeInsets.only(
-                      left: 20,
-                      top: 15
-                  ),
-                  decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(10),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.2),
-                          spreadRadius: 2,
-                          blurRadius: 1,
-                          offset: Offset(0, 0), // changes position of shadow
-                        ),
-                      ]
-
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                              padding: EdgeInsets.all(10),
-                              margin: EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                  color: Color(0xffB45253).withOpacity(0.15),
-                                  borderRadius: BorderRadius.circular(6)
-                              ),
-                              child: Icon(Icons.people_alt,size: 27,color:Color(0xffB45253)))
-                        ],
-                      ),
-                      SizedBox(height: 5,),
-                      Row(children: [
-                        Text("Manage Students",style: TextStyle(fontSize: 14,fontWeight: FontWeight.w500),)
-                      ],),
-                      SizedBox(height: 5,),
-                      Row(children: [
-                        Text("students operations",style: TextStyle(color: Colors.grey),)
-                      ],)
-                    ],
-                  ),
-                ),
-              ),
-            ),
             // Department Management
             InkWell(
               onTap: (){
@@ -206,6 +98,60 @@ class _InsAdminHomeState extends State<InsAdminHome> {
                       SizedBox(height: 5,),
                       Row(children: [
                         Text("departmental operations",style: TextStyle(color: Colors.grey),)
+                      ],)
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            // manage faculty
+            InkWell(
+              onTap: (){
+                Navigator.push(context, MaterialPageRoute(builder: (_)=>DepartSelect(insAdmin: widget.insAdmin, institute: widget.institute,)));
+              },
+              child: SizedBox(
+
+                // height: MediaQuery.of(context).size.height*0.15,
+                child: Container(
+                  padding: EdgeInsets.only(
+                      left: 20,
+                      top: 15
+                  ),
+                  decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.withOpacity(0.2),
+                          spreadRadius: 2,
+                          blurRadius: 1,
+                          offset: Offset(0, 0), // changes position of shadow
+                        ),
+                      ]
+
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                              padding: EdgeInsets.all(10),
+                              margin: EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                  color: Colors.blue.withOpacity(0.15),
+                                  borderRadius: BorderRadius.circular(6)
+                              ),
+                              child: Icon(Icons.school,size: 27,color: Colors.blue,))
+                        ],
+                      ),
+                      SizedBox(height: 5,),
+                      Row(children: [
+                        Text("Manage Faculty",style: TextStyle(fontSize: 14,fontWeight: FontWeight.w500),)
+                      ],),
+                      SizedBox(height: 5,),
+                      Row(children: [
+                        Text("faculty operations",style: TextStyle(color: Colors.grey),)
                       ],)
                     ],
                   ),
@@ -263,6 +209,60 @@ class _InsAdminHomeState extends State<InsAdminHome> {
                           Flexible(child: Text("batches & semester",style: TextStyle(color: Colors.grey),))
                         ],),
                       )
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            // manage students
+            InkWell(
+              onTap: (){
+                Navigator.push(context, MaterialPageRoute(builder: (_)=>Std_manage(insAdmin: widget.insAdmin, institute: widget.institute)));
+              },
+              child: SizedBox(
+
+                // height: MediaQuery.of(context).size.height*0.15,
+                child: Container(
+                  padding: EdgeInsets.only(
+                      left: 20,
+                      top: 15
+                  ),
+                  decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.withOpacity(0.2),
+                          spreadRadius: 2,
+                          blurRadius: 1,
+                          offset: Offset(0, 0), // changes position of shadow
+                        ),
+                      ]
+
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                              padding: EdgeInsets.all(10),
+                              margin: EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                  color: Color(0xffB45253).withOpacity(0.15),
+                                  borderRadius: BorderRadius.circular(6)
+                              ),
+                              child: Icon(Icons.people_alt,size: 27,color:Color(0xffB45253)))
+                        ],
+                      ),
+                      SizedBox(height: 5,),
+                      Row(children: [
+                        Text("Manage Students",style: TextStyle(fontSize: 14,fontWeight: FontWeight.w500),)
+                      ],),
+                      SizedBox(height: 5,),
+                      Row(children: [
+                        Text("students operations",style: TextStyle(color: Colors.grey),)
+                      ],)
                     ],
                   ),
                 ),

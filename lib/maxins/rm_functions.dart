@@ -80,4 +80,16 @@ mixin RMFuncts{
 
     return "$years year${years == 1 ? '' : 's'} $months month${months == 1 ? '' : 's'} $days day${days == 1 ? '' : 's'}";
   }
+  //convert input string (1,2 or more words ,initial letters to capital)
+  static getSentenceCase(String s){
+      if (s.trim().isEmpty) return '';
+
+      return s
+          .trim()
+          .split(RegExp(r'\s+'))
+          .where((word) => word.isNotEmpty)
+          .map((word) => word[0].toUpperCase() + word.substring(1))
+          .join(' ');
+    }
+
 }

@@ -359,6 +359,7 @@ class _FacHomeTabState extends State<FacHomeTab> {
       ],
     ));
   }
+
   Future<int> getDepartmentLecturesThisWeekCount(BuildContext context, String insAdminId, String instituteId, String departmentId, String s) async {
     try {
       final dbService = Provider.of<DbService>(context, listen: false);
@@ -629,7 +630,7 @@ class _FacHomeTabState extends State<FacHomeTab> {
       return 0;
     }
   }
-  
+
   Widget _MarkAttendanceCard(BuildContext context){
     return Container(
       padding: EdgeInsets.symmetric(

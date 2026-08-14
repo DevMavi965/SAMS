@@ -648,7 +648,7 @@ class _DailyScheduleState extends State<DailySchedule> {
                         }(),
                       ),
 
-                    // ── inline time error 7777777777776666666666666
+                    // ── inline time error 77777777777766666666666667777
                     if (timeError != null)
                       Padding(
                         padding: const EdgeInsets.only(top: 6),

@@ -1102,7 +1102,7 @@ class DbService with ChangeNotifier{
       // ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("student Added Successfully")));
     }catch(e){
       print(e.toString());
-      // ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
     }finally{
 
     }

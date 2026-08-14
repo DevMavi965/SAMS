@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:smas3/models/ins_admin.dart';
 import 'package:smas3/models/institute.dart';
 import 'package:smas3/models/fac_model.dart';
 import 'package:smas3/models/lecture.dart';
+import 'package:smas3/screens/faculty/attend_view.dart';
 
 import '../../services/db_service.dart';
 // import the attendance-marking screen once it exists, e.g.:
@@ -40,6 +43,13 @@ class _LectureEntry {
     required this.semesterId,
     required this.courseId,
   });
+}
+
+// Merges a calendar date with a TimeOfDay into a real, comparable DateTime.
+// lecture.dated alone is midnight-only, so comparing it directly against
+// DateTime.now() was the bug: "today" always looked like "already completed".
+DateTime _combineDateAndTime(DateTime date, TimeOfDay time) {
+  return DateTime(date.year, date.month, date.day, time.hour, time.minute);
 }
 
 class _FacMarkAttendanceTabState extends State<FacMarkAttendanceTab> {
@@ -120,57 +130,33 @@ class _FacMarkAttendanceTabState extends State<FacMarkAttendanceTab> {
                       final entry = entries[i];
                       final lecture = entry.lecture;
 
-                      return InkWell(
-                        onTap: () {
+                      // Real start/end timestamps, not just the bare date.
+                      final start = _combineDateAndTime(
+                          lecture.dated, lecture.start_time);
+                      final end = _combineDateAndTime(
+                          lecture.dated, lecture.end_time);
+
+                      return _LectureCard(
+                        lecture: lecture,
+                        start: start,
+                        end: end,
+                        onTapWhileOngoing: () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => MarkAttendancePlaceholder(
-                                lecture: lecture,
-                                insAdminId: widget.insAdmin.id!,
-                                instituteId: widget.institute.id!,
-                                departmentId: entry.departmentId,
-                                sessionId: entry.sessionId,
-                                semesterId: entry.semesterId,
-                                courseId: entry.courseId,
-                              ),
+                                builder: (_) =>
+                                    AttendView(
+                                      lecture: lecture,
+                                      insAdminId: widget.insAdmin.id!,
+                                      instituteId: widget.institute.id!,
+                                      departmentId: entry.departmentId,
+                                      sessionId: entry.sessionId,
+                                      semesterId: entry.semesterId,
+                                      courseId: entry.courseId,
+                                    )
                             ),
                           );
                         },
-                        child: Container(
-                          margin: EdgeInsets.symmetric(horizontal: 5, vertical: 5),
-                          padding: EdgeInsets.symmetric(horizontal: 15, vertical: 12),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(7),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(lecture.course,
-                                        style: TextStyle(fontWeight: FontWeight.w600)),
-                                    SizedBox(height: 4),
-                                    Text(
-                                      "${lecture.dated.day}/${lecture.dated.month}/${lecture.dated.year}"
-                                          "  ${lecture.start_time.hour.toString().padLeft(2, '0')}:${lecture.start_time.minute.toString().padLeft(2, '0')}"
-                                          " - ${lecture.end_time.hour.toString().padLeft(2, '0')}:${lecture.end_time.minute.toString().padLeft(2, '0')}",
-                                      style: TextStyle(color: Colors.grey, fontSize: 13),
-                                    ),
-                                    SizedBox(height: 4),
-                                    if (lecture.room != null)
-                                      Text("Room: ${lecture.room}",
-                                          style: TextStyle(color: Colors.grey, fontSize: 13)),
-                                  ],
-                                ),
-                              ),
-                              _StatusBadge(status: lecture.status!),
-                            ],
-                          ),
-                        ),
                       );
                     },
                   );
@@ -238,59 +224,183 @@ class _FacMarkAttendanceTabState extends State<FacMarkAttendanceTab> {
   }
 }
 
-class _StatusBadge extends StatelessWidget {
-  final String status;
-  const _StatusBadge({required this.status});
+// Card for a single lecture. Only navigates to AttendView while the
+// lecture is currently ongoing — ticks on its own timer so a lecture
+// that just started (or just ended) becomes tappable/locked without
+// needing the whole list to rebuild.
+class _LectureCard extends StatefulWidget {
+  final LectureModel lecture;
+  final DateTime start;
+  final DateTime end;
+  final VoidCallback onTapWhileOngoing;
+
+  const _LectureCard({
+    required this.lecture,
+    required this.start,
+    required this.end,
+    required this.onTapWhileOngoing,
+  });
+
+  @override
+  State<_LectureCard> createState() => _LectureCardState();
+}
+
+class _LectureCardState extends State<_LectureCard> {
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  bool get _isOngoing {
+    final now = DateTime.now();
+    return !now.isBefore(widget.start) && !now.isAfter(widget.end);
+  }
 
   @override
   Widget build(BuildContext context) {
-    Color color;
-    switch (status) {
-      case "completed":
-        color = Colors.green;
-        break;
-      case "upcoming":
-        color = Colors.orange;
-        break;
-      case "ongoing":
-        color = Colors.blue;
-        break;
-      default:
-        color = Colors.grey;
-    }
+    final lecture = widget.lecture;
+    final isOngoing = _isOngoing;
+
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.15),
-        borderRadius: BorderRadius.circular(20),
+      margin: const EdgeInsets.symmetric(vertical: 5),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(7),
+        onTap: () {
+          if (isOngoing) {
+            widget.onTapWhileOngoing();
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  DateTime.now().isBefore(widget.start)
+                      ? "Attendance opens once the lecture starts."
+                      : "This lecture has already ended.",
+                ),
+                duration: const Duration(seconds: 2),
+              ),
+            );
+          }
+        },
+        child: Opacity(
+          opacity: isOngoing ? 1.0 : 0.85,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey.withOpacity(0.2)),
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(7),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(lecture.course,
+                          style: const TextStyle(fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 7),
+                      Text(
+                        "${lecture.dated.day}/${lecture.dated.month}/${lecture.dated.year}"
+                            "  ${lecture.start_time.hour.toString().padLeft(2, '0')}:${lecture.start_time.minute.toString().padLeft(2, '0')}"
+                            " - ${lecture.end_time.hour.toString().padLeft(2, '0')}:${lecture.end_time.minute.toString().padLeft(2, '0')}",
+                        style: const TextStyle(color: Colors.grey, fontSize: 13),
+                      ),
+                      const SizedBox(height: 7),
+                      if (lecture.room != null)
+                        Text("Room: ${lecture.room}",
+                            style: const TextStyle(color: Colors.grey, fontSize: 13)),
+                    ],
+                  ),
+                ),
+                _LectureStatusBadge(start: widget.start, end: widget.end),
+              ],
+            ),
+          ),
+        ),
       ),
-      child: Text(status,
-          style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w600)),
     );
   }
 }
 
-// Placeholder — replace with your real attendance-marking screen.
-class MarkAttendancePlaceholder extends StatelessWidget {
-  final LectureModel lecture;
-  final String insAdminId, instituteId, departmentId, sessionId, semesterId, courseId;
+// Self-ticking status badge. Recomputes its own state on a timer instead
+// of relying on the parent list to rebuild, so "upcoming" countdowns and
+// the ongoing/completed transition stay live in real time.
+class _LectureStatusBadge extends StatefulWidget {
+  final DateTime start;
+  final DateTime end;
 
-  const MarkAttendancePlaceholder({
-    super.key,
-    required this.lecture,
-    required this.insAdminId,
-    required this.instituteId,
-    required this.departmentId,
-    required this.sessionId,
-    required this.semesterId,
-    required this.courseId,
-  });
+  const _LectureStatusBadge({required this.start, required this.end});
+
+  @override
+  State<_LectureStatusBadge> createState() => _LectureStatusBadgeState();
+}
+
+class _LectureStatusBadgeState extends State<_LectureStatusBadge> {
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    // Ticks every 30s so the countdown stays fresh without hammering
+    // the UI. Bump to 60s if this list gets long.
+    _timer = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  // Standalone helper: time left until [target]. Null if already past.
+  static Duration? timeRemaining(DateTime target) {
+    final now = DateTime.now();
+    if (target.isBefore(now)) return null;
+    return target.difference(now);
+  }
+
+  static String _formatDuration(Duration d) {
+    if (d.inDays > 0) return "${d.inDays}d ${d.inHours % 24}h";
+    if (d.inHours > 0) return "${d.inHours}h ${d.inMinutes % 60}m";
+    if (d.inMinutes > 0) return "${d.inMinutes}m";
+    return "<1m";
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(lecture.course)),
-      body: Center(child: Text("TODO: list students of this semester and mark present/absent/late")),
-    );
+    final now = DateTime.now();
+
+    if (now.isBefore(widget.start)) {
+      final remaining = timeRemaining(widget.start)!;
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          const Badge(backgroundColor: Colors.blue, label: Text("upcoming")),
+          const SizedBox(height: 4),
+          Text(
+            "in ${_formatDuration(remaining)}",
+            style: const TextStyle(fontSize: 11, color: Colors.grey),
+          ),
+        ],
+      );
+    } else if (now.isAfter(widget.end)) {
+      return const Badge(backgroundColor: Colors.green, label: Text("completed"));
+    } else {
+      return const Badge(backgroundColor: Colors.red, label: Text("ongoing"));
+    }
   }
 }
