@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:smas3/maxins/rm_functions.dart';
 import 'package:smas3/models/lecture.dart';
 
 import '../../models/lecture.dart' show LectureModel;
@@ -13,6 +14,9 @@ class FacClassCard extends StatefulWidget {
 }
 
 class _FacClassCardState extends State<FacClassCard> {
+ 
+ 
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -39,7 +43,7 @@ class _FacClassCardState extends State<FacClassCard> {
               ),
               child:
               Padding(
-                padding: const EdgeInsets.all(12.0),
+                padding:  EdgeInsets.all(12.0),
                 child: Icon(PhosphorIconsBold.calendarBlank,color: Theme.of(context).primaryColor,size: 25,),
               ),
             ),
@@ -48,7 +52,7 @@ class _FacClassCardState extends State<FacClassCard> {
             trailing: Container(
               padding: EdgeInsets.all(3),
               decoration: BoxDecoration(
-                color: widget.lectureModel.status=="completed" ?Theme.of(context).primaryColor: Colors.white,
+                color: RMFuncts.getliveStatus(widget.lectureModel.dated,widget.lectureModel.start_time,widget.lectureModel.end_time)=="ongoing"? Colors.red:(RMFuncts.getliveStatus(widget.lectureModel.dated,widget.lectureModel.start_time,widget.lectureModel.end_time)=="completed" ?Theme.of(context).primaryColor: Colors.green),
                   borderRadius: BorderRadius.circular(15),
                   border: Border.all(
                       width: 0.3,
@@ -57,7 +61,10 @@ class _FacClassCardState extends State<FacClassCard> {
               ),
               child: Badge(
                 backgroundColor: Colors.transparent,
-                label: Text(widget.lectureModel.status!,style: TextStyle(color:widget.lectureModel.status=="completed"? Colors.white:Colors.black),),
+                label: Padding(
+                  padding: const EdgeInsets.all(3.0),
+                  child: Text(RMFuncts.getliveStatus(widget.lectureModel.dated,widget.lectureModel.start_time,widget.lectureModel.end_time),style: TextStyle(color:Colors.white),),
+                ),
               ),
             ),
           ),
@@ -66,7 +73,7 @@ class _FacClassCardState extends State<FacClassCard> {
             children: [
               SizedBox(),
               Text("Attendance ",style: TextStyle(color: Colors.grey,fontSize: 12),),
-              Text("${widget.lectureModel.status=="upcoming" ?0:807}%%% students",style: TextStyle(color: Colors.grey,fontSize: 12),)
+              Text("${RMFuncts.getliveStatus(widget.lectureModel.dated,widget.lectureModel.start_time,widget.lectureModel.end_time)=="upcoming" ?0:807}%%% students",style: TextStyle(color: Colors.grey,fontSize: 12),)
             ],
           ),
           SizedBox(height: 10,),
@@ -80,12 +87,12 @@ class _FacClassCardState extends State<FacClassCard> {
               minHeight: 10,
               backgroundColor: Theme.of(context).primaryColor.withOpacity(0.2),
               borderRadius: BorderRadiusGeometry.circular(12),
-              value:widget.lectureModel.status=="upcoming" ?0: 455,
+              value:RMFuncts.getliveStatus(widget.lectureModel.dated,widget.lectureModel.start_time,widget.lectureModel.end_time)=="upcoming" ?0: 455,
               valueColor: AlwaysStoppedAnimation(Theme.of(context).primaryColor),
             ),
           ),
           //marked or not
-          widget.lectureModel.status=="completed" ?SizedBox():Padding(
+          RMFuncts.getliveStatus(widget.lectureModel.dated,widget.lectureModel.start_time,widget.lectureModel.end_time)=="ongoing" ?Padding(
             padding: const EdgeInsets.only(
                 left: 85,
                 top: 10
@@ -109,7 +116,7 @@ class _FacClassCardState extends State<FacClassCard> {
                 ],
               ),
             ),
-          )
+          ):SizedBox(),
         ],
       ),
     );

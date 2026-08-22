@@ -1,4 +1,6 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:lottie/lottie.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:smas3/models/student_model.dart';
 class PersonalInfo extends StatelessWidget {
@@ -136,7 +138,22 @@ class PersonalInfo extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text("Current Semster",style: TextStyle(color: Colors.grey),),
-                          Text(student.semesterId),
+                          FutureBuilder(future: getSemesterNo(student.id!), builder: (context,snapshot){
+                            if(snapshot.connectionState==ConnectionState.waiting){
+                              return  SizedBox(
+                                  height: 60,
+                                  width: 60,
+                                  child: Lottie.asset("assets/anims/an1.json"));
+                            }else if(snapshot.hasError){
+                              return Text(snapshot.error.toString());
+                            }else if(!snapshot.hasData){
+                              return Text("no data found");
+                            }else if(snapshot.hasData){
+                              return Text("Semester  ${snapshot.data.toString()}",style: TextStyle(fontSize: 11,color: Colors.black),);
+                            }
+                            return SizedBox();
+                          })
+                          ,
                         ],
                       )
                     ],
@@ -147,5 +164,22 @@ class PersonalInfo extends StatelessWidget {
         ],
       ),
     );
+  }
+  getSemesterNo(String id) async {
+    final doX=await FirebaseFirestore.instance.collection("SAMS").doc("SAMS_DB").collection("index").doc(id).get();
+    String insAdminId= doX['ins_admin_id'];
+    String instituteId= doX['institute_id'];
+    String departmentId= doX['department_id'];
+    String sessionId= doX['session_id'];
+    String semesterId= doX['semester_id'];
+    final semesterFuture = FirebaseFirestore.instance.collection("SAMS")
+        .doc("SAMS_DB").collection("ins_admins").doc(insAdminId)
+        .collection("institutes").doc(instituteId)
+        .collection("departments").doc(departmentId)
+        .collection("sessions").doc(sessionId)
+        .collection("semesters").doc(semesterId)
+        .get();
+    String semesterName = (await semesterFuture).data()!['semester_no'].toString();
+    return semesterName;
   }
 }

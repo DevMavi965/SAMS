@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 mixin RMFuncts{
   static String getFirstLetters(String input) {
     if (input.isEmpty) return '';
@@ -91,5 +93,13 @@ mixin RMFuncts{
           .map((word) => word[0].toUpperCase() + word.substring(1))
           .join(' ');
     }
+  static  String getliveStatus(DateTime dated, TimeOfDay start_time, TimeOfDay end_time) {
+    final now = DateTime.now();
+    final start = DateTime(dated.year, dated.month, dated.day, start_time.hour, start_time.minute);
+    final end   = DateTime(dated.year, dated.month, dated.day, end_time.hour, end_time.minute);
 
+    if (now.isBefore(start)) return "upcoming";
+    if (now.isAfter(end))    return "completed";
+    return "ongoing";
+  }
 }

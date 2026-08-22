@@ -89,7 +89,7 @@ class _AttendViewState extends State<AttendView> {
                         margin: EdgeInsets.symmetric(
                             horizontal: 5,vertical: 10
                         ),
-                        padding: EdgeInsets.symmetric(horizontal: 2,vertical: 5),
+                        padding: EdgeInsets.symmetric(horizontal: 2,vertical: 3),
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(7),
@@ -125,46 +125,132 @@ class _AttendViewState extends State<AttendView> {
                                 ),
                                 Expanded(child: Column(
                                   children: [
-                                    CircleAvatar(
-                                      radius: 12,
-                                      backgroundColor: Colors.grey,
-                                      child: Text("A",style: TextStyle(
-                                        color: Colors.white
-                                      ),),
-                                    )
+                                    _statusBadge(students[i].id!,widget.lecture),
                                   ],
                                 ))
                               ],),
-                            SizedBox(height: 15,),
+                            SizedBox(height: 5,width: 2,),
+                            Divider(color: Colors.grey.shade300,),
+                            SizedBox(height: 5,width: 2,),
+                            if(widget.lecture.present!.contains(students[i].id))...[
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 SizedBox(width: 10,),
                                 Expanded(child: Row(
                                   children: [
-                                    Icon(CupertinoIcons.time,size: 15,),
-                                    SizedBox(width: 2,),
-                                    Flexible(child: Text("in:   06:10",style: TextStyle(fontSize: 13),)),
+                                    Flexible(child: Container(
+                                        padding: EdgeInsets.all(8),
+                                        decoration: BoxDecoration(
+
+                                          color: Theme.of(context).primaryColor.withOpacity(0.15),
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child:Image.asset("assets/icons/checkin.png",height: 25,width: 25,)
+                                    ),),
+                                    SizedBox(width:7,),
+                                    Flexible(child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text("Check-in ",style: TextStyle(fontSize: 13),),
+                                        Text("06:10",style: TextStyle(fontSize: 13,fontWeight: FontWeight.w700,color: Theme.of(context).primaryColor),),
+                                      ],
+                                    )),
                                   ],
                                 )),
                                 SizedBox(width: 10,),
                                 Expanded(child: Row(
                                   children: [
-                                    Icon(Icons.verified,size: 14,),
-                                    SizedBox(width: 2,),
-                                    Flexible(child: Text("mid-point:   06:10",style: TextStyle(fontSize: 12),)),
+                                    Flexible(child: Container(
+                                        padding: EdgeInsets.all(8),
+                                        decoration: BoxDecoration(
+
+                                          color: Colors.orange.withOpacity(0.15),
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child:Icon(PhosphorIconsBold.target,size: 25,color: Colors.orange,)
+                                    ),),
+                                    SizedBox(width:7,),
+                                    Flexible(child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text("mid-point",maxLines: 1,overflow: TextOverflow.ellipsis,style: TextStyle(fontSize: 13),),
+                                        Text("06:10",style: TextStyle(fontSize: 13,fontWeight: FontWeight.w700,color: Colors.orange),),
+                                      ],
+                                    )),
                                   ],
                                 )),
                                 SizedBox(width: 10,),
                                 Expanded(child: Row(
                                   children: [
-                                    Icon(CupertinoIcons.time,size: 15,),
-                                    SizedBox(width: 2,),
-                                    Flexible(child: Text("out:   08:15",style: TextStyle(fontSize: 13),)),
+                                    Flexible(child: Container(
+                                        padding: EdgeInsets.all(8),
+                                        decoration: BoxDecoration(
+
+                                          color: Colors.red.withOpacity(0.15),
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child:Image.asset("assets/icons/checkout.png",height: 25,width: 25,)
+                                    ),),
+                                    SizedBox(width:7,),
+                                    Flexible(child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text("Check-out",maxLines: 1,overflow: TextOverflow.ellipsis,style: TextStyle(fontSize: 13),),
+                                        Text("06:10",style: TextStyle(fontSize: 13,fontWeight: FontWeight.w700,color: Colors.red),),
+                                      ],
+                                    )),
                                   ],
                                 )),
                               ],
-                            )
+                            ),
+                            SizedBox(height: 5,width: 2,),
+                            Divider(color: Colors.grey.shade300,),
+                            SizedBox(height: 5,width: 2,),
+                            Row(children: [
+                              SizedBox(width: 10,),
+                              Expanded(
+                                  flex: 2,
+                                  child: Text("Attendance Method")),
+                              Expanded(child: SizedBox()),
+                              Expanded(child: Container(
+                                  padding: EdgeInsets.all(5),
+                                  decoration: BoxDecoration(
+
+                                    color: Theme.of(context).primaryColor.withOpacity(0.15),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child:Container(
+                                      margin: EdgeInsets.all(5),
+                                      child: PhosphorIcon(PhosphorIconsBold.handTap,color: Theme.of(context).primaryColor,))
+                              )),
+                            ],)
+                            ]else...[
+                              Row(
+                                children: [
+                                  Expanded(child: Row(
+                                    children: [
+                                      Expanded(child: SizedBox()),
+                                      Expanded(child:ElevatedButton(
+
+                                          style: ButtonStyle(
+                                            //radius
+                                            shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                                                RoundedRectangleBorder(
+                                                  borderRadius: BorderRadius.circular(8.0),
+                                                )
+                                            ),
+                                            backgroundColor: MaterialStateColor.resolveWith((states) => Theme.of(context).primaryColor),
+                                          ),
+                                          onPressed: (){
+                                            Provider.of<DbService>(context,listen: false).markAttendancePresent(context, widget.lecture, students[i].id!);
+                                          }, child: Text("Mark Attendance",style: TextStyle(color: Colors.white),))),
+                                    ],
+                                  ))
+                                ],
+                              )
+                            ]
+
                           ],
                         ),
                       ),
@@ -174,5 +260,28 @@ class _AttendViewState extends State<AttendView> {
             return SizedBox();
           })
     );
+  }
+
+  _statusBadge(String studentId,LectureModel lecture) {
+    List<String> present=lecture.present!;
+    List<String> absent=lecture.absent!;
+    if(present.contains(studentId)){
+      return CircleAvatar(
+        radius: 12,
+        backgroundColor:Theme.of(context).primaryColor,
+        child: Text("P",style: TextStyle(
+            color: Colors.white
+        ),),
+      );
+    }else {
+      return CircleAvatar(
+        radius: 12,
+        backgroundColor:Colors.red,
+        child: Text("A",style: TextStyle(
+            color: Colors.white
+        ),),
+      );
+    }
+
   }
 }

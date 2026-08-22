@@ -157,146 +157,153 @@ class _FacManageState extends State<FacManage> {
                         children: [
 
                         SizedBox(width: 9,),
-                        Badge(
-                          backgroundColor: Theme.of(context).primaryColor.withAlpha(40),
-                          label:
-                          Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Text(lecturers[index].deprt,style: TextStyle(color:Theme.of(context).primaryColor,fontWeight: FontWeight.w500),),
+                        Flexible(
+                          child: Badge(
+                            backgroundColor: Theme.of(context).primaryColor.withAlpha(40),
+                            label:
+                            Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Text(widget.department.name,maxLines: 1,overflow: TextOverflow.ellipsis,style: TextStyle(color:Theme.of(context).primaryColor,fontWeight: FontWeight.w500),),
+                            ),
                           ),
                         ),
                         SizedBox(width: 9,),
-                        Badge(
-                          backgroundColor: Theme.of(context).primaryColor.withAlpha(40),
-                          label:
-                          Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Text(lecturers[index].designation,style: TextStyle(color:Theme.of(context).primaryColor,fontWeight: FontWeight.w500),),
+                        Flexible(
+                          child: Badge(
+                            backgroundColor: Theme.of(context).primaryColor.withAlpha(40),
+                            label:
+                            Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Text(lecturers[index].designation,maxLines: 1,overflow: TextOverflow.ellipsis,style: TextStyle(color:Theme.of(context).primaryColor,fontWeight: FontWeight.w500),),
+                            ),
                           ),
                         ),
                         SizedBox(width: 9,),
-                        Badge(
-                          backgroundColor: Theme.of(context).primaryColor.withAlpha(40),
-                          label:
-                          Padding(
-                            padding: const EdgeInsets.all(8.0),
-                           child: FutureBuilder(future: getCourseCountByLecturer(lecturers[index].id!), builder: (context,snapshot){
-                              if(snapshot.connectionState==ConnectionState.waiting){
-                                return Text("Loading...");
-                              }else if(snapshot.hasError){
-                                return Text("Error: ${snapshot.error}");
-                              }else if(!snapshot.hasData){
-                                return Text("No data found");
-                              }else{
-                                return Text("${snapshot.data} Courses",style: TextStyle(color:Theme.of(context).primaryColor,fontWeight: FontWeight.w500),);
-                              }
-                           }),
+                        Flexible(
+                          child: Badge(
+                            backgroundColor: Theme.of(context).primaryColor.withAlpha(40),
+                            label:
+                            Padding(
+                              padding: const EdgeInsets.all(8.0),
+                             child: FutureBuilder(future: getCourseCountByLecturer(lecturers[index].id!), builder: (context,snapshot){
+                                if(snapshot.connectionState==ConnectionState.waiting){
+                                  return Text("Loading...");
+                                }else if(snapshot.hasError){
+                                  return Text("Error: ${snapshot.error}");
+                                }else if(!snapshot.hasData){
+                                  return Text("No data found");
+                                }else{
+                                  return Text("${snapshot.data} Courses",style: TextStyle(color:Theme.of(context).primaryColor,fontWeight: FontWeight.w500),);
+                                }
+                             }),
+                            ),
                           ),
                         ),
-                          SizedBox(width: 9,),
-                          IconButton(
-                              style: ButtonStyle(
-                                padding: MaterialStateProperty.all(EdgeInsets.all(0)),
-                              ),
-                              onPressed: (){
-                            namex.text=lecturers[index].name;
-                            phonex.text=lecturers[index].phone;
-                            showModalBottomSheet(
-                                shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10)
+                        SizedBox(width: 9,),
+                        Flexible(
+                          child: IconButton(
+                                style: ButtonStyle(
+                                  padding: MaterialStateProperty.all(EdgeInsets.all(0)),
                                 ),
-                                showDragHandle: true,
-                                context: context, builder: (context)=>StatefulBuilder(builder: (context,set)=>Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 15,vertical: 10,
-                              ),child: Form(
-                                key: fkey,
-                                child: Column(children: [
-                                  Text("Update Faculty",style: TextStyle(fontSize: 20,fontWeight: FontWeight.w600),),
-                                  SizedBox(height: 15,),
-                                  TextFormField(
-                                    controller: namex,
-                                    decoration: InputDecoration(
-                                      labelText: "name",
-                                      prefixIcon: Icon(Icons.person),
-
-                                      border: OutlineInputBorder(),
-                                      focusedBorder: OutlineInputBorder(
-                                          borderSide: BorderSide(
-                                              color: Theme.of(context).primaryColor,
-                                              width: 1
-                                          )
-                                      ),
-                                    ),
-                                    validator: (v){
-                                      if(v!.isEmpty){
-                                        return "Please enter name";
-                                      }else if(v.length<4){
-                                        return "name must be at least 4 characters";
-                                      }
-                                      return null;
-                                    },
+                                onPressed: (){
+                              namex.text=lecturers[index].name;
+                              phonex.text=lecturers[index].phone;
+                              showModalBottomSheet(
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10)
                                   ),
-                                  SizedBox(height: 20,),
-                                  TextFormField(
-                                    controller: phonex,
-                                    decoration: InputDecoration(
-                                      labelText: "phone",
-                                      prefixIcon: Icon(Icons.call),
+                                  showDragHandle: true,
+                                  context: context, builder: (context)=>StatefulBuilder(builder: (context,set)=>Container(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 15,vertical: 10,
+                                ),child: Form(
+                                  key: fkey,
+                                  child: Column(children: [
+                                    Text("Update Faculty",style: TextStyle(fontSize: 20,fontWeight: FontWeight.w600),),
+                                    SizedBox(height: 15,),
+                                    TextFormField(
+                                      controller: namex,
+                                      decoration: InputDecoration(
+                                        labelText: "name",
+                                        prefixIcon: Icon(Icons.person),
 
-                                      border: OutlineInputBorder(),
-                                      focusedBorder: OutlineInputBorder(
-                                          borderSide: BorderSide(
-                                              color: Theme.of(context).primaryColor,
-                                              width: 1
-                                          )
+                                        border: OutlineInputBorder(),
+                                        focusedBorder: OutlineInputBorder(
+                                            borderSide: BorderSide(
+                                                color: Theme.of(context).primaryColor,
+                                                width: 1
+                                            )
+                                        ),
                                       ),
+                                      validator: (v){
+                                        if(v!.isEmpty){
+                                          return "Please enter name";
+                                        }else if(v.length<4){
+                                          return "name must be at least 4 characters";
+                                        }
+                                        return null;
+                                      },
                                     ),
-                                    validator: (v){
-                                      if(v!.isEmpty){
-                                        return "Please enter phone";
-                                      }else if(v.length<10){
-                                        return "name must be at least 10 characters";
+                                    SizedBox(height: 20,),
+                                    TextFormField(
+                                      controller: phonex,
+                                      decoration: InputDecoration(
+                                        labelText: "phone",
+                                        prefixIcon: Icon(Icons.call),
+
+                                        border: OutlineInputBorder(),
+                                        focusedBorder: OutlineInputBorder(
+                                            borderSide: BorderSide(
+                                                color: Theme.of(context).primaryColor,
+                                                width: 1
+                                            )
+                                        ),
+                                      ),
+                                      validator: (v){
+                                        if(v!.isEmpty){
+                                          return "Please enter phone";
+                                        }else if(v.length<10){
+                                          return "name must be at least 10 characters";
+                                        }
+                                        return null;
+                                      },
+                                    ),
+                                    SizedBox(height: 20,),
+                                    ElevatedButton.icon(onPressed: (){
+                                      if(fkey.currentState!.validate()){
+                                        Lecturer lec=Lecturer(
+                                          id: lecturers[index].id,
+                                            name: namex.text.trim(),
+                                            deprt: lecturers[index].deprt,
+                                            role: lecturers[index].role,
+                                            insAdminId:lecturers[index].insAdminId,
+                                            instituteId: lecturers[index].instituteId,
+                                            departmentId: lecturers[index].departmentId,
+                                            designation: lecturers[index].designation,
+                                            status: lecturers[index].status,
+                                            email: lecturers[index].email,
+                                            phone: phonex.text.trim(),
+                                            semesters: lecturers[index].semesters,
+                                            courses: lecturers[index].courses,
+                                            created_at: lecturers[index].created_at,
+                                        );
+                                        Provider.of<DbService>(context,listen: false).updateFaculty(context, lec);
+                                        Navigator.pop(context);
+
+                                      }else{
+                                        Navigator.pop(context);
+                                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("enter valid values")));
                                       }
-                                      return null;
-                                    },
-                                  ),
-                                  SizedBox(height: 20,),
-                                  ElevatedButton.icon(onPressed: (){
-                                    if(fkey.currentState!.validate()){
-                                      Lecturer lec=Lecturer(
-                                        id: lecturers[index].id,
-                                          name: namex.text.trim(),
-                                          deprt: lecturers[index].deprt,
-                                          role: lecturers[index].role,
-                                          insAdminId:lecturers[index].insAdminId,
-                                          instituteId: lecturers[index].instituteId,
-                                          departmentId: lecturers[index].departmentId,
-                                          designation: lecturers[index].designation,
-                                          status: lecturers[index].status,
-                                          email: lecturers[index].email,
-                                          phone: phonex.text.trim(),
-                                          semesters: lecturers[index].semesters,
-                                          courses: lecturers[index].courses,
-                                          created_at: lecturers[index].created_at,
-                                      );
-                                      Provider.of<DbService>(context,listen: false).updateFaculty(context, lec);
-                                      Navigator.pop(context);
-
-                                    }else{
-                                      Navigator.pop(context);
-                                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("enter valid values")));
-                                    }
 
 
 
 
-                                  }, label: Text("Update",style: TextStyle(color: Theme.of(context).primaryColor),),),
-                                ],)),
-                            )
-                            ));
-                          }, icon: FaIcon(FontAwesomeIcons.userPen,color: Theme.of(context).primaryColor,size: 20,)),
-
+                                    }, label: Text("Update",style: TextStyle(color: Theme.of(context).primaryColor),),),
+                                  ],)),
+                              )
+                              ));
+                            }, icon: FaIcon(FontAwesomeIcons.userPen,color: Theme.of(context).primaryColor,size: 20,)),
+                        ),
                         ],)
                     ],
                   ),

@@ -1582,7 +1582,22 @@ class DbService with ChangeNotifier{
   }
   markAttendancePresent(BuildContext context,LectureModel lectureModel,String studentId)async{
     try{
+      DateTime start_time_date=DateTime(
+        lectureModel.dated.year,
+        lectureModel.dated.month,
+        lectureModel.dated.day,
+        lectureModel.start_time.hour,
+        lectureModel.start_time.minute,
 
+      );
+      DateTime end_time_date=DateTime(
+        lectureModel.dated.year,
+        lectureModel.dated.month,
+        lectureModel.dated.day,
+        lectureModel.end_time.hour,
+        lectureModel.end_time.minute,
+
+      );
       List<String> students_=lectureModel.present!;
       students_.add(studentId);
       final dox=await indexDoc.doc(lectureModel.id).get();
@@ -1596,11 +1611,11 @@ class DbService with ChangeNotifier{
           .doc(dox.get("course_id")).collection("lectures")
           .doc(lectureModel.id).update({
         "dated":lectureModel.dated,//datetime to timestamp",
-        "start_time":lectureModel.start_time,//datetime to timestamp",
-        "end_time":lectureModel.end_time,//datetime to timestamp",
+        "start_time":Timestamp.fromDate(start_time_date),//datetime to timestamp",
+        "end_time":Timestamp.fromDate(end_time_date),//datetime to timestamp",
         "present":students_,
-        "absent":lectureModel.absent,
-        "room":lectureModel.room,
+        // "absent":lectureModel.absent,
+        // "room":lectureModel.room,
         "course_name":lectureModel.course,//will take course_name using id back in ui
         "status":lectureModel.status,
       });
@@ -1724,8 +1739,8 @@ class DbService with ChangeNotifier{
           .doc(dox.get("course_id")).collection("lectures")
           .doc(lectureModel.id).update({
         // "dated":Timestamp.fromDate(lectureModel.dated),//datetime to timestamp",
-        // "start_time":Timestamp.fromDate(start_time_date),//datetime to timestamp",
-        // "end_time":Timestamp.fromDate(end_time_date),//datetime to timestamp",
+        "start_time":Timestamp.fromDate(start_time_date),//datetime to timestamp",
+        "end_time":Timestamp.fromDate(end_time_date),//datetime to timestamp",
         // "students":lectureModel.students,
         // "present":lectureModel.present,
         "absent":students_abs,

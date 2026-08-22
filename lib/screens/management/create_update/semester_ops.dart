@@ -477,6 +477,12 @@ class _SemesterOpsState extends State<SemesterOps> {
             return SizedBox();
           }),
       floatingActionButton: FloatingActionButton(onPressed: () {
+        if (semesters.isNotEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text("This session already has a semester — only 1 semester is allowed per session"),
+          ));
+          return;
+        }
         showDialog(context: context, builder: (context) =>
             StatefulBuilder(builder:
                 (_, setState2) =>

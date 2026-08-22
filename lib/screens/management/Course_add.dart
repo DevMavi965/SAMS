@@ -155,6 +155,7 @@ class _CourseAddState extends State<CourseAdd> {
                 stream: FirebaseFirestore.instance
                     .collection("SAMS").doc("SAMS_DB").collection("index")
                     .where("institute_id", isEqualTo: widget.institute.id)
+                    .where("department_id", isEqualTo: widget.department.id)
                     .where("role", isEqualTo: "faculty") // confirm this matches lecturer.role's actual value
                     .snapshots(),
                 builder: (context, indexSnapshot) {

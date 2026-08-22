@@ -209,8 +209,7 @@ class _FacMarkAttendanceTabState extends State<FacMarkAttendanceTab> {
         );
         return _LectureEntry(
           lecture: lecture,
-          // keep the full DateTime around separately for sorting —
-          // TimeOfDay alone can't be compared across different dates
+          // keeing the full DatexTime around separately for sort
           sortKey: startDateTime,
           departmentId: departmentId,
           sessionId: sessionId,
@@ -279,7 +278,8 @@ class _LectureCardState extends State<_LectureCard> {
         onTap: () {
           if (isOngoing) {
             widget.onTapWhileOngoing();
-          } else {
+          }
+          else {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(
@@ -389,7 +389,12 @@ class _LectureStatusBadgeState extends State<_LectureStatusBadge> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          const Badge(backgroundColor: Colors.blue, label: Text("upcoming")),
+           Badge(backgroundColor: Colors.blue, label:
+          Container(
+              margin: EdgeInsets.symmetric(
+                horizontal: 6,vertical: 5
+              ),
+              child: Text("upcoming"))),
           const SizedBox(height: 4),
           Text(
             "in ${_formatDuration(remaining)}",
@@ -398,9 +403,19 @@ class _LectureStatusBadgeState extends State<_LectureStatusBadge> {
         ],
       );
     } else if (now.isAfter(widget.end)) {
-      return const Badge(backgroundColor: Colors.green, label: Text("completed"));
+      return  Badge(backgroundColor: Colors.green, label:
+      Container(
+          margin: EdgeInsets.symmetric(
+            horizontal: 6,vertical: 5
+          ),
+          child: Text("completed")));
     } else {
-      return const Badge(backgroundColor: Colors.red, label: Text("ongoing"));
+      return  Badge(backgroundColor: Colors.red, label:
+      Container(
+          margin: EdgeInsets.symmetric(
+            horizontal: 6,vertical: 5
+          ),
+          child: Text("ongoing")));
     }
   }
 }

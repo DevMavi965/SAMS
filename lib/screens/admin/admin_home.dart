@@ -70,28 +70,26 @@ class _AdminHomeState extends State<AdminHome> {
         crossAxisSpacing: 15,
         mainAxisSpacing: 15,
         shrinkWrap: true,
-        childAspectRatio: 1.4,
+        childAspectRatio: MediaQuery.of(context).orientation == Orientation.portrait
+            ? 1.05   //
+            : 1.4,
         physics: NeverScrollableScrollPhysics(),
         children: [
-          // manage faculty
+          // Department Management
           InkWell(
             onTap: (){
-              if(widget.admin.permissions!.contains("faculty_management")){
-                Navigator.push(context, MaterialPageRoute(builder: (_)=>DepartSelect(insAdmin: widget.insAdmin, institute: widget.institute,)));
+              if(widget.admin.permissions!.contains("department_management")){
+                Navigator.push(context, MaterialPageRoute(builder: (_)=>DepartManage(insAdmin:widget.insAdmin, institute: widget.institute,)));
               }else{
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("You don't have permission to manage faculty"),backgroundColor: Theme.of(context).primaryColor,));
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("You don't have permission to manage departments"),backgroundColor: Theme.of(context).primaryColor,));
               }
             },
             child: SizedBox(
-
               // height: MediaQuery.of(context).size.height*0.15,
               child: Stack(
                 children: [
                   Container(
-                    padding: EdgeInsets.only(
-                        left: 20,
-                        top: 15
-                    ),
+                    padding: EdgeInsets.all(8),
                     decoration: BoxDecoration(
                         color:Colors.white,
                         borderRadius: BorderRadius.circular(10),
@@ -108,17 +106,152 @@ class _AdminHomeState extends State<AdminHome> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Row(
-                          children: [
-                            Container(
-                                padding: EdgeInsets.all(10),
-                                margin: EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                    color: Colors.blue.withOpacity(0.15),
-                                    borderRadius: BorderRadius.circular(6)
-                                ),
-                                child: Icon(Icons.school,size: 27,color: Colors.blue,))
-                          ],
+                        Expanded(
+                          child: Row(
+                            children: [
+                              Container(
+                                  padding: EdgeInsets.all(10),
+                                  margin: EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                      color: Colors.purple.withOpacity(0.15),
+                                      borderRadius: BorderRadius.circular(6)
+                                  ),
+                                  child: Icon(CupertinoIcons.building_2_fill,size: 27,color: Colors.purple,))
+                            ],
+                          ),
+                        ),
+                        SizedBox(height: 5,),
+                        Expanded(
+                          child: Row(children: [
+                            Text("Departments",style: TextStyle(fontSize: 14,fontWeight: FontWeight.w500),)
+                          ],),
+                        ),
+                        SizedBox(height: 5,),
+                        Row(children: [
+                          Text("departmental operations",style: TextStyle(color: Colors.grey),)
+                        ],),
+                        SizedBox(height: 10,),
+                      ],
+                    ),
+                  ),
+                  widget.admin.permissions!.contains("department_management")?SizedBox():  Positioned(
+                      right: 10,
+                      top: 10,
+                      child: Icon(CupertinoIcons.lock_circle_fill,size: 50,color: Theme.of(context).primaryColor.withOpacity(0.7),))
+                ],
+              ),
+            ),
+          ),
+          // sessions
+          InkWell(
+            onTap: (){
+              if(widget.admin.permissions!.contains("session_management")){
+                Navigator.push(context, MaterialPageRoute(builder: (_)=>SessionManage(insAdmin:widget.insAdmin, institute: widget.institute,)));
+              }else{
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("You don't have permission to manage sessions"),backgroundColor: Theme.of(context).primaryColor,));
+              }
+            },
+            child: SizedBox(
+
+              // height: MediaQuery.of(context).size.height*0.15,
+              child: Stack(
+                children: [
+                  Container(
+                    padding: EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.2),
+                            spreadRadius: 2,
+                            blurRadius: 1,
+                            offset: Offset(0, 0), // changes position of shadow
+                          ),
+                        ]
+
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Expanded(
+                          child: Row(
+                            children: [
+                              Container(
+                                  padding: EdgeInsets.all(10),
+                                  margin: EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                      color: Colors.green.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(6)
+                                  ),
+                                  child: Icon(Icons.calendar_today_outlined,size: 27,color: Colors.green,))
+                            ],
+                          ),
+                        ),
+                        SizedBox(height: 5,),
+                        Row(children: [
+                          Text("Sessions",style: TextStyle(fontSize: 14,fontWeight: FontWeight.w500),)
+                        ],),
+                        SizedBox(height: 5,),
+                        Row(children: [
+                          Flexible(child: Text("batches & semester",style: TextStyle(color: Colors.grey),))
+                        ],)
+                      ],
+                    ),
+                  ),
+                  widget.admin.permissions!.contains("session_management")?SizedBox():  Positioned(
+                      right: 10,
+                      top: 10,
+                      child: Icon(CupertinoIcons.lock_circle_fill,size: 50,color: Theme.of(context).primaryColor.withOpacity(0.7),))
+                ],
+              ),
+            ),
+          ),
+          // manage faculty
+          InkWell(
+            onTap: (){
+              if(widget.admin.permissions!.contains("faculty_management")){
+                Navigator.push(context, MaterialPageRoute(builder: (_)=>DepartSelect(insAdmin: widget.insAdmin, institute: widget.institute,)));
+              }else{
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("You don't have permission to manage faculty"),backgroundColor: Theme.of(context).primaryColor,));
+              }
+            },
+            child: SizedBox(
+
+              // height: MediaQuery.of(context).size.height*0.15,
+              child: Stack(
+                children: [
+                  Container(
+                    padding: EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                        color:Colors.white,
+                        borderRadius: BorderRadius.circular(10),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.2),
+                            spreadRadius: 2,
+                            blurRadius: 1,
+                            offset: Offset(0, 0), // changes position of shadow
+                          ),
+                        ]
+
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Expanded(
+                          child: Row(
+                            children: [
+                              Container(
+                                  padding: EdgeInsets.all(10),
+                                  margin: EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                      color: Colors.blue.withOpacity(0.15),
+                                      borderRadius: BorderRadius.circular(6)
+                                  ),
+                                  child: Icon(Icons.school,size: 27,color: Colors.blue,))
+                            ],
+                          ),
                         ),
                         SizedBox(height: 5,),
                         Row(children: [
@@ -155,10 +288,7 @@ class _AdminHomeState extends State<AdminHome> {
               child: Stack(
                 children: [
                   Container(
-                    padding: EdgeInsets.only(
-                        left: 20,
-                        top: 15
-                    ),
+                    padding: EdgeInsets.all(8),
                     decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(10),
@@ -175,17 +305,19 @@ class _AdminHomeState extends State<AdminHome> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Row(
-                          children: [
-                            Container(
-                                padding: EdgeInsets.all(10),
-                                margin: EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                    color: Color(0xffB45253).withOpacity(0.15),
-                                    borderRadius: BorderRadius.circular(6)
-                                ),
-                                child: Icon(Icons.people_alt,size: 27,color:Color(0xffB45253)))
-                          ],
+                        Expanded(
+                          child: Row(
+                            children: [
+                              Container(
+                                  padding: EdgeInsets.all(10),
+                                  margin: EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                      color: Color(0xffB45253).withOpacity(0.15),
+                                      borderRadius: BorderRadius.circular(6)
+                                  ),
+                                  child: Icon(Icons.people_alt,size: 27,color:Color(0xffB45253)))
+                            ],
+                          ),
                         ),
                         SizedBox(height: 5,),
                         Row(children: [
@@ -206,137 +338,6 @@ class _AdminHomeState extends State<AdminHome> {
               ),
             ),
           ),
-          // Department Management
-          InkWell(
-            onTap: (){
-            if(widget.admin.permissions!.contains("department_management")){
-              Navigator.push(context, MaterialPageRoute(builder: (_)=>DepartManage(insAdmin:widget.insAdmin, institute: widget.institute,)));
-            }else{
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("You don't have permission to manage departments"),backgroundColor: Theme.of(context).primaryColor,));
-            }
-            },
-            child: SizedBox(
-              // height: MediaQuery.of(context).size.height*0.15,
-              child: Stack(
-                children: [
-                  Container(
-                    padding: EdgeInsets.only(
-                        left: 20,
-                        top: 15
-                    ),
-                    decoration: BoxDecoration(
-                        color:Colors.white,
-                        borderRadius: BorderRadius.circular(10),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.grey.withOpacity(0.2),
-                            spreadRadius: 2,
-                            blurRadius: 1,
-                            offset: Offset(0, 0), // changes position of shadow
-                          ),
-                        ]
-
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                                padding: EdgeInsets.all(10),
-                                margin: EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                    color: Colors.purple.withOpacity(0.15),
-                                    borderRadius: BorderRadius.circular(6)
-                                ),
-                                child: Icon(CupertinoIcons.building_2_fill,size: 27,color: Colors.purple,))
-                          ],
-                        ),
-                        SizedBox(height: 5,),
-                        Row(children: [
-                          Text("Departments",style: TextStyle(fontSize: 14,fontWeight: FontWeight.w500),)
-                        ],),
-                        SizedBox(height: 5,),
-                        Row(children: [
-                          Text("departmental operations",style: TextStyle(color: Colors.grey),)
-                        ],)
-                      ],
-                    ),
-                  ),
-                  widget.admin.permissions!.contains("department_management")?SizedBox():  Positioned(
-                      right: 10,
-                      top: 10,
-                      child: Icon(CupertinoIcons.lock_circle_fill,size: 50,color: Theme.of(context).primaryColor.withOpacity(0.7),))
-                ],
-              ),
-            ),
-          ),
-          // sessions
-          InkWell(
-            onTap: (){
-            if(widget.admin.permissions!.contains("session_management")){
-              Navigator.push(context, MaterialPageRoute(builder: (_)=>SessionManage(insAdmin:widget.insAdmin, institute: widget.institute,)));
-            }else{
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("You don't have permission to manage sessions"),backgroundColor: Theme.of(context).primaryColor,));
-            }
-            },
-            child: SizedBox(
-
-              // height: MediaQuery.of(context).size.height*0.15,
-              child: Stack(
-                children: [
-                  Container(
-                    padding: EdgeInsets.only(
-                        left: 20,
-                        top: 15
-                    ),
-                    decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(10),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.grey.withOpacity(0.2),
-                            spreadRadius: 2,
-                            blurRadius: 1,
-                            offset: Offset(0, 0), // changes position of shadow
-                          ),
-                        ]
-
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                                padding: EdgeInsets.all(10),
-                                margin: EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                    color: Colors.green.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(6)
-                                ),
-                                child: Icon(Icons.calendar_today_outlined,size: 27,color: Colors.green,))
-                          ],
-                        ),
-                        SizedBox(height: 5,),
-                        Row(children: [
-                          Text("Sessions",style: TextStyle(fontSize: 14,fontWeight: FontWeight.w500),)
-                        ],),
-                        SizedBox(height: 5,),
-                        Row(children: [
-                          Flexible(child: Text("batches & semester",style: TextStyle(color: Colors.grey),))
-                        ],)
-                      ],
-                    ),
-                  ),
-                  widget.admin.permissions!.contains("session_management")?SizedBox():  Positioned(
-                      right: 10,
-                      top: 10,
-                      child: Icon(CupertinoIcons.lock_circle_fill,size: 50,color: Theme.of(context).primaryColor.withOpacity(0.7),))
-                ],
-              ),
-            ),
-          ),
           //courses
           InkWell(
             onTap: (){
@@ -352,10 +353,7 @@ class _AdminHomeState extends State<AdminHome> {
               child: Stack(
                 children: [
                   Container(
-                    padding: EdgeInsets.only(
-                        left: 20,
-                        top: 15
-                    ),
+                    padding: EdgeInsets.all(8),
                     decoration: BoxDecoration(
                         color:Colors.white,
                         borderRadius: BorderRadius.circular(10),
@@ -372,17 +370,19 @@ class _AdminHomeState extends State<AdminHome> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Row(
-                          children: [
-                            Container(
-                                padding: EdgeInsets.all(10),
-                                margin: EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                    color: Colors.deepPurple.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(6)
-                                ),
-                                child: Icon(PhosphorIconsFill.book,size: 27,color: Colors.deepPurple,))
-                          ],
+                        Expanded(
+                          child: Row(
+                            children: [
+                              Container(
+                                  padding: EdgeInsets.all(10),
+                                  margin: EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                      color: Colors.deepPurple.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(6)
+                                  ),
+                                  child: Icon(PhosphorIconsFill.book,size: 27,color: Colors.deepPurple,))
+                            ],
+                          ),
                         ),
                         SizedBox(height: 5,),
                         Row(children: [
@@ -418,10 +418,7 @@ class _AdminHomeState extends State<AdminHome> {
               child: Stack(
                 children: [
                   Container(
-                    padding: EdgeInsets.only(
-                        left: 20,
-                        top: 15
-                    ),
+                    padding: EdgeInsets.all(8),
                     decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(10),
@@ -438,17 +435,19 @@ class _AdminHomeState extends State<AdminHome> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Row(
-                          children: [
-                            Container(
-                                padding: EdgeInsets.all(10),
-                                margin: EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                    color: Color(0xff36ADA3).withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(6)
-                                ),
-                                child: Icon(CupertinoIcons.clock,size: 27,color: Color(0xff36ADA3),))
-                          ],
+                        Expanded(
+                          child: Row(
+                            children: [
+                              Container(
+                                  padding: EdgeInsets.all(10),
+                                  margin: EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                      color: Color(0xff36ADA3).withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(6)
+                                  ),
+                                  child: Icon(CupertinoIcons.clock,size: 27,color: Color(0xff36ADA3),))
+                            ],
+                          ),
                         ),
                         SizedBox(height: 5,),
                         Row(children: [
@@ -479,15 +478,11 @@ class _AdminHomeState extends State<AdminHome> {
               }
             },
             child: SizedBox(
-
               // height: MediaQuery.of(context).size.height*0.15,
               child: Stack(
                 children: [
                   Container(
-                    padding: EdgeInsets.only(
-                        left: 20,
-                        top: 15
-                    ),
+                    padding: EdgeInsets.all(8),
                     decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(10),
@@ -504,17 +499,19 @@ class _AdminHomeState extends State<AdminHome> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Row(
-                          children: [
-                            Container(
-                                padding: EdgeInsets.all(10),
-                                margin: EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                    color: Colors.red.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(6)
-                                ),
-                                child: Icon(PhosphorIconsBold.notepad,size: 27,color: Colors.red,))
-                          ],
+                        Expanded(
+                          child: Row(
+                            children: [
+                              Container(
+                                  padding: EdgeInsets.all(10),
+                                  margin: EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                      color: Colors.red.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(6)
+                                  ),
+                                  child: Icon(PhosphorIconsBold.notepad,size: 27,color: Colors.red,))
+                            ],
+                          ),
                         ),
                         SizedBox(height: 5,),
                         Row(children: [
@@ -550,10 +547,7 @@ class _AdminHomeState extends State<AdminHome> {
               child: Stack(
                 children: [
                   Container(
-                    padding: EdgeInsets.only(
-                        left: 20,
-                        top: 15
-                    ),
+                    padding: EdgeInsets.all(8),
                     decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(10),
@@ -570,17 +564,19 @@ class _AdminHomeState extends State<AdminHome> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Row(
-                          children: [
-                            Container(
-                                padding: EdgeInsets.all(10),
-                                margin: EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                    color: Color(0xFF39B1D1).withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(6)
-                                ),
-                                child: Icon(PhosphorIconsBold.megaphone,size: 27,color:Color(0xFF39B1D1),))
-                          ],
+                        Expanded(
+                          child: Row(
+                            children: [
+                              Container(
+                                  padding: EdgeInsets.all(10),
+                                  margin: EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                      color: Color(0xFF39B1D1).withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(6)
+                                  ),
+                                  child: Icon(PhosphorIconsBold.megaphone,size: 27,color:Color(0xFF39B1D1),))
+                            ],
+                          ),
                         ),
                         SizedBox(height: 5,),
                         Row(children: [

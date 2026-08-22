@@ -6,6 +6,7 @@ class LectureModel {
   DateTime dated;
   String course;
   TimeOfDay start_time,end_time;
+  //
   List<String>? present;//student ids here.
   List<String>? absent;//student ids here.
   String room;

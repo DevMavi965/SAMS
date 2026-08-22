@@ -130,7 +130,8 @@ class _FacHomeTabState extends State<FacHomeTab> {
         SizedBox(height: 20,),
         FacHomeGrid(insAdmin:widget.insAdmin, institute: widget.institute, department: widget.department,lecturer: widget.lecturer,),
         SizedBox(height: 10,),
-        _MarkAttendanceCard(context),
+
+        // _MarkAttendanceCard(context),
         SizedBox(height: 25,),
 
         Row(
@@ -646,7 +647,7 @@ class _FacHomeTabState extends State<FacHomeTab> {
         children: [
           ListTile(
             title: Text("Mark Attendance",style: TextStyle(fontSize: 16,fontWeight: FontWeight.w400,color: Colors.white),),
-            subtitle: Text("Use Facial recognition or QR Code",style: TextStyle(fontSize: 13,color: Colors.white),),
+            subtitle: Text("Use Facial recognition or Manual",style: TextStyle(fontSize: 13,color: Colors.white),),
             trailing: Icon(Icons.filter_center_focus,color: Colors.white60,size: 48,),
           ),
           ElevatedButton(
