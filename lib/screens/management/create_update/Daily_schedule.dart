@@ -7,6 +7,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:smas3/maxins/rm_functions.dart';
+import 'package:smas3/models/attendance.dart';
 import 'package:smas3/models/course.dart';
 import 'package:smas3/models/department.dart';
 import 'package:smas3/models/ins_admin.dart';
@@ -231,8 +232,9 @@ class _DailyScheduleState extends State<DailySchedule> {
               hour: (data['end_time'] as Timestamp).toDate().hour,
               minute: (data['end_time'] as Timestamp).toDate().minute,
             ),
-            present: List<String>.from(data['present']),
-            absent: List<String>.from(data['absent']),
+            attendance: (data['attendance'] as List<dynamic>? ?? [])
+                .map((m) => Attendance.fromMap(Map<String, dynamic>.from(m as Map)))
+                .toList(),
             room: data['room'],
             status: data['status'],
           ));
@@ -756,8 +758,7 @@ class _DailyScheduleState extends State<DailySchedule> {
                             dated: lecture.dated,
                             start_time: startTime!,
                             end_time: endTime!,
-                            present: lecture.present,
-                            absent: lecture.absent,
+                            attendance: lecture.attendance,
                             room: room.text.trim(),
                             status: getStatus(lecture.dated, startTime!, endTime!),
                           );
@@ -770,8 +771,7 @@ class _DailyScheduleState extends State<DailySchedule> {
                             dated: widget.date,
                             start_time: startTime!,
                             end_time: endTime!,
-                            present: [],
-                            absent: [],
+                            attendance: [],
                             room: room.text.trim(),
                             status: getStatus(widget.date, startTime!, endTime!)
                           );

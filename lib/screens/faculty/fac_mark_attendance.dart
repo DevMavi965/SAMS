@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:smas3/models/attendance.dart';
 import 'package:smas3/models/ins_admin.dart';
 import 'package:smas3/models/institute.dart';
 import 'package:smas3/models/fac_model.dart';
@@ -201,8 +202,9 @@ class _FacMarkAttendanceTabState extends State<FacMarkAttendanceTab> {
           // model expects TimeOfDay, Firestore gives a Timestamp -> DateTime
           start_time: TimeOfDay.fromDateTime(startDateTime),
           end_time: TimeOfDay.fromDateTime(endDateTime),
-          present: List<String>.from(doc['present'] ?? []),
-          absent: List<String>.from(doc['absent'] ?? []),
+          attendance: (doc['attendance'] as List<dynamic>? ?? [])
+            .map((m) => Attendance.fromMap(Map<String, dynamic>.from(m as Map)))
+            .toList(),
           room: doc['room'],
           course: doc['course_name'],
           status: doc['status'],
@@ -223,10 +225,6 @@ class _FacMarkAttendanceTabState extends State<FacMarkAttendanceTab> {
   }
 }
 
-// Card for a single lecture. Only navigates to AttendView while the
-// lecture is currently ongoing — ticks on its own timer so a lecture
-// that just started (or just ended) becomes tappable/locked without
-// needing the whole list to rebuild.
 class _LectureCard extends StatefulWidget {
   final LectureModel lecture;
   final DateTime start;
@@ -244,26 +242,66 @@ class _LectureCard extends StatefulWidget {
   State<_LectureCard> createState() => _LectureCardState();
 }
 
-class _LectureCardState extends State<_LectureCard> {
+class _LectureCardState extends State<_LectureCard>
+    with SingleTickerProviderStateMixin {
   Timer? _timer;
+
+  late AnimationController _borderController;
+  late Animation<Color?> _borderColor;
 
   @override
   void initState() {
     super.initState();
-    _timer = Timer.periodic(const Duration(seconds: 30), (_) {
-      if (mounted) setState(() {});
-    });
+
+    // Border animation: WHITE <-> RED
+    _borderController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
+
+    _borderColor = ColorTween(
+      begin: Colors.white,
+      end: Colors.red,
+    ).animate(_borderController);
+
+    // Check status every 30 seconds
+    _timer = Timer.periodic(
+      const Duration(seconds: 30),
+          (_) {
+        if (mounted) {
+          setState(() {});
+          _updateAnimation();
+        }
+      },
+    );
+
+    // Start animation immediately if already ongoing
+    _updateAnimation();
+  }
+
+  void _updateAnimation() {
+    if (_isOngoing) {
+      if (!_borderController.isAnimating) {
+        _borderController.repeat(reverse: true);
+      }
+    } else {
+      _borderController.stop();
+      _borderController.value = 0.0;
+    }
   }
 
   @override
   void dispose() {
     _timer?.cancel();
+    _borderController.dispose();
     super.dispose();
   }
 
   bool get _isOngoing {
     final now = DateTime.now();
-    return !now.isBefore(widget.start) && !now.isAfter(widget.end);
+
+    return !now.isBefore(widget.start) &&
+        !now.isAfter(widget.end);
   }
 
   @override
@@ -275,11 +313,11 @@ class _LectureCardState extends State<_LectureCard> {
       margin: const EdgeInsets.symmetric(vertical: 5),
       child: InkWell(
         borderRadius: BorderRadius.circular(7),
+
         onTap: () {
           if (isOngoing) {
             widget.onTapWhileOngoing();
-          }
-          else {
+          } else {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(
@@ -292,15 +330,37 @@ class _LectureCardState extends State<_LectureCard> {
             );
           }
         },
+
         child: Opacity(
           opacity: isOngoing ? 1.0 : 0.85,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey.withOpacity(0.2)),
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(7),
-            ),
+
+          child: AnimatedBuilder(
+            animation: _borderColor,
+
+            builder: (context, child) {
+              return Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 15,
+                  vertical: 12,
+                ),
+
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: isOngoing
+                        ? (_borderColor.value ?? Colors.red)
+                        : Colors.grey.withOpacity(0.2),
+                    width: isOngoing ? 2 : 1,
+                  ),
+
+                  color: Colors.white,
+
+                  borderRadius: BorderRadius.circular(7),
+                ),
+
+                child: child,
+              );
+            },
+
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -308,23 +368,44 @@ class _LectureCardState extends State<_LectureCard> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(lecture.course,
-                          style: const TextStyle(fontWeight: FontWeight.w600)),
+                      Text(
+                        lecture.course,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+
                       const SizedBox(height: 7),
+
                       Text(
                         "${lecture.dated.day}/${lecture.dated.month}/${lecture.dated.year}"
                             "  ${lecture.start_time.hour.toString().padLeft(2, '0')}:${lecture.start_time.minute.toString().padLeft(2, '0')}"
                             " - ${lecture.end_time.hour.toString().padLeft(2, '0')}:${lecture.end_time.minute.toString().padLeft(2, '0')}",
-                        style: const TextStyle(color: Colors.grey, fontSize: 13),
+                        style: const TextStyle(
+                          color: Colors.grey,
+                          fontSize: 13,
+                        ),
                       ),
+
                       const SizedBox(height: 7),
+
                       if (lecture.room != null)
-                        Text("Room: ${lecture.room}",
-                            style: const TextStyle(color: Colors.grey, fontSize: 13)),
+                        Text(
+                          "Room: ${lecture.room}",
+                          style: const TextStyle(
+                            color: Colors.grey,
+                            fontSize: 13,
+                          ),
+                        ),
+                      SizedBox(),
                     ],
                   ),
                 ),
-                _LectureStatusBadge(start: widget.start, end: widget.end),
+
+                _LectureStatusBadge(
+                  start: widget.start,
+                  end: widget.end,
+                ),
               ],
             ),
           ),
@@ -353,8 +434,6 @@ class _LectureStatusBadgeState extends State<_LectureStatusBadge> {
   @override
   void initState() {
     super.initState();
-    // Ticks every 30s so the countdown stays fresh without hammering
-    // the UI. Bump to 60s if this list gets long.
     _timer = Timer.periodic(const Duration(seconds: 30), (_) {
       if (mounted) setState(() {});
     });

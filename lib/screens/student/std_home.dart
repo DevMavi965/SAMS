@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:smas3/maxins/rm_functions.dart';
 import 'package:smas3/models/announcement_model.dart';
 import 'package:smas3/models/lecture.dart';
 import 'package:smas3/models/course.dart';
@@ -31,43 +32,53 @@ class StdHome extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               SizedBox(height: 15,),
-              Text("Welcome back ${student.name}!",textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              SizedBox(height: 5,),
-              Text("Here's your attendance overview",
-                style: TextStyle(fontSize: 11,fontWeight: FontWeight.w400),
-              ),
+             Row(
+               children: [
+                 SizedBox(width: 5,),
+                 CircleAvatar(
+                   radius: 30,
+                   backgroundImage: AssetImage("assets/icons/user.png"),
+                 ),
+                 SizedBox(width: 20,),
+                 Column(
+                   crossAxisAlignment: CrossAxisAlignment.start,
+                   children: [
+                     Text("Welcome back!",style: TextStyle(fontSize: 13,color: Colors.black54),),
+                     SizedBox(height: 3,),
+                     Text(RMFuncts.getSentenceCase(student.name),style: TextStyle(fontSize: 17,fontWeight: FontWeight.w500),),
+                     SizedBox(height: 3,),
+                     Text("Have a productive day!",style: TextStyle(fontSize: 13,color: Colors.black54),),
+                   ],
+                 )
+               ],
+             ),
               SizedBox(height: 25,),
               //announcements bar
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      SizedBox(width: 5,),
-                      Icon(
-                        PhosphorIcons.megaphoneSimple(),color: Colors.red,fontWeight: FontWeight.bold,
-                        size: 18,
-                      ),
-                      SizedBox(width: 5,),
-                      Text("Announcements",style: TextStyle(fontSize: 15,fontWeight: FontWeight.w500),)
-
-                    ],
-                  ),
-                  SizedBox(width: 50,),
-                  Text("See all",style: TextStyle(fontSize: 12,fontWeight: FontWeight.w500),)
-                  // ,SizedBox(width: 3,)
-                ],
-              ),
-              SizedBox(height: 15,),
+              // Row(
+              //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              //   children: [
+              //     Row(
+              //       children: [
+              //         SizedBox(width: 5,),
+              //         Icon(
+              //           PhosphorIcons.megaphoneSimple(),color: Colors.red,fontWeight: FontWeight.bold,
+              //           size: 18,
+              //         ),
+              //         SizedBox(width: 5,),
+              //         Text("Announcements",style: TextStyle(fontSize: 15,fontWeight: FontWeight.w500),)
+              //
+              //       ],
+              //     ),
+              //     SizedBox(width: 50,),
+              //     Text("See all",style: TextStyle(fontSize: 12,fontWeight: FontWeight.w500),)
+              //     // ,SizedBox(width: 3,)
+              //   ],
+              // ),
+              // SizedBox(height: 15,),
               //anouncements
-              for(var ann in announcements)
-                Std_Announcement_card(ann: ann),
-              SizedBox(height: 20,),
+              // for(var ann in announcements)
+              //   Std_Announcement_card(ann: ann),
+              SizedBox(height: 5,),
               StudentStatusCard(status: "present", checkin_time: "8:40", streak: 13,attendence_percentage: 87,),
               SizedBox(height: 10,),
               AttRecCard(present_days: 34, late_days: 3, absent_days: 2),

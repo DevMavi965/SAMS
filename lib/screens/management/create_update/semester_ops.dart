@@ -74,597 +74,600 @@ class _SemesterOpsState extends State<SemesterOps> {
                     end_date: sems['end_date'].toDate()
                 ));
               }
-              return semesters.isEmpty ? Center(
-                child: Text("No semesters found, Add first"),) : ListView
-                  .builder(
-                  itemCount: semesters.length,
-                  itemBuilder: (_, count) {
-                    return Card(
-                      color: Colors.white,
-                      child:
-                      Row(
-                        children: [
-                          SizedBox(width: 10,),
-                          Expanded(
-                            child: CircleAvatar(
-                              radius: 30,
-                              backgroundColor: Theme
-                                  .of(context)
-                                  .primaryColor
-                                  .withOpacity(1),
-                              child: Icon(PhosphorIconsDuotone.folderUser,
-                                color: Colors.white, size: 30,),
+              return Scaffold(
+                body: semesters.isEmpty ? Center(
+                  child: Text("No semesters found, Add first"),) : ListView
+                    .builder(
+                    itemCount: semesters.length,
+                    itemBuilder: (_, count) {
+                      return Card(
+                        color: Colors.white,
+                        child:
+                        Row(
+                          children: [
+                            SizedBox(width: 10,),
+                            Expanded(
+                              child: CircleAvatar(
+                                radius: 30,
+                                backgroundColor: Theme
+                                    .of(context)
+                                    .primaryColor
+                                    .withOpacity(1),
+                                child: Icon(PhosphorIconsDuotone.folderUser,
+                                  color: Colors.white, size: 30,),
+                              ),
                             ),
-                          ),
-                          SizedBox(width: 15,),
-                          Expanded(
-                            flex: 5,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                            SizedBox(width: 15,),
+                            Expanded(
+                              flex: 5,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  SizedBox(height: 10,),
+                                  Text("Semester ${semesters[count].semester_no}",
+                                    style: TextStyle(fontWeight: FontWeight.w600,
+                                        fontSize: 16),),
+                                  SizedBox(height: 10,),
+                                  Text("Start Date: ${semesters[count].start_date
+                                      .day}/${semesters[count].start_date
+                                      .month}/${semesters[count].start_date
+                                      .year}", style: TextStyle(
+                                      color: Colors.black87, fontSize: 12),),
+                                  SizedBox(height: 10,),
+                                  Text("End Date: ${semesters[count].end_date
+                                      .day}/${semesters[count].end_date
+                                      .month}/${semesters[count].end_date.year}",
+                                    style: TextStyle(
+                                        color: Colors.black87, fontSize: 12),),
+                                  SizedBox(height: 10,),
+                                  Text("Duration: ${RMFuncts.getDuration(
+                                      semesters[count].start_date,
+                                      semesters[count].end_date)}",
+                                    style: TextStyle(
+                                        color: Colors.black87, fontSize: 12),),
+                                  SizedBox(height: 10,),
+                                ],),
+                            ),
+                            Expanded(child: Column(
                               children: [
-                                SizedBox(height: 10,),
-                                Text("Semester ${semesters[count].semester_no}",
-                                  style: TextStyle(fontWeight: FontWeight.w600,
-                                      fontSize: 16),),
-                                SizedBox(height: 10,),
-                                Text("Start Date: ${semesters[count].start_date
-                                    .day}/${semesters[count].start_date
-                                    .month}/${semesters[count].start_date
-                                    .year}", style: TextStyle(
-                                    color: Colors.black87, fontSize: 12),),
-                                SizedBox(height: 10,),
-                                Text("End Date: ${semesters[count].end_date
-                                    .day}/${semesters[count].end_date
-                                    .month}/${semesters[count].end_date.year}",
-                                  style: TextStyle(
-                                      color: Colors.black87, fontSize: 12),),
-                                SizedBox(height: 10,),
-                                Text("Duration: ${RMFuncts.getDuration(
-                                    semesters[count].start_date,
-                                    semesters[count].end_date)}",
-                                  style: TextStyle(
-                                      color: Colors.black87, fontSize: 12),),
-                                SizedBox(height: 10,),
-                              ],),
-                          ),
-                          Expanded(child: Column(
-                            children: [
-                              IconButton(onPressed: () async { //delete button
-                                int studentCount = await getStudentsCount(
-                                    context, semesters[count].id!);
-                                if (studentCount > 0) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text(
-                                          "Cannot delete semester with students"),
-                                        backgroundColor: Colors.red,));
-                                } else {
-                                  showDialog(context: context, builder: (_) =>
-                                      AlertDialog(
-                                        backgroundColor: Colors.white,
-                                        icon: Icon(Icons.delete, color: Theme
-                                            .of(context)
-                                            .primaryColor, size: 33,),
-                                        title: Text("Delete Semester"),
-                                        content: Text(
-                                            "Are you sure you want to delete this semester?"),
-                                        actions: [
-                                          FilledButton(onPressed: () {
-                                            Navigator.pop(context);
-                                          },
-                                            style: ButtonStyle(
-                                              backgroundColor: MaterialStateProperty
-                                                  .all(Theme
-                                                  .of(context)
-                                                  .primaryColor),
-                                            ),
-                                            child: Text("Cancel",
-                                              style: TextStyle(
-                                                  color: Colors.white),),),
-                                          FilledButton(onPressed: () {
-                                            Navigator.pop(context);
-                                            Provider
-                                                .of<DbService>(
-                                                context, listen: false)
-                                                .removeSemester(
-                                                context, semesters[count].id!);
-                                          },
-                                            style: ButtonStyle(
-                                              backgroundColor: MaterialStateProperty
-                                                  .all(Colors.red),),
-                                            child: Text("Yes", style: TextStyle(
-                                                color: Colors.white),),)
-                                        ],
-                                      ));
-                                }
-                              }, icon: Icon(Icons.delete, color: Colors.red,),),
-                              SizedBox(height: 5,),
-                              //update semester
-                              IconButton(onPressed: () {
-                                startDate1 = semesters[count].start_date;
-                                endDate1 = semesters[count].end_date;
-                                selectedSemester = semesters[count].semester_no;
-                                showDialog(context: context, builder:
-                                    (_) =>
-                                    StatefulBuilder(
-                                        builder: (context, setState1) =>
-                                            AlertDialog(
-                                              backgroundColor: Colors.white,
-                                              icon: Icon(PhosphorIconsDuotone
-                                                  .calendarHeart, color: Theme
-                                                  .of(context)
-                                                  .primaryColor, size: 33,),
-                                              title: Text("Update Semester"),
-                                              content: Container(
-                                                padding: EdgeInsets.symmetric(
-                                                    horizontal: 10,
-                                                    vertical: 10),
-                                                child: Column(
-                                                  mainAxisSize: MainAxisSize
-                                                      .min,
-                                                  crossAxisAlignment: CrossAxisAlignment
-                                                      .start,
-                                                  children: [
-
-                                                    SizedBox(height: 10,),
-                                                    DropdownButton(
-                                                        value: selectedSemester,
-                                                        items: [
-                                                          for(int i = 1; i <=
-                                                              8; i++)
-                                                          // if(!semesters.any((element) => element.semester_no==i))
-                                                            DropdownMenuItem(
-                                                              value: i,
-                                                              child: Text(
-                                                                  "Semester $i"),
-                                                            )
-                                                        ], onChanged: (v) {
-                                                      setState1(() {
-                                                        selectedSemester = v;
-                                                      });
-                                                    }),
-                                                    SizedBox(height: 10,),
-                                                    Text("Start date"),
-                                                    SizedBox(height: 10,),
-                                                    // stratrd date
-                                                    InkWell(
-                                                        onTap: () async {
-                                                          await getFirstDate1();
-                                                          setState1(() {});
-                                                        },
-                                                        child: Row(
-                                                          children: [
-                                                            Icon(Icons
-                                                                .calendar_month,
-                                                              color: Theme
-                                                                  .of(context)
-                                                                  .primaryColor,),
-                                                            SizedBox(
-                                                              width: 10,),
-                                                            Text(startDate1 ==
-                                                                null
-                                                                ? "select Start Date"
-                                                                : DateFormat(
-                                                                "dd/MM/yyyy")
-                                                                .format(
-                                                                startDate1!)
-                                                                .toString()
-                                                                .replaceAll(
-                                                                "/", "-")),
-                                                          ],
-                                                        )
-                                                    ),
-                                                    SizedBox(height: 10,),
-                                                    Text("End date"),
-                                                    SizedBox(height: 10,),
-                                                    // last date
-                                                    InkWell(
-                                                        onTap: () async {
-                                                          await getLastDate1();
-                                                          setState1(() {});
-                                                        },
-                                                        child: Row(
-                                                          children: [
-                                                            Icon(Icons
-                                                                .calendar_month,
-                                                              color: Theme
-                                                                  .of(context)
-                                                                  .primaryColor,),
-                                                            SizedBox(
-                                                              width: 10,),
-                                                            Text(
-                                                                endDate1 == null
-                                                                    ? "select Start Date"
-                                                                    : DateFormat(
-                                                                    "dd/MM/yyyy")
-                                                                    .format(
-                                                                    endDate1!)),
-                                                          ],
-                                                        )),
-                                                    SizedBox(height: 10,),
-                                                  ],
-                                                ),
+                                IconButton(onPressed: () async { //delete button
+                                  int studentCount = await getStudentsCount(
+                                      context, semesters[count].id!);
+                                  if (studentCount > 0) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(content: Text(
+                                            "Cannot delete semester with students"),
+                                          backgroundColor: Colors.red,));
+                                  } else {
+                                    showDialog(context: context, builder: (_) =>
+                                        AlertDialog(
+                                          backgroundColor: Colors.white,
+                                          icon: Icon(Icons.delete, color: Theme
+                                              .of(context)
+                                              .primaryColor, size: 33,),
+                                          title: Text("Delete Semester"),
+                                          content: Text(
+                                              "Are you sure you want to delete this semester?"),
+                                          actions: [
+                                            FilledButton(onPressed: () {
+                                              Navigator.pop(context);
+                                            },
+                                              style: ButtonStyle(
+                                                backgroundColor: MaterialStateProperty
+                                                    .all(Theme
+                                                    .of(context)
+                                                    .primaryColor),
                                               ),
-                                              actions: [
-                                                FilledButton(onPressed: () {
-                                                  if (startDate1 != null &&
-                                                      endDate1 != null) {
-                                                    // making session name like cs2022-26
-                                                    if (startDate1!.isBefore(
-                                                        endDate1!)) {
-                                                      //   session  must be at least 6 months long
-                                                      if (startDate1!.isBefore(
-                                                          widget.session
-                                                              .start_date) ||
-                                                          startDate1!.isAfter(
-                                                              widget.session
-                                                                  .end_date) ||
-                                                          endDate1!.isAfter(
-                                                              widget.session
-                                                                  .end_date) ||
-                                                          endDate1!.isBefore(
-                                                              widget.session
-                                                                  .start_date)) {
+                                              child: Text("Cancel",
+                                                style: TextStyle(
+                                                    color: Colors.white),),),
+                                            FilledButton(onPressed: () {
+                                              Navigator.pop(context);
+                                              Provider
+                                                  .of<DbService>(
+                                                  context, listen: false)
+                                                  .removeSemester(
+                                                  context, semesters[count].id!);
+                                            },
+                                              style: ButtonStyle(
+                                                backgroundColor: MaterialStateProperty
+                                                    .all(Colors.red),),
+                                              child: Text("Yes", style: TextStyle(
+                                                  color: Colors.white),),)
+                                          ],
+                                        ));
+                                  }
+                                }, icon: Icon(Icons.delete, color: Colors.red,),),
+                                SizedBox(height: 5,),
+                                //update semester
+                                IconButton(onPressed: () {
+                                  startDate1 = semesters[count].start_date;
+                                  endDate1 = semesters[count].end_date;
+                                  selectedSemester = semesters[count].semester_no;
+                                  showDialog(context: context, builder:
+                                      (_) =>
+                                      StatefulBuilder(
+                                          builder: (context, setState1) =>
+                                              AlertDialog(
+                                                backgroundColor: Colors.white,
+                                                icon: Icon(PhosphorIconsDuotone
+                                                    .calendarHeart, color: Theme
+                                                    .of(context)
+                                                    .primaryColor, size: 33,),
+                                                title: Text("Update Semester"),
+                                                content: Container(
+                                                  padding: EdgeInsets.symmetric(
+                                                      horizontal: 10,
+                                                      vertical: 10),
+                                                  child: Column(
+                                                    mainAxisSize: MainAxisSize
+                                                        .min,
+                                                    crossAxisAlignment: CrossAxisAlignment
+                                                        .start,
+                                                    children: [
 
-                                                      } else if (endDate1!
-                                                          .difference(
-                                                          startDate1!).inDays >
-                                                          365) {
-                                                        ScaffoldMessenger
-                                                            .of(
-                                                            context)
-                                                            .showSnackBar(
-                                                            SnackBar(
-                                                              content: Text(
-                                                                  "semester must be at most 1 years long"),));
-                                                      } else if (endDate1!
-                                                          .difference(
-                                                          startDate1!).inDays >=
-                                                          180) {
-                                                        if (selectedSemester !=
-                                                            null) {
-                                                          if (semesters.any((
-                                                              element) =>
-                                                          element.semester_no ==
-                                                              selectedSemester! &&
-                                                              element.id !=
-                                                                  semesters[count]
-                                                                      .id)) {
-                                                            ScaffoldMessenger
-                                                                .of(context)
-                                                                .showSnackBar(
-                                                                SnackBar(
-                                                                  content: Text(
-                                                                      "semester already exists"),));
-                                                            return;
-                                                          } else if (hasOverlap(startDate1!,endDate1!,semesters[count].id)) {
-                                                            ScaffoldMessenger
-                                                                .of(context)
-                                                                .showSnackBar(
-                                                                SnackBar(
-                                                                  content: Text(
-                                                                      "semester already exists"),));
-                                                            return;
-                                                          }
-                                                          else
-                                                          {
-                                                            Provider
-                                                                .of<
-                                                                DbService>(
-                                                                context,
-                                                                listen: false)
-                                                                .updateSemester(
-                                                                context,
-                                                                Semester(
-                                                                    id: semesters[count]
-                                                                        .id,
-                                                                    institute_id: widget
-                                                                        .institute
-                                                                        .id!,
-                                                                    ins_admin_id: widget
-                                                                        .insAdmin
-                                                                        .id!,
-                                                                    department_id: widget
-                                                                        .department
-                                                                        .id!,
-                                                                    session_id: widget
-                                                                        .session
-                                                                        .id!,
-                                                                    semester_no: selectedSemester!,
-                                                                    start_date: startDate1!,
-                                                                    end_date: endDate1!
-                                                                )
-                                                            );
-                                                            Navigator.pop(
-                                                                context);
-                                                            setState1(() {
-                                                              startDate1 = null;
-                                                              endDate1 = null;
-                                                              selectedSemester =
-                                                              null;
-                                                            });
-                                                          }
-                                                        } else {
+                                                      SizedBox(height: 10,),
+                                                      DropdownButton(
+                                                          value: selectedSemester,
+                                                          items: [
+                                                            for(int i = 1; i <=
+                                                                8; i++)
+                                                            // if(!semesters.any((element) => element.semester_no==i))
+                                                              DropdownMenuItem(
+                                                                value: i,
+                                                                child: Text(
+                                                                    "Semester $i"),
+                                                              )
+                                                          ], onChanged: (v) {
+                                                        setState1(() {
+                                                          selectedSemester = v;
+                                                        });
+                                                      }),
+                                                      SizedBox(height: 10,),
+                                                      Text("Start date"),
+                                                      SizedBox(height: 10,),
+                                                      // stratrd date
+                                                      InkWell(
+                                                          onTap: () async {
+                                                            await getFirstDate1();
+                                                            setState1(() {});
+                                                          },
+                                                          child: Row(
+                                                            children: [
+                                                              Icon(Icons
+                                                                  .calendar_month,
+                                                                color: Theme
+                                                                    .of(context)
+                                                                    .primaryColor,),
+                                                              SizedBox(
+                                                                width: 10,),
+                                                              Text(startDate1 ==
+                                                                  null
+                                                                  ? "select Start Date"
+                                                                  : DateFormat(
+                                                                  "dd/MM/yyyy")
+                                                                  .format(
+                                                                  startDate1!)
+                                                                  .toString()
+                                                                  .replaceAll(
+                                                                  "/", "-")),
+                                                            ],
+                                                          )
+                                                      ),
+                                                      SizedBox(height: 10,),
+                                                      Text("End date"),
+                                                      SizedBox(height: 10,),
+                                                      // last date
+                                                      InkWell(
+                                                          onTap: () async {
+                                                            await getLastDate1();
+                                                            setState1(() {});
+                                                          },
+                                                          child: Row(
+                                                            children: [
+                                                              Icon(Icons
+                                                                  .calendar_month,
+                                                                color: Theme
+                                                                    .of(context)
+                                                                    .primaryColor,),
+                                                              SizedBox(
+                                                                width: 10,),
+                                                              Text(
+                                                                  endDate1 == null
+                                                                      ? "select Start Date"
+                                                                      : DateFormat(
+                                                                      "dd/MM/yyyy")
+                                                                      .format(
+                                                                      endDate1!)),
+                                                            ],
+                                                          )),
+                                                      SizedBox(height: 10,),
+                                                    ],
+                                                  ),
+                                                ),
+                                                actions: [
+                                                  FilledButton(onPressed: () {
+                                                    if (startDate1 != null &&
+                                                        endDate1 != null) {
+                                                      // making session name like cs2022-26
+                                                      if (startDate1!.isBefore(
+                                                          endDate1!)) {
+                                                        //   session  must be at least 6 months long
+                                                        if (startDate1!.isBefore(
+                                                            widget.session
+                                                                .start_date) ||
+                                                            startDate1!.isAfter(
+                                                                widget.session
+                                                                    .end_date) ||
+                                                            endDate1!.isAfter(
+                                                                widget.session
+                                                                    .end_date) ||
+                                                            endDate1!.isBefore(
+                                                                widget.session
+                                                                    .start_date)) {
+
+                                                        } else if (endDate1!
+                                                            .difference(
+                                                            startDate1!).inDays >
+                                                            365) {
                                                           ScaffoldMessenger
                                                               .of(
                                                               context)
                                                               .showSnackBar(
                                                               SnackBar(
                                                                 content: Text(
-                                                                    "please select semester"),));
+                                                                    "semester must be at most 1 years long"),));
+                                                        } else if (endDate1!
+                                                            .difference(
+                                                            startDate1!).inDays >=
+                                                            180) {
+                                                          if (selectedSemester !=
+                                                              null) {
+                                                            if (semesters.any((
+                                                                element) =>
+                                                            element.semester_no ==
+                                                                selectedSemester! &&
+                                                                element.id !=
+                                                                    semesters[count]
+                                                                        .id)) {
+                                                              ScaffoldMessenger
+                                                                  .of(context)
+                                                                  .showSnackBar(
+                                                                  SnackBar(
+                                                                    content: Text(
+                                                                        "semester already exists"),));
+                                                              return;
+                                                            } else if (hasOverlap(startDate1!,endDate1!,semesters[count].id)) {
+                                                              ScaffoldMessenger
+                                                                  .of(context)
+                                                                  .showSnackBar(
+                                                                  SnackBar(
+                                                                    content: Text(
+                                                                        "semester already exists"),));
+                                                              return;
+                                                            }
+                                                            else
+                                                            {
+                                                              Provider
+                                                                  .of<
+                                                                  DbService>(
+                                                                  context,
+                                                                  listen: false)
+                                                                  .updateSemester(
+                                                                  context,
+                                                                  Semester(
+                                                                      id: semesters[count]
+                                                                          .id,
+                                                                      institute_id: widget
+                                                                          .institute
+                                                                          .id!,
+                                                                      ins_admin_id: widget
+                                                                          .insAdmin
+                                                                          .id!,
+                                                                      department_id: widget
+                                                                          .department
+                                                                          .id!,
+                                                                      session_id: widget
+                                                                          .session
+                                                                          .id!,
+                                                                      semester_no: selectedSemester!,
+                                                                      start_date: startDate1!,
+                                                                      end_date: endDate1!
+                                                                  )
+                                                              );
+                                                              Navigator.pop(
+                                                                  context);
+                                                              setState1(() {
+                                                                startDate1 = null;
+                                                                endDate1 = null;
+                                                                selectedSemester =
+                                                                null;
+                                                              });
+                                                            }
+                                                          } else {
+                                                            ScaffoldMessenger
+                                                                .of(
+                                                                context)
+                                                                .showSnackBar(
+                                                                SnackBar(
+                                                                  content: Text(
+                                                                      "please select semester"),));
+                                                          }
                                                         }
-                                                      }
-                                                      else if (endDate1!
-                                                          .difference(
-                                                          startDate1!).inDays <
-                                                          180) {
-                                                        ScaffoldMessenger
-                                                            .of(
-                                                            context)
-                                                            .showSnackBar(
+                                                        else if (endDate1!
+                                                            .difference(
+                                                            startDate1!).inDays <
+                                                            180) {
+                                                          ScaffoldMessenger
+                                                              .of(
+                                                              context)
+                                                              .showSnackBar(
+                                                              SnackBar(
+                                                                content: Text(
+                                                                    "semester must be at least 6 months long"),));
+                                                        }
+                                                        else if (startDate!
+                                                            .isBefore(
+                                                            widget.session
+                                                                .start_date) ||
+                                                            startDate!.isAfter(
+                                                                widget.session
+                                                                    .end_date)) {
+                                                          ScaffoldMessenger
+                                                              .of(
+                                                              context)
+                                                              .showSnackBar(
+                                                              SnackBar(
+                                                                content: Text(
+                                                                    "semester must be within session start and end date"),));
+                                                        }
+                                                        else
+                                                        if (endDate1!.difference(
+                                                            startDate1!).inDays >
+                                                            400) {
+                                                          ScaffoldMessenger
+                                                              .of(
+                                                              context)
+                                                              .showSnackBar(
+                                                              SnackBar(
+                                                                content: Text(
+                                                                    "semester must be at most 1 years long"),));
+                                                        }
+                                                        else {
+                                                          ScaffoldMessenger
+                                                              .of(
+                                                              context)
+                                                              .showSnackBar(
+                                                              SnackBar(
+                                                                content: Text(
+                                                                    "semester must be at least 6 months long"),));
+                                                        }
+                                                      } else {
+                                                        ScaffoldMessenger.of(
+                                                            context).showSnackBar(
                                                             SnackBar(
                                                               content: Text(
-                                                                  "semester must be at least 6 months long"),));
-                                                      }
-                                                      else if (startDate!
-                                                          .isBefore(
-                                                          widget.session
-                                                              .start_date) ||
-                                                          startDate!.isAfter(
-                                                              widget.session
-                                                                  .end_date)) {
-                                                        ScaffoldMessenger
-                                                            .of(
-                                                            context)
-                                                            .showSnackBar(
-                                                            SnackBar(
-                                                              content: Text(
-                                                                  "semester must be within session start and end date"),));
-                                                      }
-                                                      else
-                                                      if (endDate1!.difference(
-                                                          startDate1!).inDays >
-                                                          400) {
-                                                        ScaffoldMessenger
-                                                            .of(
-                                                            context)
-                                                            .showSnackBar(
-                                                            SnackBar(
-                                                              content: Text(
-                                                                  "semester must be at most 1 years long"),));
-                                                      }
-                                                      else {
-                                                        ScaffoldMessenger
-                                                            .of(
-                                                            context)
-                                                            .showSnackBar(
-                                                            SnackBar(
-                                                              content: Text(
-                                                                  "semester must be at least 6 months long"),));
+                                                                  "start date must be before end date"),));
                                                       }
                                                     } else {
                                                       ScaffoldMessenger.of(
                                                           context).showSnackBar(
-                                                          SnackBar(
-                                                            content: Text(
-                                                                "start date must be before end date"),));
+                                                          SnackBar(content: Text(
+                                                              "please select start and end date"),));
                                                     }
-                                                  } else {
-                                                    ScaffoldMessenger.of(
-                                                        context).showSnackBar(
-                                                        SnackBar(content: Text(
-                                                            "please select start and end date"),));
-                                                  }
-                                                }, child: Text("update"),),
-                                                FilledButton(onPressed: () {
-                                                  setState1(() {
-                                                    startDate1 = null;
-                                                    endDate1 = null;
-                                                    selectedSemester = null;
-                                                  });
-                                                  Navigator.pop(context);
-                                                }, child: Text("Cancel"),),
-                                              ],
-                                            )));
-                              }, icon: Icon(Icons.edit_calendar, color: Theme
-                                  .of(context)
-                                  .primaryColor,),),
+                                                  }, child: Text("update"),),
+                                                  FilledButton(onPressed: () {
+                                                    setState1(() {
+                                                      startDate1 = null;
+                                                      endDate1 = null;
+                                                      selectedSemester = null;
+                                                    });
+                                                    Navigator.pop(context);
+                                                  }, child: Text("Cancel"),),
+                                                ],
+                                              )));
+                                }, icon: Icon(Icons.edit_calendar, color: Theme
+                                    .of(context)
+                                    .primaryColor,),),
+                              ],
+                            ))
+                          ],
+                        ),);
+                    }),
+                floatingActionButton:semesters.isEmpty? FloatingActionButton(onPressed: () {
+                  if (semesters.isNotEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Text("This session already has a semester — only 1 semester is allowed per session"),
+                    ));
+                    return;
+                  }
+                  showDialog(context: context, builder: (context) =>
+                      StatefulBuilder(builder:
+                          (_, setState2) =>
+                          AlertDialog(
+                            backgroundColor: Colors.white,
+                            icon: Icon(PhosphorIconsDuotone.calendarHeart, color: Theme
+                                .of(context)
+                                .primaryColor, size: 33,),
+                            title: Text("Add Session"),
+                            content: Container(
+                              padding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  SizedBox(height: 10,), //delete
+                                  DropdownButton(
+                                      value: selectedSemester,
+                                      items: [
+                                        for(int i = 1; i <= 8; i++)
+                                          if(!semesters.any((element) =>
+                                          element.semester_no == i))
+                                            DropdownMenuItem(
+                                              value: i,
+                                              child: Text("Semester $i"),
+                                            )
+                                      ], onChanged: (v) {
+                                    setState2(() {
+                                      selectedSemester = v;
+                                    });
+                                  }),
+                                  SizedBox(height: 10,),
+                                  Text("Start date"),
+                                  SizedBox(height: 10,),
+                                  // stratrd date
+                                  InkWell(
+                                      onTap: () async {
+                                        await getFirstDate();
+                                        setState2(() {});
+                                      },
+                                      child:
+                                      Row(
+                                        children: [
+                                          Icon(Icons.calendar_month, color: Theme
+                                              .of(context)
+                                              .primaryColor,),
+                                          SizedBox(width: 10,),
+                                          Text(startDate == null
+                                              ? "select Start Date"
+                                              : DateFormat("dd/MM/yyyy").format(
+                                              startDate!).toString().replaceAll("/", "-")
+                                          ),
+                                        ],
+                                      )
+                                  )
+                                  ,
+                                  SizedBox(height: 10,),
+                                  Text("End date"),
+                                  SizedBox(height: 10,),
+                                  // last date
+                                  InkWell(
+                                      onTap: () async {
+                                        await getLastDate();
+                                        setState2(() {});
+                                      },
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.calendar_month, color: Theme
+                                              .of(context)
+                                              .primaryColor,),
+                                          SizedBox(width: 10,),
+                                          Text(endDate == null
+                                              ? "select Start Date"
+                                              : DateFormat("dd/MM/yyyy")
+                                              .format(endDate!)
+                                              .replaceAll("/", "-")
+                                          ),
+                                        ],
+                                      )),
+                                  SizedBox(height: 10,),
+                                ],
+                              ),
+                            ),
+                            actions: [ //add       button
+                              FilledButton(onPressed: () {
+                                print("startDate=$startDate endDate=$endDate");
+                                print("session: ${widget.session.start_date} -> ${widget.session.end_date}");
+                                if (startDate != null && endDate != null) {
+                                  // making session name like cs2022-26
+                                  if (startDate!.isBefore(widget.session.start_date) ||
+                                      startDate!.isAfter(widget.session.end_date)
+                                      || endDate!.isAfter(widget.session.end_date) ||
+                                      endDate!.isBefore(widget.session.start_date)) {
+                                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                      content: Text(
+                                          "semester must be within session start and end date"),));
+                                  } else if (startDate!.isBefore(endDate!)) {
+                                    //   session  must be at least 6 months long
+                                    if (endDate!.difference(startDate!).inDays > 365) {
+                                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                        content: Text(
+                                            "semester must be at most 1 years long"),));
+                                    }
+                                    else if (hasOverlap(startDate!,endDate!,null)) {//here is issue count
+                                      ScaffoldMessenger
+                                          .of(context)
+                                          .showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                                "semester already exists"),));
+                                      return;
+                                    }
+                                    else
+                                    if (endDate!.difference(startDate!).inDays >= 180) {
+                                      if (selectedSemester != null) {
+                                        Provider
+                                            .of<DbService>(context, listen: false)
+                                            .addSemester(context, widget.insAdmin.id!,
+                                            widget.institute.id!, widget.department.id!,
+                                            widget.session.id!,
+                                            Semester(
+                                                institute_id: widget.institute.id!,
+                                                ins_admin_id: widget.insAdmin.id!,
+                                                department_id: widget.department.id!,
+                                                session_id: widget.session.id!,
+                                                semester_no: selectedSemester!,
+                                                start_date: startDate!,
+                                                end_date: endDate!
+                                            )
+                                        );
+                                        Navigator.pop(context);
+                                        setState2(() {
+                                          startDate = null;
+                                          endDate = null;
+                                          selectedSemester = null;
+                                        });
+                                      } else {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(
+                                              content: Text("please select semester"),));
+                                      }
+                                    } else
+                                    if (startDate!.isBefore(widget.session.start_date) ||
+                                        startDate!.isAfter(widget.session.end_date)) {
+                                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                        content: Text(
+                                            "semester must be within session start and end date"),));
+                                    }
+                                    else
+                                    if (endDate!.difference(startDate!).inDays < 180) {
+                                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                        content: Text(
+                                            "semester must be at least 6 months long"),));
+                                    } else {
+                                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                        content: Text(
+                                            "semester must be at least 6 months long"),));
+                                    }
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                      content: Text(
+                                          "start date must be before end date"),));
+                                  }
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                    content: Text("please select start and end date"),));
+                                }
+                              }, child: Text("Add"),),
+                              FilledButton(onPressed: () {
+                                Navigator.pop(context);
+                              }, child: Text("Cancel"),),
                             ],
-                          ))
-                        ],
-                      ),);
-                  });
+                          )
+                      ));
+                },
+                  backgroundColor: Theme
+                      .of(context)
+                      .primaryColor,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(100)
+                  ),
+                  child: Icon(Icons.add, color: Colors.white,),):SizedBox(),
+              );
             }
             return SizedBox();
           }),
-      floatingActionButton: FloatingActionButton(onPressed: () {
-        if (semesters.isNotEmpty) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text("This session already has a semester — only 1 semester is allowed per session"),
-          ));
-          return;
-        }
-        showDialog(context: context, builder: (context) =>
-            StatefulBuilder(builder:
-                (_, setState2) =>
-                AlertDialog(
-                  backgroundColor: Colors.white,
-                  icon: Icon(PhosphorIconsDuotone.calendarHeart, color: Theme
-                      .of(context)
-                      .primaryColor, size: 33,),
-                  title: Text("Add Session"),
-                  content: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        SizedBox(height: 10,), //delete
-                        DropdownButton(
-                            value: selectedSemester,
-                            items: [
-                              for(int i = 1; i <= 8; i++)
-                                if(!semesters.any((element) =>
-                                element.semester_no == i))
-                                  DropdownMenuItem(
-                                    value: i,
-                                    child: Text("Semester $i"),
-                                  )
-                            ], onChanged: (v) {
-                          setState2(() {
-                            selectedSemester = v;
-                          });
-                        }),
-                        SizedBox(height: 10,),
-                        Text("Start date"),
-                        SizedBox(height: 10,),
-                        // stratrd date
-                        InkWell(
-                            onTap: () async {
-                              await getFirstDate();
-                              setState2(() {});
-                            },
-                            child:
-                            Row(
-                              children: [
-                                Icon(Icons.calendar_month, color: Theme
-                                    .of(context)
-                                    .primaryColor,),
-                                SizedBox(width: 10,),
-                                Text(startDate == null
-                                    ? "select Start Date"
-                                    : DateFormat("dd/MM/yyyy").format(
-                                    startDate!).toString().replaceAll("/", "-")
-                                ),
-                              ],
-                            )
-                        )
-                        ,
-                        SizedBox(height: 10,),
-                        Text("End date"),
-                        SizedBox(height: 10,),
-                        // last date
-                        InkWell(
-                            onTap: () async {
-                              await getLastDate();
-                              setState2(() {});
-                            },
-                            child: Row(
-                              children: [
-                                Icon(Icons.calendar_month, color: Theme
-                                    .of(context)
-                                    .primaryColor,),
-                                SizedBox(width: 10,),
-                                Text(endDate == null
-                                    ? "select Start Date"
-                                    : DateFormat("dd/MM/yyyy")
-                                    .format(endDate!)
-                                    .replaceAll("/", "-")
-                                ),
-                              ],
-                            )),
-                        SizedBox(height: 10,),
-                      ],
-                    ),
-                  ),
-                  actions: [ //add       button
-                    FilledButton(onPressed: () {
-                      print("startDate=$startDate endDate=$endDate");
-                      print("session: ${widget.session.start_date} -> ${widget.session.end_date}");
-                      if (startDate != null && endDate != null) {
-                        // making session name like cs2022-26
-                        if (startDate!.isBefore(widget.session.start_date) ||
-                            startDate!.isAfter(widget.session.end_date)
-                            || endDate!.isAfter(widget.session.end_date) ||
-                            endDate!.isBefore(widget.session.start_date)) {
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                            content: Text(
-                                "semester must be within session start and end date"),));
-                        } else if (startDate!.isBefore(endDate!)) {
-                          //   session  must be at least 6 months long
-                          if (endDate!.difference(startDate!).inDays > 365) {
-                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                              content: Text(
-                                  "semester must be at most 1 years long"),));
-                          }
-                          else if (hasOverlap(startDate!,endDate!,null)) {//here is issue count
-                            ScaffoldMessenger
-                                .of(context)
-                                .showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                      "semester already exists"),));
-                            return;
-                          }
-                          else
-                          if (endDate!.difference(startDate!).inDays >= 180) {
-                            if (selectedSemester != null) {
-                              Provider
-                                  .of<DbService>(context, listen: false)
-                                  .addSemester(context, widget.insAdmin.id!,
-                                  widget.institute.id!, widget.department.id!,
-                                  widget.session.id!,
-                                  Semester(
-                                      institute_id: widget.institute.id!,
-                                      ins_admin_id: widget.insAdmin.id!,
-                                      department_id: widget.department.id!,
-                                      session_id: widget.session.id!,
-                                      semester_no: selectedSemester!,
-                                      start_date: startDate!,
-                                      end_date: endDate!
-                                  )
-                              );
-                              Navigator.pop(context);
-                              setState2(() {
-                                startDate = null;
-                                endDate = null;
-                                selectedSemester = null;
-                              });
-                            } else {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text("please select semester"),));
-                            }
-                          } else
-                          if (startDate!.isBefore(widget.session.start_date) ||
-                              startDate!.isAfter(widget.session.end_date)) {
-                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                              content: Text(
-                                  "semester must be within session start and end date"),));
-                          }
-                          else
-                          if (endDate!.difference(startDate!).inDays < 180) {
-                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                              content: Text(
-                                  "semester must be at least 6 months long"),));
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                              content: Text(
-                                  "semester must be at least 6 months long"),));
-                          }
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                            content: Text(
-                                "start date must be before end date"),));
-                        }
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          content: Text("please select start and end date"),));
-                      }
-                    }, child: Text("Add"),),
-                    FilledButton(onPressed: () {
-                      Navigator.pop(context);
-                    }, child: Text("Cancel"),),
-                  ],
-                )
-            ));
-      },
-        backgroundColor: Theme
-            .of(context)
-            .primaryColor,
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(100)
-        ),
-        child: Icon(Icons.add, color: Colors.white,),),
+
     );
   }
 
@@ -718,23 +721,36 @@ class _SemesterOpsState extends State<SemesterOps> {
 
   getLastDate() async {
     DateTime firstDate = DateTime.now().subtract(Duration(days: 395 * 1));
-    // can be three+ year session so we need to checkIt
     DateTime lastDate = DateTime.now().add(Duration(days: 365 * 6));
+
+    DateTime base = startDate ?? DateTime.now();
+    DateTime suggested = DateTime(base.year, base.month + 6, base.day);
+
+    // clamp so it never falls outside the allowed range
+    if (suggested.isBefore(firstDate)) suggested = firstDate;
+    if (suggested.isAfter(lastDate)) suggested = lastDate;
+
     endDate = await showDatePicker(
         context: context,
         firstDate: firstDate,
-        initialDate: DateTime.now().add(Duration(days: 185)),
+        initialDate: suggested,
         lastDate: lastDate);
   }
 
   getLastDate1() async {
     DateTime firstDate = DateTime.now().subtract(Duration(days: 395 * 1));
-    // can be three+ year session so we need to checkIt
     DateTime lastDate = DateTime.now().add(Duration(days: 365 * 6));
+
+    DateTime base = startDate1 ?? DateTime.now();
+    DateTime suggested = DateTime(base.year, base.month + 6, base.day);
+
+    if (suggested.isBefore(firstDate)) suggested = firstDate;
+    if (suggested.isAfter(lastDate)) suggested = lastDate;
+
     endDate1 = await showDatePicker(
         context: context,
         firstDate: firstDate,
-        initialDate: DateTime.now().add(Duration(days: 185)),
+        initialDate: suggested,
         lastDate: lastDate);
   }
 

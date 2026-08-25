@@ -216,14 +216,7 @@ class _CourseAddState extends State<CourseAdd> {
                           for (var lec in lecturers)
                             DropdownMenuItem(
                               value: lec.id,
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(lec.name),
-                                  SizedBox(width: 10),
-                                  Text("${lec.deprt} department"),
-                                ],
-                              ),
+                              child: Text(lec.name),
                             ),
                         ],
                         onChanged: (v) {

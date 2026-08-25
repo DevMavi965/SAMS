@@ -124,6 +124,7 @@ class _FacDeshboardState extends State<FacDeshboard> {
               print("tapped$v");
             },
             type: BottomNavigationBarType.fixed,
+            backgroundColor: Colors.white,
             items: [
               for(int i=0;i<menus.length;i++)
                 BottomNavigationBarItem(

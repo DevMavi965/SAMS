@@ -85,9 +85,10 @@ class _RegisterInsAdminState extends State<RegisterInsAdmin> {
                     return "Please enter valid email";
                   }else if(!v.contains("com")){
                     return "Please enter valid email";
-                  }else if(!v.contains("gmail" )&&!v.contains("yahoo")&&!v.contains("outlook")){
-                    return "Please enter valid email";
                   }
+                  // else if(!v.contains("gmail" )&&!v.contains("yahoo")&&!v.contains("outlook")){
+                  //   return "Please enter valid email";
+                  // }
                   // method II
                   // final emailRegex =
                   // RegExp(r'^[\w\-\.]+@([\w\-]+\.)+[\w\-]{2,4}$');

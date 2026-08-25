@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:provider/provider.dart';
+import 'package:smas3/models/attendance.dart';
 import 'package:smas3/models/fac_model.dart';
 import 'package:smas3/models/lecture.dart';
 import 'package:smas3/widgets/fac_widgets/fac_class_card.dart';
@@ -12,6 +13,7 @@ import '../../models/department.dart';
 import '../../models/ins_admin.dart';
 import '../../models/institute.dart';
 import '../../services/db_service.dart';
+
 class FacHomeTab extends StatefulWidget {
   final InsAdmin insAdmin;
   final Institute institute;
@@ -26,7 +28,57 @@ class FacHomeTab extends StatefulWidget {
 
 class _FacHomeTabState extends State<FacHomeTab> {
 
-  List<LectureModel> lectures=[];
+  List<LectureModel> lectures = [];
+
+  // cached so today's lectures are only fetched once per build cycle,
+  // instead of once in initState + once per FutureBuilder that needs them
+  late Future<List<LectureModel>> _todaysLecturesFuture;
+
+  // ---- shared helpers for parsing the "attendance" field stored on a lecture doc ----
+
+  static TimeOfDay? _toTimeOfDay(dynamic v) {
+    if (v == null) return null;
+    if (v is Timestamp) return TimeOfDay.fromDateTime(v.toDate());
+    if (v is Map) {
+      final h = v['hour'];
+      final m = v['minute'];
+      if (h is int && m is int) return TimeOfDay(hour: h, minute: m);
+    }
+    return null;
+  }
+
+  static List<Attendance> _parseAttendance(dynamic rawList) {
+    if (rawList is! List) return [];
+    return rawList
+        .whereType<Map>()
+        .map((raw) => Attendance(
+      sid: raw['sid']?.toString() ?? '',
+      checkin: _toTimeOfDay(raw['checkin']),
+      checkout: _toTimeOfDay(raw['checkout']),
+      mid_point: raw['mid_point'] is bool ? raw['mid_point'] as bool : null,
+      method: raw['method']?.toString(),
+      status: raw['status']?.toString() ?? 'absent',
+    ))
+        .toList();
+  }
+
+  static LectureModel _lectureFromDoc(String id, Map<String, dynamic> data) {
+    final datedTs = data['dated'] as Timestamp;
+    final startTs = data['start_time'] as Timestamp;
+    final endTs = data['end_time'] as Timestamp;
+
+    return LectureModel(
+      id: id,
+      dated: datedTs.toDate(),
+      start_time: TimeOfDay.fromDateTime(startTs.toDate()),
+      end_time: TimeOfDay.fromDateTime(endTs.toDate()),
+      attendance: _parseAttendance(data['attendance']),
+      room: data['room'] ?? '',
+      status: data['status'],
+      course: data['course_name'] ?? '',
+    );
+  }
+
   Future<List<LectureModel>> getTodaysLectures() async {
     try {
       final dbService = Provider.of<DbService>(context, listen: false);
@@ -58,23 +110,19 @@ class _FacHomeTabState extends State<FacHomeTab> {
             .where("course_id", whereIn: batch)
             .get();
 
-        print("Found ${lecturesIndexSnap.docs.length} total lecture index docs for these courses");
-
         for (var idxDoc in lecturesIndexSnap.docs) {
           final idx = idxDoc.data();
 
           final datedRaw = idx['dated'];
-          if (datedRaw is! Timestamp) {
-            print("Skipping ${idxDoc.id}: 'dated' missing or wrong type (${datedRaw.runtimeType})");
-            continue;
-          }
+          if (datedRaw is! Timestamp) continue;
           final datedDate = datedRaw.toDate();
 
           final isToday = DateUtils.isSameDay(datedDate, now);
-          print("Lecture ${idxDoc.id}: dated=$datedDate, isToday=$isToday");
-
           if (!isToday) continue;
 
+          // session_id / semester_id come from the lecture's own index doc —
+          // a lecturer can have lectures across multiple sessions/semesters,
+          // so this must be resolved per-lecture, not once for the whole lecturer.
           final lectureDoc = await dbService.dbref
               .collection("ins_admins").doc(widget.insAdmin.id)
               .collection("institutes").doc(widget.institute.id)
@@ -87,38 +135,23 @@ class _FacHomeTabState extends State<FacHomeTab> {
 
           if (!lectureDoc.exists) continue;
 
-          final data = lectureDoc.data()!;
-
-          final datedTs = data['dated'] as Timestamp;
-          final startTs = data['start_time'] as Timestamp;
-          final endTs = data['end_time'] as Timestamp;
-
-          todaysLectures.add(LectureModel(
-            id: lectureDoc.id,
-            dated: datedTs.toDate(),
-            start_time: TimeOfDay.fromDateTime(startTs.toDate()),
-            end_time: TimeOfDay.fromDateTime(endTs.toDate()),
-            present: List<String>.from(data['present'] ?? []),
-            absent: List<String>.from(data['absent'] ?? []),
-            room: data['room'],
-            status: data['status'],
-            course: data['course_name'],
-          ));
+          todaysLectures.add(_lectureFromDoc(lectureDoc.id, lectureDoc.data()!));
         }
       }
 
-      print("Final todaysLectures count: ${todaysLectures.length}");
       return todaysLectures;
     } catch (e) {
       print(e.toString());
       return [];
     }
-  }  @override
-  void initState() {
-    getTodaysLectures();
-    // TODO: implement initState
-    super.initState();
   }
+
+  @override
+  void initState() {
+    super.initState();
+    _todaysLecturesFuture = getTodaysLectures();
+  }
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(child:
@@ -138,34 +171,34 @@ class _FacHomeTabState extends State<FacHomeTab> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text("Today's lectures",style: TextStyle(fontSize: 18,fontWeight: FontWeight.w500),),
-          Badge(
-            backgroundColor: Theme.of(context).primaryColor.withOpacity(0.9),
-            label: Padding(
-              padding: const EdgeInsets.all(4.0),
-              child: FutureBuilder(
-                future: getTodaysLectures(),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return Text("Loading...");
-                  } else if (snapshot.hasError) {
-                    return Text("Error: ${snapshot.error}");
-                  } else if (!snapshot.hasData || snapshot.data == null) {
-                    return Text("0");
-                  }
-                  return Text(
-                    "${snapshot.data!.length} lectures",
-                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
-                  );
-                },
+            Badge(
+              backgroundColor: Theme.of(context).primaryColor.withOpacity(0.9),
+              label: Padding(
+                padding: const EdgeInsets.all(4.0),
+                child: FutureBuilder(
+                  future: _todaysLecturesFuture,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return Text("Loading...");
+                    } else if (snapshot.hasError) {
+                      return Text("Error: ${snapshot.error}");
+                    } else if (!snapshot.hasData || snapshot.data == null) {
+                      return Text("0");
+                    }
+                    return Text(
+                      "${snapshot.data!.length} lectures",
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                    );
+                  },
+                ),
               ),
-            ),
-          )
+            )
           ],
         ),
         SizedBox(height: 7,),
         //classes (completed or pending)
         FutureBuilder(
-          future: getTodaysLectures(),
+          future: _todaysLecturesFuture,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return Text("Loading...");
@@ -179,7 +212,6 @@ class _FacHomeTabState extends State<FacHomeTab> {
               physics: NeverScrollableScrollPhysics(),
               itemCount: snapshot.data!.length,
               itemBuilder: (context, index) {
-                final lecture = snapshot.data![index];
                 return FacClassCard( lectureModel:snapshot.data![index],);
               },
             );
@@ -190,7 +222,7 @@ class _FacHomeTabState extends State<FacHomeTab> {
           color: Colors.white,
           child: Container(
             margin: EdgeInsets.symmetric(
-              horizontal: 10,vertical: 10
+                horizontal: 10,vertical: 10
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -205,7 +237,7 @@ class _FacHomeTabState extends State<FacHomeTab> {
                     Row(
                       children: [
                         FutureBuilder(
-                          future: getDepartmentCompletedLecturesThisWeekCount(context, widget.insAdmin.id!, widget.institute.id!, widget.department.id!, widget.department.id!),
+                          future: getDepartmentCompletedLecturesThisWeekCount(context, widget.insAdmin.id!, widget.institute.id!, widget.department.id!),
                           builder: (context, snapshot) {
                             if (snapshot.connectionState == ConnectionState.waiting) {
                               return Text("Loading...");
@@ -219,7 +251,7 @@ class _FacHomeTabState extends State<FacHomeTab> {
                         ),
                         Text("/"),
                         FutureBuilder(
-                          future: getDepartmentLecturesThisWeekCount(context, widget.insAdmin.id!, widget.institute.id!, widget.department.id!, widget.department.id!),
+                          future: getDepartmentLecturesThisWeekCount(context, widget.insAdmin.id!, widget.institute.id!, widget.department.id!),
                           builder: (context, snapshot) {
                             if (snapshot.connectionState == ConnectionState.waiting) {
                               return Text("Loading...");
@@ -238,7 +270,7 @@ class _FacHomeTabState extends State<FacHomeTab> {
                 SizedBox(height: 5,),
                 Flexible(
                   child: FutureBuilder(
-                    future: getPercentageConductedLecturesThisWeek(context, widget.insAdmin.id!, widget.institute.id!, widget.department.id!, widget.department.id!),
+                    future: getPercentageConductedLecturesThisWeek(context, widget.insAdmin.id!, widget.institute.id!, widget.department.id!),
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
                         return Text("Loading...");
@@ -261,7 +293,7 @@ class _FacHomeTabState extends State<FacHomeTab> {
 
                 SizedBox(height: 20,),
                 FutureBuilder(
-                  future: getDepartmentAvgAttendanceThisWeek(context, widget.insAdmin.id!, widget.institute.id!, widget.department.id!, widget.department.id!),
+                  future: getDepartmentAvgAttendanceThisWeek(context, widget.insAdmin.id!, widget.institute.id!, widget.department.id!),
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return Text("Loading...");
@@ -307,7 +339,7 @@ class _FacHomeTabState extends State<FacHomeTab> {
                       children: [
                         Icon(CupertinoIcons.check_mark_circled,color: Theme.of(context).primaryColor,size: 30,),
                         FutureBuilder(
-                          future: getDepartmentTotalPresentThisWeek(context, widget.insAdmin.id!, widget.institute.id!, widget.department.id!, widget.department.id!),
+                          future: getDepartmentAttendanceCountThisWeek(context, widget.insAdmin.id!, widget.institute.id!, widget.department.id!, "present"),
                           builder: (context, snapshot) {
                             if (snapshot.connectionState == ConnectionState.waiting) {
                               return Text("Loading...");
@@ -326,7 +358,19 @@ class _FacHomeTabState extends State<FacHomeTab> {
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
                         Icon(CupertinoIcons.clock,color: Colors.brown,size: 30,),
-                        Text("3",style: TextStyle(fontWeight: FontWeight.w600,),),
+                        FutureBuilder(
+                          future: getDepartmentAttendanceCountThisWeek(context, widget.insAdmin.id!, widget.institute.id!, widget.department.id!, "late"),
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState == ConnectionState.waiting) {
+                              return Text("Loading...");
+                            } else if (snapshot.hasError) {
+                              return Text("Error: ${snapshot.error}");
+                            } else if (!snapshot.hasData || snapshot.data == null) {
+                              return Text("0");
+                            }
+                            return Text(snapshot.data.toString(),style: TextStyle(fontWeight: FontWeight.w600,));
+                          },
+                        ),
                         Text("Late",style: TextStyle(color: Colors.grey),)
                       ],
                     )),
@@ -335,7 +379,7 @@ class _FacHomeTabState extends State<FacHomeTab> {
                       children: [
                         Icon(CupertinoIcons.xmark_circle,color: Colors.red,size: 30,),
                         FutureBuilder(
-                          future: getDepartmentTotalAbsentThisWeek(context, widget.insAdmin.id!, widget.institute.id!, widget.department.id!, widget.department.id!),
+                          future: getDepartmentAttendanceCountThisWeek(context, widget.insAdmin.id!, widget.institute.id!, widget.department.id!, "absent"),
                           builder: (context, snapshot) {
                             if (snapshot.connectionState == ConnectionState.waiting) {
                               return Text("Loading...");
@@ -361,118 +405,85 @@ class _FacHomeTabState extends State<FacHomeTab> {
     ));
   }
 
-  Future<int> getDepartmentLecturesThisWeekCount(BuildContext context, String insAdminId, String instituteId, String departmentId, String s) async {
+  /// Runs the shared "lectures this week for this department" scan once and
+  /// hands back the raw index docs, so the stat helpers below don't each
+  /// repeat the same Firestore round trip.
+  Future<List<QueryDocumentSnapshot<Map<String, dynamic>>>> _lectureIndexDocsThisWeek(
+      BuildContext context, String insAdminId, String instituteId, String departmentId,
+      {bool completedOnly = false}) async {
+    final dbService = Provider.of<DbService>(context, listen: false);
+
+    final now = DateTime.now();
+    // Week starts Monday, ends Sunday (inclusive).
+    final startOfWeek = DateTime(now.year, now.month, now.day)
+        .subtract(Duration(days: now.weekday - 1));
+    final endOfWeek = startOfWeek.add(Duration(days: 7)); // exclusive upper bound
+
+    Query<Map<String, dynamic>> q = dbService.indexDoc
+        .where("type", isEqualTo: "lecture")
+        .where("ins_admin_id", isEqualTo: insAdminId)
+        .where("institute_id", isEqualTo: instituteId)
+        .where("department_id", isEqualTo: departmentId);
+    if (completedOnly) {
+      q = q.where("status", isEqualTo: "completed");
+    }
+
+    final snap = await q.get();
+
+    return snap.docs.where((idxDoc) {
+      final datedRaw = idxDoc.data()['dated'];
+      if (datedRaw is! Timestamp) return false;
+      final datedDate = datedRaw.toDate();
+      return !datedDate.isBefore(startOfWeek) && datedDate.isBefore(endOfWeek);
+    }).toList();
+  }
+
+  Future<int> getDepartmentLecturesThisWeekCount(BuildContext context, String insAdminId, String instituteId, String departmentId) async {
     try {
-      final dbService = Provider.of<DbService>(context, listen: false);
-
-      final now = DateTime.now();
-      // Week starts Monday, ends Sunday (inclusive).
-      final startOfWeek = DateTime(now.year, now.month, now.day)
-          .subtract(Duration(days: now.weekday - 1));
-      final endOfWeek = startOfWeek.add(Duration(days: 7)); // exclusive upper bound
-
-      // Equality-only query — no composite index needed.
-      final lecturesIndexSnap = await dbService.indexDoc
-          .where("type", isEqualTo: "lecture")
-          .where("ins_admin_id", isEqualTo: insAdminId)
-          .where("institute_id", isEqualTo: instituteId)
-          .where("department_id", isEqualTo: departmentId)
-          .get();
-
-      int totalThisWeek = 0;
-
-      for (var idxDoc in lecturesIndexSnap.docs) {
-        final idx = idxDoc.data();
-
-        final datedRaw = idx['dated'];
-        if (datedRaw is! Timestamp) continue;
-        final datedDate = datedRaw.toDate();
-
-        final isThisWeek = !datedDate.isBefore(startOfWeek) && datedDate.isBefore(endOfWeek);
-        if (isThisWeek) {
-          totalThisWeek++;
-        }
-      }
-
-      return totalThisWeek;
+      final docs = await _lectureIndexDocsThisWeek(context, insAdminId, instituteId, departmentId);
+      return docs.length;
     } catch (e) {
       print(e.toString());
       return 0;
     }
   }
-  Future<int> getDepartmentCompletedLecturesThisWeekCount(BuildContext context, String insAdminId, String instituteId, String departmentId, String s) async {
+
+  Future<int> getDepartmentCompletedLecturesThisWeekCount(BuildContext context, String insAdminId, String instituteId, String departmentId) async {
     try {
-      final dbService = Provider.of<DbService>(context, listen: false);
-
-      final now = DateTime.now();
-      // Week starts Monday, ends Sunday (inclusive).
-      final startOfWeek = DateTime(now.year, now.month, now.day)
-          .subtract(Duration(days: now.weekday - 1));
-      final endOfWeek = startOfWeek.add(Duration(days: 7)); // exclusive upper bound
-
-      // Equality-only query — no composite index needed.
-      final lecturesIndexSnap = await dbService.indexDoc
-          .where("type", isEqualTo: "lecture")
-          .where("ins_admin_id", isEqualTo: insAdminId)
-          .where("institute_id", isEqualTo: instituteId)
-          .where("department_id", isEqualTo: departmentId)
-          .where("status", isEqualTo: "completed")
-          .get();
-
-      int totalCompletedThisWeek = 0;
-
-      for (var idxDoc in lecturesIndexSnap.docs) {
-        final idx = idxDoc.data();
-
-        final datedRaw = idx['dated'];
-        if (datedRaw is! Timestamp) continue;
-        final datedDate = datedRaw.toDate();
-
-        final isThisWeek = !datedDate.isBefore(startOfWeek) && datedDate.isBefore(endOfWeek);
-        if (isThisWeek) {
-          totalCompletedThisWeek++;
-        }
-      }
-
-      return totalCompletedThisWeek;
+      final docs = await _lectureIndexDocsThisWeek(context, insAdminId, instituteId, departmentId, completedOnly: true);
+      return docs.length;
     } catch (e) {
       print(e.toString());
       return 0;
     }
   }
-  Future<Map<String, dynamic>> getDepartmentAvgAttendanceThisWeek(BuildContext context, String insAdminId, String instituteId, String departmentId, String s) async {
+
+  Future<num> getPercentageConductedLecturesThisWeek(BuildContext context, String insAdminId, String instituteId, String departmentId) async {
+    try {
+      final conductedLectures = await getDepartmentCompletedLecturesThisWeekCount(context, insAdminId, instituteId, departmentId);
+      final totalLectures = await getDepartmentLecturesThisWeekCount(context, insAdminId, instituteId, departmentId);
+      if (totalLectures == 0) return 0;
+      return (conductedLectures / totalLectures) * 100;
+    } catch (e) {
+      print(e.toString());
+      return 0;
+    }
+  }
+
+  /// Counts how many attendance entries across this week's lectures have the
+  /// given status ("present" / "absent" / "late"), reading from the unified
+  /// `attendance` field on each lecture doc (List<Attendance>-shaped map).
+  Future<int> getDepartmentAttendanceCountThisWeek(
+      BuildContext context, String insAdminId, String instituteId, String departmentId, String status) async {
     try {
       final dbService = Provider.of<DbService>(context, listen: false);
+      final docs = await _lectureIndexDocsThisWeek(context, insAdminId, instituteId, departmentId);
 
-      final now = DateTime.now();
-      // Week starts Monday, ends Sunday (inclusive).
-      final startOfWeek = DateTime(now.year, now.month, now.day)
-          .subtract(Duration(days: now.weekday - 1));
-      final endOfWeek = startOfWeek.add(Duration(days: 7)); // exclusive upper bound
+      int total = 0;
 
-      // Equality-only query — no composite index needed.
-      final lecturesIndexSnap = await dbService.indexDoc
-          .where("type", isEqualTo: "lecture")
-          .where("ins_admin_id", isEqualTo: insAdminId)
-          .where("institute_id", isEqualTo: instituteId)
-          .where("department_id", isEqualTo: departmentId)
-          .get();
-
-      int totalPresent = 0;
-      int lectureCount = 0;
-
-      for (var idxDoc in lecturesIndexSnap.docs) {
+      for (var idxDoc in docs) {
         final idx = idxDoc.data();
 
-        final datedRaw = idx['dated'];
-        if (datedRaw is! Timestamp) continue;
-        final datedDate = datedRaw.toDate();
-
-        final isThisWeek = !datedDate.isBefore(startOfWeek) && datedDate.isBefore(endOfWeek);
-        if (!isThisWeek) continue;
-
-        // Need the actual lecture document to read its "present" array —
-        // indexDoc only stores pointers, not the attendance data itself.
         final lectureDoc = await dbService.dbref
             .collection("ins_admins").doc(insAdminId)
             .collection("institutes").doc(instituteId)
@@ -485,10 +496,45 @@ class _FacHomeTabState extends State<FacHomeTab> {
 
         if (!lectureDoc.exists) continue;
 
-        final presentList = lectureDoc.data()?['present'];
-        if (presentList is List) {
-          totalPresent += presentList.length;
-        }
+        final attendanceList = _parseAttendance(lectureDoc.data()?['attendance']);
+        total += attendanceList.where((a) => a.status == status).length;
+      }
+
+      return total;
+    } catch (e) {
+      print(e.toString());
+      return 0;
+    }
+  }
+
+  Future<Map<String, dynamic>> getDepartmentAvgAttendanceThisWeek(BuildContext context, String insAdminId, String instituteId, String departmentId) async {
+    try {
+      final dbService = Provider.of<DbService>(context, listen: false);
+      final docs = await _lectureIndexDocsThisWeek(context, insAdminId, instituteId, departmentId);
+
+      int totalPresent = 0;
+      int lectureCount = 0;
+
+      for (var idxDoc in docs) {
+        final idx = idxDoc.data();
+
+        // Need the actual lecture document to read its "attendance" array —
+        // indexDoc only stores pointers, not the attendance data itself.
+        // session_id/semester_id come from this lecture's own index entry.
+        final lectureDoc = await dbService.dbref
+            .collection("ins_admins").doc(insAdminId)
+            .collection("institutes").doc(instituteId)
+            .collection("departments").doc(departmentId)
+            .collection("sessions").doc(idx['session_id'])
+            .collection("semesters").doc(idx['semester_id'])
+            .collection("courses").doc(idx['course_id'])
+            .collection("lectures").doc(idxDoc.id)
+            .get();
+
+        if (!lectureDoc.exists) continue;
+
+        final attendanceList = _parseAttendance(lectureDoc.data()?['attendance']);
+        totalPresent += attendanceList.where((a) => a.status == "present").length;
         lectureCount++;
       }
 
@@ -506,129 +552,6 @@ class _FacHomeTabState extends State<FacHomeTab> {
         "lecture_count": 0,
         "avg_attendance": 0.0,
       };
-    }
-  }
-  Future<num> getPercentageConductedLecturesThisWeek(BuildContext context, String insAdminId, String instituteId, String departmentId, String s) async {
-    try {
-      final conductedLectures = await getDepartmentCompletedLecturesThisWeekCount(context, insAdminId, instituteId, departmentId, s);
-      final totalLectures = await getDepartmentLecturesThisWeekCount(context, insAdminId, instituteId, departmentId, s);
-      if (totalLectures == 0) return 0;
-      return (conductedLectures / totalLectures) * 100;
-    } catch (e) {
-      print(e.toString());
-      return 0;
-    }
-  }
-  Future<int> getDepartmentTotalPresentThisWeek(BuildContext context, String insAdminId, String instituteId, String departmentId, String s) async {
-    try {
-      final dbService = Provider.of<DbService>(context, listen: false);
-
-      final now = DateTime.now();
-      // Week starts Monday, ends Sunday (inclusive).
-      final startOfWeek = DateTime(now.year, now.month, now.day)
-          .subtract(Duration(days: now.weekday - 1));
-      final endOfWeek = startOfWeek.add(Duration(days: 7)); // exclusive upper bound
-
-      // Equality-only query — no composite index needed.
-      final lecturesIndexSnap = await dbService.indexDoc
-          .where("type", isEqualTo: "lecture")
-          .where("ins_admin_id", isEqualTo: insAdminId)
-          .where("institute_id", isEqualTo: instituteId)
-          .where("department_id", isEqualTo: departmentId)
-          .get();
-
-      int totalPresent = 0;
-
-      for (var idxDoc in lecturesIndexSnap.docs) {
-        final idx = idxDoc.data();
-
-        final datedRaw = idx['dated'];
-        if (datedRaw is! Timestamp) continue;
-        final datedDate = datedRaw.toDate();
-
-        final isThisWeek = !datedDate.isBefore(startOfWeek) && datedDate.isBefore(endOfWeek);
-        if (!isThisWeek) continue;
-
-        // Need the actual lecture document to read its "present" array —
-        // indexDoc only stores pointers, not the attendance data itself.
-        final lectureDoc = await dbService.dbref
-            .collection("ins_admins").doc(insAdminId)
-            .collection("institutes").doc(instituteId)
-            .collection("departments").doc(departmentId)
-            .collection("sessions").doc(idx['session_id'])
-            .collection("semesters").doc(idx['semester_id'])
-            .collection("courses").doc(idx['course_id'])
-            .collection("lectures").doc(idxDoc.id)
-            .get();
-
-        if (!lectureDoc.exists) continue;
-
-        final presentList = lectureDoc.data()?['present'];
-        if (presentList is List) {
-          totalPresent += presentList.length;
-        }
-      }
-
-      return totalPresent;
-    } catch (e) {
-      print(e.toString());
-      return 0;
-    }
-  }
-  Future<int> getDepartmentTotalAbsentThisWeek(BuildContext context, String insAdminId, String instituteId, String departmentId, String s) async {
-    try {
-      final dbService = Provider.of<DbService>(context, listen: false);
-
-      final now = DateTime.now();
-      // Week starts Monday, ends Sunday (inclusive).
-      final startOfWeek = DateTime(now.year, now.month, now.day)
-          .subtract(Duration(days: now.weekday - 1));
-      final endOfWeek = startOfWeek.add(Duration(days: 7)); // exclusive upper bound
-
-      // Equality-only query — no composite index needed.
-      final lecturesIndexSnap = await dbService.indexDoc
-          .where("type", isEqualTo: "lecture")
-          .where("ins_admin_id", isEqualTo: insAdminId)
-          .where("institute_id", isEqualTo: instituteId)
-          .where("department_id", isEqualTo: departmentId)
-          .get();
-
-      int totalPresent = 0;
-
-      for (var idxDoc in lecturesIndexSnap.docs) {
-        final idx = idxDoc.data();
-
-        final datedRaw = idx['dated'];
-        if (datedRaw is! Timestamp) continue;
-        final datedDate = datedRaw.toDate();
-
-        final isThisWeek = !datedDate.isBefore(startOfWeek) && datedDate.isBefore(endOfWeek);
-        if (!isThisWeek) continue;
-
-        // Need the actual lecture document to read its "present" array —
-        // indexDoc only stores pointers, not the attendance data itself.
-        final lectureDoc = await dbService.dbref
-            .collection("ins_admins").doc(insAdminId)
-            .collection("institutes").doc(instituteId)
-            .collection("departments").doc(departmentId)
-            .collection("sessions").doc(idx['session_id'])
-            .collection("semesters").doc(idx['semester_id'])
-            .collection("courses").doc(idx['course_id'])
-            .collection("lectures").doc(idxDoc.id)
-            .get();
-
-        if (!lectureDoc.exists) continue;
-
-        final absentList = lectureDoc.data()?['absent'];
-        if (absentList is List) {
-          totalPresent += absentList.length;
-        }
-      }
-
-      return totalPresent;
-    } catch (e) {
-      print(e.toString());
-      return 0;
     }
   }
 

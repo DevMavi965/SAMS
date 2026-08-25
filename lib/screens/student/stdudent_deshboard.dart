@@ -33,14 +33,13 @@ class StudentDeshboard extends StatefulWidget {
 
 class _StudentDeshboardState extends State<StudentDeshboard> {
  int current=0;
-  List<String> menus=["home","schedule","leave","alerts","profile"];
+  List<String> menus=["home","schedule","leave","notifications","profile"];
  List<LectureModel> lectures=[
    LectureModel(
        dated: DateTime.now(),
        start_time: TimeOfDay(hour: 9, minute: 00),
        end_time: TimeOfDay(hour: 10, minute: 00),
-       present:["2537889","2537891","2537892"],
-       absent: ["2537888","25378"] ,
+       attendance: [],
        room: "14-B",
        status: "upcoming",
        course: "Data Mining"
@@ -49,8 +48,7 @@ class _StudentDeshboardState extends State<StudentDeshboard> {
        dated: DateTime.now(),
        start_time: TimeOfDay(hour: 10, minute: 00),
        end_time: TimeOfDay(hour: 12, minute: 00),
-       present:["2537888","2537889","2537890","2537891"],
-       absent: ["2537892"] ,
+       attendance:[],
        room: "8-A",
        status: "upcoming",
        course: "Microprocessors"
@@ -59,29 +57,13 @@ class _StudentDeshboardState extends State<StudentDeshboard> {
        dated: DateTime.now(),
        start_time: TimeOfDay(hour: 10, minute: 00),
        end_time: TimeOfDay(hour: 12, minute: 00),
-       present:["2537888","2537889","2537890","2537891"],
-       absent: ["2537892"] ,
+       attendance:[] ,
        room: "Lab-2",
        status: "upcoming",
        course: "System-Design Lab"
    ),
-   LectureModel(
-       dated: DateTime.now(),
-       start_time: TimeOfDay(hour: 10, minute: 00),
-       end_time: TimeOfDay(hour: 12, minute: 00),
-       present:["2537888","2537889","2537890","2537891"],
-       absent: ["2537892"] ,
-       room: "13-C",
-       status: "upcoming",
-       course: "Microprocessors"
-   ),
-   // Lecture(
-   //     course: Course(name: "DSA", lecturer:"Dr Asif", room:"13C", time: DateTime.now(), status: "upcoming"),
-   //     total_std:50,
-   //     absent_std:2,
-   //     late_std: 2,
-   //     present_std: 48,
-   //     status: "completed"),
+
+
 
  ];
   List<Announcement> stud_announcements = [
@@ -119,8 +101,9 @@ class _StudentDeshboardState extends State<StudentDeshboard> {
       bottomNavigationBar: BottomNavigationBar(
         selectedItemColor: Theme.of(context).primaryColor,
         unselectedItemColor: Colors.grey,
+        backgroundColor: Colors.white,
         currentIndex:current,
-
+        type: BottomNavigationBarType.fixed,
         onTap: (v){
           setState(() {
             current=v;

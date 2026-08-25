@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -45,7 +46,9 @@ class _AttendViewState extends State<AttendView> {
         fontSize: 15,
       ),),
     ),
-      body: StreamBuilder(stream: Provider.of<DbService>(context,listen: false).dbref
+      body:Provider.of<DbService>(context,listen: false).loading?
+      Center(child: CircularProgressIndicator(),):
+      StreamBuilder(stream: Provider.of<DbService>(context,listen: false).dbref
           .collection("ins_admins").doc(widget.insAdminId)
           .collection("institutes").doc(widget.instituteId)
           .collection("departments").doc(widget.departmentId)
@@ -132,7 +135,7 @@ class _AttendViewState extends State<AttendView> {
                             SizedBox(height: 5,width: 2,),
                             Divider(color: Colors.grey.shade300,),
                             SizedBox(height: 5,width: 2,),
-                            if(widget.lecture.present!.contains(students[i].id))...[
+                            if(widget.lecture.attendance?.firstWhereOrNull((element) => element.sid==students[i].id)?.status=="present" ||widget.lecture.attendance?.firstWhereOrNull((element) => element.sid==students[i].id)?.status=="late")...[
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
@@ -153,8 +156,14 @@ class _AttendViewState extends State<AttendView> {
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         Text("Check-in ",style: TextStyle(fontSize: 13),),
-                                        Text("06:10",style: TextStyle(fontSize: 13,fontWeight: FontWeight.w700,color: Theme.of(context).primaryColor),),
-                                      ],
+                                        Text(
+                                          widget.lecture.attendance?[i].checkin?.format(context) ?? "--:--",
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w700,
+                                            color: Theme.of(context).primaryColor,
+                                          ),
+                                        ),                                      ],
                                     )),
                                   ],
                                 )),
@@ -175,7 +184,7 @@ class _AttendViewState extends State<AttendView> {
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         Text("mid-point",maxLines: 1,overflow: TextOverflow.ellipsis,style: TextStyle(fontSize: 13),),
-                                        Text("06:10",style: TextStyle(fontSize: 13,fontWeight: FontWeight.w700,color: Colors.orange),),
+                                        Icon(widget.lecture.attendance?.firstWhereOrNull((element) => element.sid==students[i].id)?.mid_point!=null && widget.lecture.attendance?.firstWhereOrNull((element) => element.sid==students[i].id)?.mid_point==true?CupertinoIcons.checkmark_alt:Icons.radio_button_unchecked,color: Colors.orange,)
                                       ],
                                     )),
                                   ],
@@ -197,7 +206,8 @@ class _AttendViewState extends State<AttendView> {
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         Text("Check-out",maxLines: 1,overflow: TextOverflow.ellipsis,style: TextStyle(fontSize: 13),),
-                                        Text("06:10",style: TextStyle(fontSize: 13,fontWeight: FontWeight.w700,color: Colors.red),),
+                                        Text(widget.lecture.attendance?.firstWhereOrNull((element) => element.sid==students[i].id)?.checkout==null?"00:00 AM":widget.lecture.attendance?[i].checkout?.format(context) ?? "--:--",
+                                        style: TextStyle(fontSize: 13,fontWeight: FontWeight.w700,color: Colors.red),),
                                       ],
                                     )),
                                   ],
@@ -243,7 +253,7 @@ class _AttendViewState extends State<AttendView> {
                                             backgroundColor: MaterialStateColor.resolveWith((states) => Theme.of(context).primaryColor),
                                           ),
                                           onPressed: (){
-                                            Provider.of<DbService>(context,listen: false).markAttendancePresent(context, widget.lecture, students[i].id!);
+                                            Provider.of<DbService>(context,listen: false).studentCheckIn(context, widget.lecture, students[i].id!,"manual");
                                           }, child: Text("Mark Attendance",style: TextStyle(color: Colors.white),))),
                                     ],
                                   ))
@@ -262,26 +272,28 @@ class _AttendViewState extends State<AttendView> {
     );
   }
 
-  _statusBadge(String studentId,LectureModel lecture) {
-    List<String> present=lecture.present!;
-    List<String> absent=lecture.absent!;
-    if(present.contains(studentId)){
+  _statusBadge(String studentId, LectureModel lecture) {
+    final record = widget.lecture.attendance
+        ?.firstWhereOrNull((element) => element.sid == studentId);
+
+    if (record?.status == "present") {
       return CircleAvatar(
         radius: 12,
-        backgroundColor:Theme.of(context).primaryColor,
-        child: Text("P",style: TextStyle(
-            color: Colors.white
-        ),),
+        backgroundColor: Theme.of(context).primaryColor,
+        child: const Text("P", style: TextStyle(color: Colors.white)),
       );
-    }else {
+    }else if(record?.status=="late"){
       return CircleAvatar(
         radius: 12,
-        backgroundColor:Colors.red,
-        child: Text("A",style: TextStyle(
-            color: Colors.white
-        ),),
+        backgroundColor: Colors.orange,
+        child: const Text("L", style: TextStyle(color: Colors.white)),
+      );
+    } else {
+      return CircleAvatar(
+        radius: 12,
+        backgroundColor: Colors.red,
+        child: const Text("A", style: TextStyle(color: Colors.white)),
       );
     }
-
   }
 }
