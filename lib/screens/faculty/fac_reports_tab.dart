@@ -1,9 +1,21 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:smas3/models/department.dart';
+import 'package:smas3/models/ins_admin.dart';
+import 'package:smas3/models/institute.dart';
+import 'package:smas3/widgets/fac_widgets/fac_course_card2.dart';
 import 'package:smas3/widgets/fac_widgets/fac_custom_lineChart.dart';
+import 'package:smas3/widgets/fac_widgets/fac_pie_week.dart';
 import 'package:smas3/widgets/fac_widgets/fac_reports_grid.dart';
+import 'package:smas3/widgets/fac_widgets/fac_week_graph.dart';
+
+import '../../models/fac_model.dart';
 class FacReportsTab extends StatefulWidget {
-  const FacReportsTab({super.key});
+  final Lecturer lecturer;
+  final InsAdmin insAdmin;
+  final Institute institute;
+  final Department department;
+  const FacReportsTab({super.key, required this.lecturer, required this.insAdmin, required this.institute, required this.department});
 
   @override
   State<FacReportsTab> createState() => _FacReportsTabState();
@@ -69,156 +81,14 @@ class _FacReportsTabState extends State<FacReportsTab> {
          ),
        ),
        SizedBox(height: 20,),
-       FacReportsGrid(total_students: 175, lectures_this_week: 5, total_records: 498, avg_attendance: 89),
+       FacReportsGrid(insAdmin: widget.insAdmin, institute: widget.institute, department: widget.department, lecturer: widget.lecturer,),
        SizedBox(height: 15,),
        // week overview bar graph
-       Card(
-         color: Colors.white,
-         child: Padding(
-           padding: EdgeInsets.symmetric(
-               horizontal: 15,
-               vertical: 15
-           ),
-           child: Column(
-             children: [
-               Row(
-                 children: [
-                   Text("This Week Overview",style: TextStyle(fontWeight: FontWeight.w400),textAlign: TextAlign.center,),
-                 ],
-               ),
-               SizedBox(height: 17,),
-               SizedBox(
-
-                 height: 250,
-                 child: BarChart(
-                     BarChartData(
-                       gridData: FlGridData(show: false),
-                       borderData: FlBorderData(show: true,border: Border(
-                         bottom: BorderSide(color: Colors.grey,width: 1),
-                         left: BorderSide(color: Colors.grey,width: 0.5),
-                       )),
-                       backgroundColor: Colors.white,
-                       titlesData: FlTitlesData(
-                           rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                           topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                           bottomTitles: AxisTitles(
-                               sideTitles: SideTitles(
-                                   showTitles: true,
-                                   getTitlesWidget: (v,meta){
-                                     switch(v.toInt()){
-                                       case 0:
-                                         return Text("Mon");
-                                       case 1:
-                                         return Text("Tue");
-                                       case 2:
-                                         return Text("Wed");
-                                       case 3:
-                                         return Text("Thu");
-                                       case 4:
-                                         return Text("Fri");
-                                       default:
-                                         return Text("");
-                                     }
-                                   }
-                               )
-                           )
-                       ),
-                       barGroups: _getBarGroups(),
-                     )
-                 ),
-               ),
-             ],
-           ),
-         ),
-       ),
+       FacWeeklyAttendanceChart(insAdmin: widget.insAdmin, institute: widget.institute, department: widget.department, lecturer: widget.lecturer,),
        SizedBox(height: 15,),
        SizedBox(height: 15,),
        //   Pie chart distributiom
-       SizedBox(
-         height: 250,
-         child: Card(
-           color: Colors.white,
-           child: Padding(
-             padding: const EdgeInsets.symmetric(
-                 horizontal: 10,
-                 vertical: 15
-             ),
-             child: Column(
-               children: [
-                 Row(
-                   children: [
-                     SizedBox(width: 10,),
-                     Text("Attendance Distribution",style: TextStyle(fontWeight: FontWeight.w600),textAlign: TextAlign.center,),
-                   ],
-                 ),
-                 Expanded(
-                   child: Row(
-                     children: [
-                       Expanded(
-                         flex: 2,
-                         child: Padding(
-                           padding: const EdgeInsets.all(8.0),
-                           child: PieChart(
-                               PieChartData(
-                                   startDegreeOffset: 50,
-                                   sections: [
-                                     PieChartSectionData(
-                                         showTitle: false,
-                                         color: Theme.of(context).primaryColor.withAlpha(210),
-                                         value: 428
-                                     ),
-                                     PieChartSectionData(
-                                         showTitle: false,
-                                         color: Colors.red.withAlpha(220),
-                                         value: 45
-                                     ),
-                                     PieChartSectionData(
-                                         showTitle: false,
-                                         color: Colors.brown.withAlpha(230),
-                                         value: 18
-                                     ),
-                                   ]
-                               )
-                           ),
-                         ),
-                       ),
-                       Expanded(
-                         child: Column(
-                           mainAxisAlignment: MainAxisAlignment.end,
-                           crossAxisAlignment: CrossAxisAlignment.start,
-                           children: [
-                             Row(
-                               children: [
-                                 Icon(Icons.circle,color: Theme.of(context).primaryColor,size: 14,),
-                                 SizedBox(width: 5,),
-                                 Text("Present :428",style: TextStyle(fontSize: 14),),
-                               ],
-                             ),
-                             Row(
-                               children: [
-                                 Icon(Icons.circle,color:Colors.red,size: 14,),
-                                 SizedBox(width: 5,),
-                                 Text("Absent :18",style: TextStyle(fontSize: 14),),
-                               ],
-                             ),
-                             Row(
-                               children: [
-                                 Icon(Icons.circle,color: Colors.brown,size: 14,),
-                                 SizedBox(width: 5,),
-                                 Text("Late :45",style: TextStyle(fontSize: 14),),
-                               ],
-                             ),
-                           ],
-                         ),
-                       )
-                     ],
-                   ),
-                 )
-               ],
-             ),
-           ),
-         ),
-       )
+       FacAttendanceDistributionChart(insAdmin: widget.insAdmin, institute: widget.institute, department: widget.department, lecturer: widget.lecturer,)
      ],
    )//weekly
        :(selected_opt==1?
@@ -273,8 +143,7 @@ class _FacReportsTabState extends State<FacReportsTab> {
           ),
         ),
         SizedBox(height: 20,),
-        FacCustomLinechart(Months: ["Jan","Feb","Mar","Apr","May","Jun"], montly_attendance_percentage: [67,76,83,76,81,74]),
-
+       FacCustomLinechart(insAdmin: widget.insAdmin, institute: widget.institute, department: widget.department, lecturer: widget.lecturer,)
 
       ],
     ):
@@ -329,76 +198,8 @@ class _FacReportsTabState extends State<FacReportsTab> {
          ),
        ),
        SizedBox(height: 20,),
-       for(int i=0;i<5;i++)
-       Card(
-         child: Padding(
-           padding: const EdgeInsets.symmetric(horizontal: 10,vertical: 10),
-           child: Column(
-             children: [
-               Row(
-                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                 children: [
-                   Text("Course-Name"),
-                   Badge(label: Text("87%"),backgroundColor: Theme.of(context).primaryColor,)
-                 ],
-               ),
-               SizedBox(height: 7,),
-               Row(
-                 children: [
-                   Text("45 students",style: TextStyle(color: Colors.grey),),
-                 ],
-               ),
-               SizedBox(height: 30,),
-               Row(
-                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                 children: [
-                   Text("Average Attendance",style: TextStyle(color: Colors.grey),),
-                   Text("87%"),
-
-                 ],
-               ),
-               Padding(
-                 padding: const EdgeInsets.symmetric(horizontal: 2,vertical: 10),
-                 child: LinearProgressIndicator(
-                   borderRadius: BorderRadius.circular(3),
-                   minHeight: 7,
-                   value: 0.87,
-                   color: Theme.of(context).primaryColor,
-                 ),
-               ),
-               Row(children: [
-                 Text("Last Class: 2 hours ago",style: TextStyle(color: Colors.grey),)
-               ],),
-               SizedBox(height: 20,),
-               InkWell(
-                 onTap: (){
-
-                 },
-                 child: Container(
-
-                   padding: EdgeInsets.symmetric(horizontal: 10,vertical: 5),
-                   decoration: BoxDecoration(
-                     color: Color(0xfff1f5f9),
-                     borderRadius: BorderRadius.circular(15),
-                     border: Border.all(
-                       color: Colors.grey.shade400,
-                       width: 1
-                     )
-                   ),
-                     child: Row(
-                       mainAxisAlignment: MainAxisAlignment.center,
-                   children: [
-                     Padding(
-                       padding: const EdgeInsets.all(4.0),
-                       child: Text("View Details",style: TextStyle(fontWeight: FontWeight.w600),),
-                     ),
-                   ],
-                 )),
-               ),
-             ],
-           ),
-         ),
-       )
+       // courses with thier data
+       FacCourseWiseList(insAdmin: widget.insAdmin, institute: widget.institute, department: widget.department, lecturer: widget.lecturer)
      ],
    )));//lecture-wise
   }
@@ -422,4 +223,44 @@ class _FacReportsTabState extends State<FacReportsTab> {
      );
    });
   }
+  // Future<void> fetchLecturerLectures(String lecturerId) async {
+  //   loading = true;
+  //   notifyListeners();
+  //   try {
+  //     final myCourses = courses.where((c) => c.lecturer_id == lecturerId).toList();
+  //     List<LectureModel> fetched = [];
+  //
+  //     for (var c in myCourses) {
+  //       final snap = await dbref
+  //           .collection("ins_admins").doc(c.insAdminId)
+  //           .collection("institutes").doc(c.institute_id)
+  //           .collection("departments").doc(c.department_id)
+  //           .collection("sessions").doc(c.session_id)
+  //           .collection("semesters").doc(c.semester_id)
+  //           .collection("courses").doc(c.id)
+  //           .collection("lectures").get();
+  //
+  //       for (var lec in snap.docs) {
+  //         fetched.add(LectureModel(
+  //           id: lec.id,
+  //           course: lec['course_name'],
+  //           dated: (lec['dated'] as Timestamp).toDate(),
+  //           start_time: TimeOfDay.fromDateTime((lec['start_time'] as Timestamp).toDate()),
+  //           end_time: TimeOfDay.fromDateTime((lec['end_time'] as Timestamp).toDate()),
+  //           room: lec['room'],
+  //           status: lec['status'],
+  //           attendance: (lec['attendance'] as List<dynamic>? ?? [])
+  //               .map((a) => Attendance.fromMap(a as Map<String, dynamic>))
+  //               .toList(),
+  //         ));
+  //       }
+  //     }
+  //     lectures = fetched;
+  //   } catch (e) {
+  //     print(e.toString());
+  //   } finally {
+  //     loading = false;
+  //     notifyListeners();
+  //   }
+  // }
 }

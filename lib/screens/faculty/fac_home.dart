@@ -420,7 +420,8 @@ class _FacHomeTabState extends State<FacHomeTab> {
   /// hands back the raw index docs, so the stat helpers below don't each
   /// repeat the same Firestore round trip.
   Future<List<QueryDocumentSnapshot<Map<String, dynamic>>>> _lectureIndexDocsThisWeek(
-      BuildContext context, String insAdminId, String instituteId, String departmentId) async {
+      BuildContext context, String insAdminId, String instituteId, String departmentId) async
+  {
     final dbService = Provider.of<DbService>(context, listen: false);
 
     final now = DateTime.now();

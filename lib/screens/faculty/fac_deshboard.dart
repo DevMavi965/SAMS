@@ -92,7 +92,12 @@ class _FacDeshboardState extends State<FacDeshboard> {
     FacHomeTab(insAdmin: insAdmin!,institute: institute!,department: department!,lecturer: widget.lecturer,),
     FacMarkAttendanceTab(insAdmin: insAdmin!, institute: institute!, lecturer: widget.lecturer,),
     CourseTab(insAdmin:insAdmin!,institute: institute!,department: department!,lecturer: widget.lecturer,),
-    FacReportsTab(),
+    FacReportsTab(
+      insAdmin: insAdmin!,
+      institute: institute!,
+      department: department!,
+      lecturer: widget.lecturer,
+    ),
     FacProfileTab(lecturer: widget.lecturer, insAdmin: insAdmin!, institute: institute!, department: department!,)
   ];
   @override

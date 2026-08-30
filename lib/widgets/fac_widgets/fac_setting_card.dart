@@ -3,12 +3,17 @@ import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:smas3/models/fac_model.dart';
+import 'package:smas3/models/ins_admin.dart';
+import 'package:smas3/models/institute.dart';
 import 'package:smas3/models/student_model.dart';
+import 'package:smas3/screens/faculty/fac_ann.dart';
 
 import '../../providers/theme_Provider.dart' show ThemeProvider;
 class FacSettingCard extends StatefulWidget {
   final Lecturer lecturer;
-  const FacSettingCard({super.key, required this.lecturer});
+  final InsAdmin insAdmin;
+  final Institute institute;
+  const FacSettingCard({super.key, required this.lecturer, required this.insAdmin, required this.institute});
 
   @override
   State<FacSettingCard> createState() => _FacSettingCardState();
@@ -26,7 +31,7 @@ class _FacSettingCardState extends State<FacSettingCard> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
-          color: Colors.grey,
+          color: Colors.grey.shade100,
           width: 0.2,
         ),
       ),
@@ -34,7 +39,7 @@ class _FacSettingCardState extends State<FacSettingCard> {
       Table(
         border:
         TableBorder.all(
-          color: Colors.grey,
+          color: Colors.white,
           width: 0.2,
         ),
         children: [
@@ -46,7 +51,7 @@ class _FacSettingCardState extends State<FacSettingCard> {
                   child:
                   InkWell(
                     onTap: (){
-                      print("updated profile");
+                      Navigator.push(context, MaterialPageRoute(builder: (_)=>FacAnnTab(insAdmin: widget.insAdmin, institute: widget.institute)));
                     },
                     child: Row(
                       children: [
@@ -57,14 +62,14 @@ class _FacSettingCardState extends State<FacSettingCard> {
                             color: Colors.green.shade50,
                             shape: BoxShape.circle,
                           ),
-                          child: Icon(Icons.person_2_outlined,size: 25,color: Theme.of(context).primaryColor,),
+                          child: Icon(CupertinoIcons.speaker_3,size: 25,color: Theme.of(context).primaryColor,),
                         ),
                         SizedBox(width: 10,),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text("Edit Profile",),
-                            Text("update your personal information",style: TextStyle(color: Colors.grey)),
+                            Text("announcements",),
+                            Text("view announcements",style: TextStyle(color: Colors.grey)),
                           ],
                         ),
                         Spacer(),
@@ -182,41 +187,41 @@ class _FacSettingCardState extends State<FacSettingCard> {
               ]
           ),
           //bio metric setting
-          TableRow(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: InkWell(
-                    onTap: (){
-                      print("updated biometric: ${widget.lecturer.name}");
-                    },
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 45,
-                          height: 45,
-                          decoration: BoxDecoration(
-                            color: Colors.green.shade50,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(PhosphorIconsBold.shieldCheck,size: 25,color: Theme.of(context).primaryColor,),
-                        ),
-                        SizedBox(width: 10,),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text("Biometric Settings",),
-                            Text("configure fingerprint & face id",style: TextStyle(color: Colors.grey),),
-                          ],
-                        ),
-                        Spacer(),
-                        Icon(Icons.navigate_next,size: 20,color: Colors.grey,)
-                      ],
-                    ),
-                  ),
-                )
-              ]
-          )
+          // TableRow(
+          //     children: [
+          //       Padding(
+          //         padding: const EdgeInsets.all(12.0),
+          //         child: InkWell(
+          //           onTap: (){
+          //             print("updated biometric: ${widget.lecturer.name}");
+          //           },
+          //           child: Row(
+          //             children: [
+          //               Container(
+          //                 width: 45,
+          //                 height: 45,
+          //                 decoration: BoxDecoration(
+          //                   color: Colors.green.shade50,
+          //                   shape: BoxShape.circle,
+          //                 ),
+          //                 child: Icon(PhosphorIconsBold.shieldCheck,size: 25,color: Theme.of(context).primaryColor,),
+          //               ),
+          //               SizedBox(width: 10,),
+          //               Column(
+          //                 crossAxisAlignment: CrossAxisAlignment.start,
+          //                 children: [
+          //                   Text("Biometric Settings",),
+          //                   Text("configure fingerprint & face id",style: TextStyle(color: Colors.grey),),
+          //                 ],
+          //               ),
+          //               Spacer(),
+          //               Icon(Icons.navigate_next,size: 20,color: Colors.grey,)
+          //             ],
+          //           ),
+          //         ),
+          //       )
+          //     ]
+          // )
         ],
       ),
     );

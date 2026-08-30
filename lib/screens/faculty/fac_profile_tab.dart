@@ -39,7 +39,7 @@ class _FacProfileTabState extends State<FacProfileTab> {
         SizedBox(height: 25,),
         Text("Settings",style: TextStyle(fontSize: 16,fontWeight: FontWeight.w500),),
         SizedBox(height: 10,),
-        FacSettingCard(lecturer: widget.lecturer),
+        FacSettingCard(lecturer: widget.lecturer, insAdmin: widget.insAdmin, institute: widget.institute,),
         SizedBox(height: 25,),
         OutlinedButton.icon(
           style: OutlinedButton.styleFrom(

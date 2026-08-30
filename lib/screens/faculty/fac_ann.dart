@@ -11,16 +11,16 @@ import '../../models/ins_admin.dart';
 import '../../models/institute.dart';
 import '../../services/db_service.dart';
 
-class AlertTab extends StatefulWidget {
+class FacAnnTab extends StatefulWidget {
   final InsAdmin insAdmin;
   final Institute institute;
-  const AlertTab({super.key, required this.insAdmin, required this.institute});
+  const FacAnnTab({super.key, required this.insAdmin, required this.institute});
 
   @override
-  State<AlertTab> createState() => _AlertTabState();
+  State<FacAnnTab> createState() => _FacAnnTabState();
 }
 
-class _AlertTabState extends State<AlertTab> {
+class _FacAnnTabState extends State<FacAnnTab> {
   TextEditingController title=TextEditingController();
   TextEditingController message=TextEditingController();
   late TextEditingController title1=TextEditingController();

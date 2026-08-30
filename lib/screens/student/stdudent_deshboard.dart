@@ -27,24 +27,26 @@ import '../../models/department.dart';
 import '../../models/ins_admin.dart';
 import '../../models/institute.dart';
 import '../../services/db_service.dart';
+/*
+ Student dashboard shell — bottom nav + the 5 tab screens.
 
-/// Student dashboard shell — bottom nav + the 5 tab screens.
-///
-/// `Scheduletab` needs `insAdmin`/`institute`/`department`/`session`/
-/// `semester`, which are only known after `getInsAdminInsDep()` finishes
-/// its Firestore reads. Previously `screens` was a `late` field built
-/// with `insAdmin!` etc., and `build()` read it unconditionally — so the
-/// very first frame (before the fetch resolves) force-unwrapped still-null
-/// fields and crashed with "Null check operator used on a null value".
-/// Because the field was `late`, that failed initialization didn't stick:
-/// the next rebuild (triggered once the fetch's `setState` actually ran)
-/// retried and succeeded — which is why the crash only flashed for a
-/// couple of seconds instead of staying broken.
-///
-/// Fix: `build()` now returns a loading screen until every required
-/// field is actually non-null, and the tab list is built via a getter
-/// (computed fresh each build) instead of a `late` field, so it's never
-/// evaluated before the data it depends on exists.
+ [Scheduletab] needs `insAdmin`/`institute`/`department`/`session`/
+ [semester], which are only known after `getInsAdminInsDep()` finishes
+ its Firestore reads. Previously `screens` was a `late` field built
+ with `insAdmin!` etc., and `build()` read it unconditionally — so the
+ very first frame (before the fetch resolves) force-unwrapped still-null
+ fields and crashed with "Null check operator used on a null value".
+ Because the field was `late`, that failed initialization didn't stick:
+ the next rebuild (triggered once the fetch's `setState` actually ran)
+ retried and succeeded — which is why the crash only flashed for a
+ couple of seconds instead of staying broken.
+
+ Fix: [......build().....] now returns a loading screen until every required
+ field is actually nonnull, and the tab list is built via a getter
+ (computed fresh each build) instead of a `late` field, so it's never
+evaluated before the data it depends on exists.
+
+ */
 class StudentDeshboard extends StatefulWidget {
   final Student student;
   const StudentDeshboard({super.key, required this.student});
@@ -179,14 +181,8 @@ class _StudentDeshboardState extends State<StudentDeshboard> {
   }
 
   int current = 0;
-  static const List<String> menus = ["home", "schedule", "leave", "notifications", "profile"];
+  static const List<String> menus = ["home", "schedule", "leave", "announcements_std", "profile"];
 
-  final List<In_Notification> notifications = [
-    In_Notification(title: "attendance", body: "body of notification attendance ", type: "attendance", time: "10:00", is_read: false),
-    In_Notification(title: "good", body: "you passed quiz #A14 ", type: "good", time: "10:00", is_read: true),
-    In_Notification(title: "warning", body: "low attendance ", type: "warning", time: "10:00", is_read: false),
-    In_Notification(title: "upcoming", body: "date sheet revealed for upcoming exams ", type: "upcoming", time: "10:00", is_read: true),
-  ];
 
   List<Widget> get _screens => [
     StdHome(student: widget.student),
@@ -204,7 +200,10 @@ class _StudentDeshboardState extends State<StudentDeshboard> {
       session: session!,
       semester: semester!,
     ),
-    AlertTab(notifications: notifications),
+    AlertTab(
+      insAdmin: insAdmin!,
+      institute: institute!,
+    ),
     ProfileTab(student: widget.student),
   ];
 

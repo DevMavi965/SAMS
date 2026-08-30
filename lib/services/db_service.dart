@@ -787,6 +787,7 @@ class DbService with ChangeNotifier{
     }
   }
 
+
   addInsAdmin(BuildContext context,InsAdmin _insAdmin)async{
     try{
       // InsAdmin insAdmin=InsAdmin(name: "Ameer Muawiya", email: "ameermuawiya34@gmail.com", created_at: DateTime.now(), last_login: DateTime.now(), status: "active");

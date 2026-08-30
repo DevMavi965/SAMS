@@ -37,7 +37,7 @@ class _FacPersonalInfoCardState extends State<FacPersonalInfoCard> {
       Table(
         border:
         TableBorder.all(
-          color: Colors.grey,
+          color: Colors.grey.shade100,
           width: 0.2,
         ),
         children: [

@@ -739,11 +739,11 @@ Contributions are welcome.
 
 # 24. Team Members
 
-| Name                  | Role      |
-| --------------------- | --------- |
-| Ameer Muawiya         | Team Lead |
-| Muhammad Huzaifa Khan | Developer |
-| Aliyan Sagheer        | Developer |
+| Name                  | Role                 |
+| --------------------- |----------------------|
+| Ameer Muawiya         | Team Lead +Developer |
+| Muhammad Huzaifa Khan | Researcher           |
+| Aliyan Sagheer        | Researcher            |
 
 ---
 
