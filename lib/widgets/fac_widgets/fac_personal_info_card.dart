@@ -120,7 +120,7 @@ class _FacPersonalInfoCardState extends State<FacPersonalInfoCard> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text("Designation",style: TextStyle(color: Colors.grey),),
-                          Text(widget.lecturer.role),
+                          Text(widget.lecturer.designation),
                         ],
                       )
                     ],

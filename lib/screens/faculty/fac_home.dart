@@ -34,6 +34,11 @@ class _FacHomeTabState extends State<FacHomeTab> {
   // instead of once in initState + once per FutureBuilder that needs them
   late Future<List<LectureModel>> _todaysLecturesFuture;
 
+  // Single cached future for the whole "This Week" stats card. Replaces
+  // 5 separate uncached Futures that were each re-triggered on every
+  // rebuild and each re-fetching the same lecture docs independently.
+  late Future<Map<String, dynamic>> _weeklyStatsFuture;
+
   // ---- shared helpers for parsing the "attendance" field stored on a lecture doc ----
 
   static TimeOfDay? _toTimeOfDay(dynamic v) {
@@ -150,6 +155,9 @@ class _FacHomeTabState extends State<FacHomeTab> {
   void initState() {
     super.initState();
     _todaysLecturesFuture = getTodaysLectures();
+    _weeklyStatsFuture = _computeWeeklyStats(
+      context, widget.insAdmin.id!, widget.institute.id!, widget.department.id!,
+    );
   }
 
   @override
@@ -237,7 +245,7 @@ class _FacHomeTabState extends State<FacHomeTab> {
                     Row(
                       children: [
                         FutureBuilder(
-                          future: getDepartmentCompletedLecturesThisWeekCount(context, widget.insAdmin.id!, widget.institute.id!, widget.department.id!),
+                          future: _weeklyStatsFuture,
                           builder: (context, snapshot) {
                             if (snapshot.connectionState == ConnectionState.waiting) {
                               return Text("Loading...");
@@ -246,12 +254,12 @@ class _FacHomeTabState extends State<FacHomeTab> {
                             } else if (!snapshot.hasData || snapshot.data == null) {
                               return Text("0");
                             }
-                            return Text(snapshot.data.toString());
+                            return Text(snapshot.data!['conducted_lectures'].toString());
                           },
                         ),
                         Text("/"),
                         FutureBuilder(
-                          future: getDepartmentLecturesThisWeekCount(context, widget.insAdmin.id!, widget.institute.id!, widget.department.id!),
+                          future: _weeklyStatsFuture,
                           builder: (context, snapshot) {
                             if (snapshot.connectionState == ConnectionState.waiting) {
                               return Text("Loading...");
@@ -260,7 +268,7 @@ class _FacHomeTabState extends State<FacHomeTab> {
                             } else if (!snapshot.hasData || snapshot.data == null) {
                               return Text("0");
                             }
-                            return Text(snapshot.data.toString());
+                            return Text(snapshot.data!['total_lectures'].toString());
                           },
                         ),
                       ],
@@ -270,7 +278,7 @@ class _FacHomeTabState extends State<FacHomeTab> {
                 SizedBox(height: 5,),
                 Flexible(
                   child: FutureBuilder(
-                    future: getPercentageConductedLecturesThisWeek(context, widget.insAdmin.id!, widget.institute.id!, widget.department.id!),
+                    future: _weeklyStatsFuture,
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
                         return Text("Loading...");
@@ -279,8 +287,9 @@ class _FacHomeTabState extends State<FacHomeTab> {
                       } else if (!snapshot.hasData || snapshot.data == null) {
                         return Text("0");
                       }
+                      final percentageConducted = snapshot.data!['percentage_conducted'] as num;
                       return LinearProgressIndicator(
-                        value: snapshot.data! / 100,
+                        value: percentageConducted / 100,
                         backgroundColor: Theme.of(context).primaryColor.withOpacity(0.2),
                         valueColor: AlwaysStoppedAnimation(Theme.of(context).primaryColor),
                         minHeight: 7,
@@ -293,7 +302,7 @@ class _FacHomeTabState extends State<FacHomeTab> {
 
                 SizedBox(height: 20,),
                 FutureBuilder(
-                  future: getDepartmentAvgAttendanceThisWeek(context, widget.insAdmin.id!, widget.institute.id!, widget.department.id!),
+                  future: _weeklyStatsFuture,
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return Text("Loading...");
@@ -302,6 +311,7 @@ class _FacHomeTabState extends State<FacHomeTab> {
                     } else if (!snapshot.hasData || snapshot.data == null) {
                       return Text("0");
                     }
+                    final avgAttendance = snapshot.data!['avg_attendance'] as double;
                     return Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -309,12 +319,12 @@ class _FacHomeTabState extends State<FacHomeTab> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text("Avg Attendance"),
-                            Text("${(snapshot.data!['avg_attendance']*100).toStringAsFixed(1)}%")
+                            Text("${(avgAttendance*100).toStringAsFixed(1)}%")
                           ],
                         ),
                         SizedBox(height: 5,),
                         LinearProgressIndicator(
-                          value: snapshot.data!['avg_attendance'],
+                          value: avgAttendance,
                           backgroundColor: Theme.of(context).primaryColor.withOpacity(0.2),
                           valueColor: AlwaysStoppedAnimation(Theme.of(context).primaryColor),
                           minHeight: 7,
@@ -339,7 +349,7 @@ class _FacHomeTabState extends State<FacHomeTab> {
                       children: [
                         Icon(CupertinoIcons.check_mark_circled,color: Theme.of(context).primaryColor,size: 30,),
                         FutureBuilder(
-                          future: getDepartmentAttendanceCountThisWeek(context, widget.insAdmin.id!, widget.institute.id!, widget.department.id!, "present"),
+                          future: _weeklyStatsFuture,
                           builder: (context, snapshot) {
                             if (snapshot.connectionState == ConnectionState.waiting) {
                               return Text("Loading...");
@@ -348,7 +358,8 @@ class _FacHomeTabState extends State<FacHomeTab> {
                             } else if (!snapshot.hasData || snapshot.data == null) {
                               return Text("0");
                             }
-                            return Text(snapshot.data.toString(),style: TextStyle(fontWeight: FontWeight.w600,));
+                            // present tile = present + late combined
+                            return Text("${snapshot.data!['present_count']-snapshot.data!['late_count']}",style: TextStyle(fontWeight: FontWeight.w600,));
                           },
                         ),
                         Text("Present",style: TextStyle(color: Colors.grey),)
@@ -359,7 +370,7 @@ class _FacHomeTabState extends State<FacHomeTab> {
                       children: [
                         Icon(CupertinoIcons.clock,color: Colors.brown,size: 30,),
                         FutureBuilder(
-                          future: getDepartmentAttendanceCountThisWeek(context, widget.insAdmin.id!, widget.institute.id!, widget.department.id!, "late"),
+                          future: _weeklyStatsFuture,
                           builder: (context, snapshot) {
                             if (snapshot.connectionState == ConnectionState.waiting) {
                               return Text("Loading...");
@@ -368,7 +379,7 @@ class _FacHomeTabState extends State<FacHomeTab> {
                             } else if (!snapshot.hasData || snapshot.data == null) {
                               return Text("0");
                             }
-                            return Text(snapshot.data.toString(),style: TextStyle(fontWeight: FontWeight.w600,));
+                            return Text(snapshot.data!['late_count'].toString(),style: TextStyle(fontWeight: FontWeight.w600,));
                           },
                         ),
                         Text("Late",style: TextStyle(color: Colors.grey),)
@@ -379,7 +390,7 @@ class _FacHomeTabState extends State<FacHomeTab> {
                       children: [
                         Icon(CupertinoIcons.xmark_circle,color: Colors.red,size: 30,),
                         FutureBuilder(
-                          future: getDepartmentAttendanceCountThisWeek(context, widget.insAdmin.id!, widget.institute.id!, widget.department.id!, "absent"),
+                          future: _weeklyStatsFuture,
                           builder: (context, snapshot) {
                             if (snapshot.connectionState == ConnectionState.waiting) {
                               return Text("Loading...");
@@ -388,7 +399,7 @@ class _FacHomeTabState extends State<FacHomeTab> {
                             } else if (!snapshot.hasData || snapshot.data == null) {
                               return Text("0");
                             }
-                            return Text(snapshot.data.toString(),style: TextStyle(fontWeight: FontWeight.w600,));
+                            return Text(snapshot.data!['absent_count'].toString(),style: TextStyle(fontWeight: FontWeight.w600,));
                           },
                         ),
                         Text("Absent",style: TextStyle(color: Colors.grey),)
@@ -409,8 +420,7 @@ class _FacHomeTabState extends State<FacHomeTab> {
   /// hands back the raw index docs, so the stat helpers below don't each
   /// repeat the same Firestore round trip.
   Future<List<QueryDocumentSnapshot<Map<String, dynamic>>>> _lectureIndexDocsThisWeek(
-      BuildContext context, String insAdminId, String instituteId, String departmentId,
-      {bool completedOnly = false}) async {
+      BuildContext context, String insAdminId, String instituteId, String departmentId) async {
     final dbService = Provider.of<DbService>(context, listen: false);
 
     final now = DateTime.now();
@@ -424,9 +434,6 @@ class _FacHomeTabState extends State<FacHomeTab> {
         .where("ins_admin_id", isEqualTo: insAdminId)
         .where("institute_id", isEqualTo: instituteId)
         .where("department_id", isEqualTo: departmentId);
-    if (completedOnly) {
-      q = q.where("status", isEqualTo: "completed");
-    }
 
     final snap = await q.get();
 
@@ -438,53 +445,31 @@ class _FacHomeTabState extends State<FacHomeTab> {
     }).toList();
   }
 
-  Future<int> getDepartmentLecturesThisWeekCount(BuildContext context, String insAdminId, String instituteId, String departmentId) async {
-    try {
-      final docs = await _lectureIndexDocsThisWeek(context, insAdminId, instituteId, departmentId);
-      return docs.length;
-    } catch (e) {
-      print(e.toString());
-      return 0;
-    }
-  }
-
-  Future<int> getDepartmentCompletedLecturesThisWeekCount(BuildContext context, String insAdminId, String instituteId, String departmentId) async {
-    try {
-      final docs = await _lectureIndexDocsThisWeek(context, insAdminId, instituteId, departmentId, completedOnly: true);
-      return docs.length;
-    } catch (e) {
-      print(e.toString());
-      return 0;
-    }
-  }
-
-  Future<num> getPercentageConductedLecturesThisWeek(BuildContext context, String insAdminId, String instituteId, String departmentId) async {
-    try {
-      final conductedLectures = await getDepartmentCompletedLecturesThisWeekCount(context, insAdminId, instituteId, departmentId);
-      final totalLectures = await getDepartmentLecturesThisWeekCount(context, insAdminId, instituteId, departmentId);
-      if (totalLectures == 0) return 0;
-      return (conductedLectures / totalLectures) * 100;
-    } catch (e) {
-      print(e.toString());
-      return 0;
-    }
-  }
-
-  /// Counts how many attendance entries across this week's lectures have the
-  /// given status ("present" / "absent" / "late"), reading from the unified
-  /// `attendance` field on each lecture doc (List<Attendance>-shaped map).
-  Future<int> getDepartmentAttendanceCountThisWeek(
-      BuildContext context, String insAdminId, String instituteId, String departmentId, String status) async {
+  /// Single source of truth for every "this week" stat shown in the card:
+  /// total lectures, conducted lectures (+ % conducted), average attendance
+  /// rate, and present/late/absent counts. Replaces five separate,
+  /// uncached, inconsistently-defined queries that were each re-triggered
+  /// on every rebuild and each re-fetched the same lecture docs independently.
+  ///
+  /// "Conducted" is defined once, consistently, as: the lecture's scheduled
+  /// end time has passed — NOT whether a `status == "completed"` field was
+  /// set (that field is never actually written elsewhere in the app) and
+  /// NOT whether any attendance was recorded (a lecture with zero students
+  /// present is still a conducted lecture).
+  ///
+  /// A student counts as "present" only if status is present/late AND a
+  /// checkout was recorded — checked-in-but-never-checked-out does not count.
+  Future<Map<String, dynamic>> _computeWeeklyStats(
+      BuildContext context, String insAdminId, String instituteId, String departmentId) async {
     try {
       final dbService = Provider.of<DbService>(context, listen: false);
       final docs = await _lectureIndexDocsThisWeek(context, insAdminId, instituteId, departmentId);
+      final now = DateTime.now();
 
-      int total = 0;
-
-      for (var idxDoc in docs) {
+      // Fetch every lecture doc in parallel instead of one await per loop iteration.
+      final lectureSnaps = await Future.wait(docs.map((idxDoc) {
         final idx = idxDoc.data();
-
-        final lectureDoc = await dbService.dbref
+        return dbService.dbref
             .collection("ins_admins").doc(insAdminId)
             .collection("institutes").doc(instituteId)
             .collection("departments").doc(departmentId)
@@ -493,66 +478,87 @@ class _FacHomeTabState extends State<FacHomeTab> {
             .collection("courses").doc(idx['course_id'])
             .collection("lectures").doc(idxDoc.id)
             .get();
+      }));
 
+      int conductedLectures = 0;
+      int presentCount = 0; // present + late, i.e. "attended"
+      int lateCount = 0;
+      int absentCount = 0;
+
+      for (final lectureDoc in lectureSnaps) {
         if (!lectureDoc.exists) continue;
+        final data = lectureDoc.data();
+        if (data == null) continue;
 
-        final attendanceList = _parseAttendance(lectureDoc.data()?['attendance']);
-        total += attendanceList.where((a) => a.status == status).length;
+        if (!_isLectureTimeElapsed(data, now)) continue;
+        conductedLectures++;
+
+        final attendanceList = _parseAttendance(data['attendance']);
+        // A student only counts as present if they actually completed the
+        // session: status is present/late AND a checkout was recorded.
+        // status==present/late with no checkout means they checked in but
+        // never checked out — that does not count as present.
+        final present = attendanceList
+            .where((a) => a.status == "present" && a.checkout != null)
+            .length;
+        final late = attendanceList
+            .where((a) => a.status == "late" && a.checkout != null)
+            .length;
+        final absent = attendanceList.where((a) => a.status == "absent").length;
+
+        presentCount += present + late; // present tile shows present+late combined
+        lateCount += late;
+        absentCount += absent;
       }
 
-      return total;
-    } catch (e) {
-      print(e.toString());
-      return 0;
-    }
-  }
-
-  Future<Map<String, dynamic>> getDepartmentAvgAttendanceThisWeek(BuildContext context, String insAdminId, String instituteId, String departmentId) async {
-    try {
-      final dbService = Provider.of<DbService>(context, listen: false);
-      final docs = await _lectureIndexDocsThisWeek(context, insAdminId, instituteId, departmentId);
-
-      int totalPresent = 0;
-      int lectureCount = 0;
-
-      for (var idxDoc in docs) {
-        final idx = idxDoc.data();
-
-        // Need the actual lecture document to read its "attendance" array —
-        // indexDoc only stores pointers, not the attendance data itself.
-        // session_id/semester_id come from this lecture's own index entry.
-        final lectureDoc = await dbService.dbref
-            .collection("ins_admins").doc(insAdminId)
-            .collection("institutes").doc(instituteId)
-            .collection("departments").doc(departmentId)
-            .collection("sessions").doc(idx['session_id'])
-            .collection("semesters").doc(idx['semester_id'])
-            .collection("courses").doc(idx['course_id'])
-            .collection("lectures").doc(idxDoc.id)
-            .get();
-
-        if (!lectureDoc.exists) continue;
-
-        final attendanceList = _parseAttendance(lectureDoc.data()?['attendance']);
-        totalPresent += attendanceList.where((a) => a.status == "present").length;
-        lectureCount++;
-      }
-
-      final avgAttendance = lectureCount > 0 ? (totalPresent / lectureCount) : 0.0;
+      final totalMarks = presentCount + absentCount; // presentCount already includes late
+      // Fraction 0.0–1.0 of attendance marks that were present/late — this is
+      // what the UI expects: raw value feeds LinearProgressIndicator directly,
+      // and ×100 for the percentage label.
+      final avgAttendance = totalMarks > 0 ? (presentCount / totalMarks) : 0.0;
+      final totalLectures = docs.length;
+      final percentageConducted = totalLectures > 0 ? (conductedLectures / totalLectures) * 100 : 0;
 
       return {
-        "total_present": totalPresent,
-        "lecture_count": lectureCount,
+        "total_lectures": totalLectures,
+        "conducted_lectures": conductedLectures,
+        "percentage_conducted": percentageConducted,
         "avg_attendance": avgAttendance,
+        "present_count": presentCount,
+        "late_count": lateCount,
+        "absent_count": absentCount,
       };
     } catch (e) {
       print(e.toString());
       return {
-        "total_present": 0,
-        "lecture_count": 0,
+        "total_lectures": 0,
+        "conducted_lectures": 0,
+        "percentage_conducted": 0,
         "avg_attendance": 0.0,
+        "present_count": 0,
+        "late_count": 0,
+        "absent_count": 0,
       };
     }
+  }
+
+  /// Returns true once the lecture's scheduled end time has passed — the
+  /// single definition of "conducted" used throughout this stats block.
+  ///
+  /// Field names/types match `_lectureFromDoc` above: date lives in `dated`
+  /// (not `date`), and `end_time` is stored as a `Timestamp` (not a
+  /// {hour, minute} map) — a mismatch here previously threw inside the
+  /// try/catch and silently forced avg_attendance to 0.0 every time.
+  bool _isLectureTimeElapsed(Map<String, dynamic> lectureData, DateTime now) {
+    final dateTs = lectureData['dated'] as Timestamp?;
+    final endTs = lectureData['end_time'] as Timestamp?;
+    if (dateTs == null || endTs == null) return false;
+
+    final date = dateTs.toDate();
+    final endTod = endTs.toDate();
+    final lectureEnd = DateTime(date.year, date.month, date.day, endTod.hour, endTod.minute);
+
+    return now.isAfter(lectureEnd);
   }
 
   Widget _MarkAttendanceCard(BuildContext context){

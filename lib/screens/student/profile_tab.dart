@@ -109,12 +109,47 @@ class _ProfileTabState extends State<ProfileTab> {
                 ),
               ),
               onPressed: (){
-                Provider.of<DbService>(context,listen: false).signOut(context);
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("successfully logged out"),));
-            },
+                showDialog(context: context, builder: (_)=>
+                    AlertDialog(
+                      icon: Icon(Icons.logout,size: 28,color: Theme.of(context).primaryColor,),
+                      title: Text("Are you sure you want to logout?",style: TextStyle(fontSize: 16),),
+                      actions: [
+                        Row(
+                          children: [
+                            ElevatedButton(onPressed: (){
+                              Navigator.pop(context);
+                            },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.white60,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(7),
+
+                                  ),),
+                                child: Text("Cancel",style: TextStyle(color: Colors.black),)),
+                            Spacer(),
+                            ElevatedButton(onPressed: (){
+                              Provider.of<DbService>(context,listen: false).signOut(context);
+                              Navigator.pop(context);
+                              Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+                            },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.red,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(7),
+                                    side: BorderSide(color: Colors.red,width: 0.5),
+                                  ),),
+                                child: Text("Logout",style: TextStyle(color: Colors.white),)),
+                          ],
+                        ),
+
+                      ],
+                    )
+                );
+              },
               label: Text("Logout"),
               icon: Icon(Icons.logout),
-            )
+            ),
+            SizedBox(height: 35,),
           ],
         ),
       ),

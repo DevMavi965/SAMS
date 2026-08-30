@@ -1656,8 +1656,8 @@ class DbService with ChangeNotifier{
       notifyListeners();
     }
   }
-  studentCheckOut(BuildContext context, LectureModel lectureModel, String studentId, String method) async {
-    loading=true;
+  studentMidPoint(BuildContext context, LectureModel lectureModel, String studentId) async {
+    loading = true;
     notifyListeners();
     try {
       final existing = lectureModel.attendance?.firstWhereOrNull((e) => e.sid == studentId);
@@ -1669,36 +1669,35 @@ class DbService with ChangeNotifier{
         }
         return;
       }
-      if(existing.checkout!=null){
+      //mid_point checking
+      if (existing.mid_point == true) {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("student already checked out")),
+
+             SnackBar(content: Text("midpoint already marked for this student"),backgroundColor: Theme.of(context).primaryColor,),
           );
         }
         return;
       }
-     if(existing.mid_point==false){
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("student has not marked mid point")),
-          );
-        }
-        return;
-     }
       final newRecord = Attendance(
         sid: studentId,
-        checkin: TimeOfDay.fromDateTime(DateTime.now()),
+        checkin: existing.checkin,
         checkout: null,
-        mid_point: false,
-        method: method,
-        status: "present",
+        mid_point: true,
+        method: existing.method,
+        status: existing.status,
       );
 
       final currentAttendance = lectureModel.attendance ?? [];
-      final attendanceMaps = [
-        ...currentAttendance.map((a) => a.toMap(onDate: lectureModel.dated)),
-        newRecord.toMap(onDate: lectureModel.dated),
+
+      final updatedAttendance = [
+        ...currentAttendance.where((a) => a.sid != studentId),
+        newRecord,
       ];
+
+      final attendanceMaps = updatedAttendance
+          .map((a) => a.toMap(onDate: lectureModel.dated))
+          .toList();
 
       final dox = await indexDoc.doc(lectureModel.id).get();
       await dbref
@@ -1711,7 +1710,7 @@ class DbService with ChangeNotifier{
           .collection("lectures").doc(lectureModel.id)
           .update({"attendance": attendanceMaps});
 
-      lectureModel.attendance = [...currentAttendance, newRecord];
+      lectureModel.attendance = updatedAttendance; //updattedRecord
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1723,60 +1722,245 @@ class DbService with ChangeNotifier{
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
       }
-    }finally{
-      loading=false;
+    } finally {
+      loading = false;
       notifyListeners();
     }
   }
+  studentCheckOut(BuildContext context, LectureModel lectureModel, String studentId,String method) async {
+    loading = true;
+    notifyListeners();
+    try {
+      final existing = lectureModel.attendance?.firstWhereOrNull((e) => e.sid == studentId);
 
-  markAttendancePresentGroup(BuildContext context,LectureModel lectureModel,List<String> studentIds,String method)async{
-    try{
-      final dox=await indexDoc.doc(lectureModel.id).get();
-    List<Map<String,dynamic>> students_p=[];
-      for(int i=0;i<studentIds.length;i++){
-        students_p.add(
-          {
-            "id":studentIds[i],
-            "check_in":Timestamp.fromDate(DateTime.now()),
-            "check_out":null,
-            "method":method,
-            "status":"present",
-            "mid_point":null,
-          }
-        );
+      // guardin-checkin
+      if (existing == null) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("student has not checked in")),
+          );
+        }
+        return;
       }
-      // DateTime start_time_date=DateTime(
-      //   lectureModel.dated.year,
-      //   lectureModel.dated.month,
-      //   lectureModel.dated.day,
-      //   lectureModel.start_time.hour,
-      //   lectureModel.start_time.minute,
-      //
-      // );
-      // DateTime end_time_date=DateTime(
-      //   lectureModel.dated.year,
-      //   lectureModel.dated.month,
-      //   lectureModel.dated.day,
-      //   lectureModel.end_time.hour,
-      //   lectureModel.end_time.minute,
-      //
-      // );
-      final lecRef=await dbref.
-      collection("ins_admins").doc(dox.get("ins_admin_id"))
+
+      // guardng:if already checkout
+      if (existing.checkout != null) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("student already checked out")),
+          );
+        }
+        return;
+      }
+     if(existing.mid_point!=true){
+       if (context.mounted) {
+         ScaffoldMessenger.of(context).showSnackBar(
+           const SnackBar(content: Text("midpoint not marked for this student")),
+         );
+       }
+       return;
+     }
+      final newRecord = Attendance(
+        sid: studentId,
+        checkin: existing.checkin,
+        checkout: TimeOfDay.fromDateTime(DateTime.now()),
+        mid_point: existing.mid_point,
+        method: method,
+        status: existing.status,
+      );
+
+      final currentAttendance = lectureModel.attendance ?? [];
+      final updatedAttendance = [
+        ...currentAttendance.where((a) => a.sid != studentId),
+        newRecord,
+      ];
+
+      final attendanceMaps = updatedAttendance
+          .map((a) => a.toMap(onDate: lectureModel.dated))
+          .toList();
+
+      final dox = await indexDoc.doc(lectureModel.id).get();
+      await dbref
+          .collection("ins_admins").doc(dox.get("ins_admin_id"))
           .collection("institutes").doc(dox.get("institute_id"))
           .collection("departments").doc(dox.get("department_id"))
           .collection("sessions").doc(dox.get("session_id"))
           .collection("semesters").doc(dox.get("semester_id"))
-          .collection("courses")
-          .doc(dox.get("course_id")).collection("lectures")
-          .doc(lectureModel.id).update({
-        "attendance":students_p,
-      });
-      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("lecture updated Successfully")));
-    }catch(e){
-      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
-    }finally{
+          .collection("courses").doc(dox.get("course_id"))
+          .collection("lectures").doc(lectureModel.id)
+          .update({"attendance": attendanceMaps});
 
+      lectureModel.attendance = updatedAttendance;
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("checked out successfully")),
+        );
+      }
+    } catch (e) {
+      print(e.toString());
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      }
+    } finally {
+      loading = false;
+      notifyListeners();
+    }
+  }
+  studentMarkAbsent(BuildContext context, LectureModel lectureModel, String studentId,String method) async {
+    loading = true;
+    notifyListeners();
+    try {
+      final existing = lectureModel.attendance?.firstWhereOrNull((e) => e.sid == studentId);
+
+      // guardin-checkin
+      if (existing == null) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("student has not checked in")),
+          );
+        }
+        return;
+      }
+
+      // guardng:if already checkout
+      if (existing.checkout != null) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("student already checked out")),
+          );
+        }
+        return;
+      }
+     if(existing.mid_point!=true){
+       if (context.mounted) {
+         ScaffoldMessenger.of(context).showSnackBar(
+           const SnackBar(content: Text("midpoint not marked for this student")),
+         );
+       }
+       return;
+     }
+      final newRecord = Attendance(
+        sid: studentId,
+        checkin: existing.checkin,
+        checkout: TimeOfDay.fromDateTime(DateTime.now()),
+        mid_point: existing.mid_point,
+        method: method,
+        status: existing.status,
+      );
+
+      final currentAttendance = lectureModel.attendance ?? [];
+      final updatedAttendance = [
+        ...currentAttendance.where((a) => a.sid != studentId),
+        newRecord,
+      ];
+
+      final attendanceMaps = updatedAttendance
+          .map((a) => a.toMap(onDate: lectureModel.dated))
+          .toList();
+
+      final dox = await indexDoc.doc(lectureModel.id).get();
+      await dbref
+          .collection("ins_admins").doc(dox.get("ins_admin_id"))
+          .collection("institutes").doc(dox.get("institute_id"))
+          .collection("departments").doc(dox.get("department_id"))
+          .collection("sessions").doc(dox.get("session_id"))
+          .collection("semesters").doc(dox.get("semester_id"))
+          .collection("courses").doc(dox.get("course_id"))
+          .collection("lectures").doc(lectureModel.id)
+          .update({"attendance": attendanceMaps});
+
+      lectureModel.attendance = updatedAttendance;
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("checked out successfully")),
+        );
+      }
+    } catch (e) {
+      print(e.toString());
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      }
+    } finally {
+      loading = false;
+      notifyListeners();
+    }
+  }
+
+
+  markAttendancePresentGroup(BuildContext context, LectureModel lectureModel, List<String> studentIds, String method) async {
+    loading = true;
+    notifyListeners();
+    try {
+      final currentAttendance = lectureModel.attendance ?? [];
+
+      // late function marks student status late, if they are 10 mins late
+      String status_var = DateTime.now().difference(lectureModel.dated).inMinutes > 10
+          ? "late"
+          : "present";
+
+      final now = TimeOfDay.fromDateTime(DateTime.now());
+
+      // skip students who are already checked in
+      final alreadyCheckedIn = currentAttendance
+          .where((a) => studentIds.contains(a.sid))
+          .map((a) => a.sid)
+          .toSet();
+
+      final toAdd = studentIds.where((id) => !alreadyCheckedIn.contains(id));
+
+      final newRecords = toAdd
+          .map((id) => Attendance(
+        sid: id,
+        checkin: now,
+        checkout: null,
+        mid_point: false,
+        method: method,
+        status: status_var,
+      ))
+          .toList();
+
+      if (newRecords.isEmpty) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("all selected students are already checked in")),
+          );
+        }
+        return;
+      }
+
+      final updatedAttendance = [...currentAttendance, ...newRecords];
+      final attendanceMaps = updatedAttendance
+          .map((a) => a.toMap(onDate: lectureModel.dated))
+          .toList();
+
+      final dox = await indexDoc.doc(lectureModel.id).get();
+      await dbref
+          .collection("ins_admins").doc(dox.get("ins_admin_id"))
+          .collection("institutes").doc(dox.get("institute_id"))
+          .collection("departments").doc(dox.get("department_id"))
+          .collection("sessions").doc(dox.get("session_id"))
+          .collection("semesters").doc(dox.get("semester_id"))
+          .collection("courses").doc(dox.get("course_id"))
+          .collection("lectures").doc(lectureModel.id)
+          .update({"attendance": attendanceMaps});
+
+      lectureModel.attendance = updatedAttendance;
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("${newRecords.length} student(s) marked present")),
+        );
+      }
+    } catch (e) {
+      print(e.toString());
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      }
+    } finally {
+      loading = false;
+      notifyListeners();
     }
   }
   markAttendanceAbsentGroup(BuildContext context,LectureModel lectureModel,List<String> studentIds,String method)async{
@@ -1826,7 +2010,6 @@ class DbService with ChangeNotifier{
     }catch(e){
       if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
     }finally{
-
     }
   }
   markAttendanceAbsent(BuildContext context,LectureModel lectureModel,String studentId)async{

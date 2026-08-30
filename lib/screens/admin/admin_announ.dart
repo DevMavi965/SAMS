@@ -77,13 +77,12 @@ class _AdminAnnouncementsState extends State<AdminAnnouncements> {
                   Text("View Announcements",style: TextStyle(fontSize: 15,color: Colors.grey),),
                   SizedBox(height: 20,),
                   AdminAnnGrid(total: total, urgent:urgent, events: events),
-                  SizedBox(height: 15,),
-                  ListView.builder(
-                      shrinkWrap: true,
-                      physics: NeverScrollableScrollPhysics(),
-                      itemCount: announcements.length,
-                      itemBuilder: (tcontext,index)=>InkWell(
-                          child: AdminAnnCard(adminAnnouncement: announcements[index]))),
+
+                  announcements.isEmpty?Center(child: Text("New announcements will appear here...",style: TextStyle(color: Colors.grey),)):SizedBox(),
+                  SizedBox(height: 20,),
+                  for(int i=0;i<announcements.length;i++)
+                    AdminAnnCard(adminAnnouncement: announcements[i])
+
                 ],
               );
             }

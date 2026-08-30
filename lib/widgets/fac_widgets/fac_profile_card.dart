@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:smas3/maxins/rm_functions.dart';
 import 'package:smas3/models/fac_model.dart';
 import 'package:smas3/models/student_model.dart';
 class Fac_profile_Card extends StatefulWidget {
@@ -63,14 +64,14 @@ class _Fac_profile_CardState extends State<Fac_profile_Card> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(widget.lecturer.name,style: TextStyle(color: Colors.white,fontWeight: FontWeight.bold,fontSize: 18),),
-                  Text(widget.lecturer.designation,style: TextStyle(color: Colors.white,fontWeight: FontWeight.w400,fontSize: 14),),
+                  Text(RMFuncts.getSentenceCase(widget.lecturer.name),style: TextStyle(color: Colors.white,fontWeight: FontWeight.bold,fontSize: 18),),
+                  Text(RMFuncts.getSentenceCase(widget.lecturer.designation),style: TextStyle(color: Colors.white,fontWeight: FontWeight.w400,fontSize: 14),),
                 ],
 
               )
             ],
           ),
-          SizedBox(height: 20,),
+          SizedBox(height: 16,),
           Row(
             children: [
               OutlinedButton(
@@ -80,8 +81,7 @@ class _Fac_profile_CardState extends State<Fac_profile_Card> {
                     maximumSize: MaterialStateProperty.all(Size(150, 35)),
                     padding: MaterialStateProperty.all(EdgeInsets.all(0)),
                     shape: MaterialStateProperty.all(RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(18),
-
+                    borderRadius: BorderRadius.circular(18),
                     )),
                     side: MaterialStateProperty.all(BorderSide(
                       color: Colors.white,

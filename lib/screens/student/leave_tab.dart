@@ -4,16 +4,26 @@ import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:smas3/models/Leave_Application_Model.dart';
+import 'package:smas3/models/ins_admin.dart';
 import 'package:smas3/models/student_model.dart';
 import 'package:smas3/widgets/student_widgets/leave_Selection_card.dart';
 import 'package:smas3/widgets/student_widgets/leave_acceptance_record.dart';
 import 'package:intl/intl.dart';
 
+import '../../models/department.dart';
+import '../../models/institute.dart';
+import '../../models/semester.dart';
+import '../../models/session.dart';
 import '../../services/db_service.dart';
 
 class LeaveTab extends StatefulWidget {
+  final InsAdmin insAdmin;
+  final Institute institute;
+  final Department department;
+  final Session session;
+  final Semester semester;
   final Student student;
-  const LeaveTab({super.key, required this.student});
+  const LeaveTab({super.key, required this.student, required this.insAdmin, required this.institute, required this.department, required this.session, required this.semester});
 
   @override
   State<LeaveTab> createState() => _LeaveTabState();
@@ -520,8 +530,15 @@ class _LeaveTabState extends State<LeaveTab> {
 
               }
               if(leaveApplications.isNotEmpty){
-                return LeaveSelectionCard(leaveApplications: leaveApplications);
+                return ListView(
+                  children: [
+                    LeaveSelectionCard(leaveApplications: leaveApplications),
+                    SizedBox(height: 15,),
+                    Text("My Leave Applications",style: TextStyle(fontSize: 16,fontWeight: FontWeight.w500),),
+                  ],
+                );
               }
+
             }
             return SizedBox();
           })

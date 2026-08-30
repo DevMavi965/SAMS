@@ -103,13 +103,14 @@ class _AdminProfileState extends State<AdminProfile> {
                   actions: [
                     Row(
                       children: [
-                        OutlinedButton(onPressed: (){
+                        ElevatedButton(onPressed: (){
                           Navigator.pop(context);
                         },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.white60,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(7),
+
                               ),),
                             child: Text("Cancel",style: TextStyle(color: Colors.black),)),
                         Spacer(),

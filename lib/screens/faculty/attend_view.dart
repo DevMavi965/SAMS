@@ -2,6 +2,7 @@ import 'package:collection/collection.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:lottie/lottie.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:smas3/maxins/rm_functions.dart';
@@ -47,7 +48,10 @@ class _AttendViewState extends State<AttendView> {
       ),),
     ),
       body:Provider.of<DbService>(context,listen: false).loading?
-      Center(child: CircularProgressIndicator(),):
+      Center(child:SizedBox(
+          height: 60,
+          width: 60,
+          child: Lottie.asset("assets/anims/an1.json")),):
       StreamBuilder(stream: Provider.of<DbService>(context,listen: false).dbref
           .collection("ins_admins").doc(widget.insAdminId)
           .collection("institutes").doc(widget.instituteId)
@@ -85,183 +89,201 @@ class _AttendViewState extends State<AttendView> {
               ListView.builder(
                   itemCount: students.length,
                   itemBuilder: (_,i){
-                    return Card(
-                      color: Colors.white,
-                      child: Container(
-                        width: MediaQuery.of(context).size.width,
-                        margin: EdgeInsets.symmetric(
-                            horizontal: 5,vertical: 10
-                        ),
-                        padding: EdgeInsets.symmetric(horizontal: 2,vertical: 3),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(7),
+                    return InkWell(
+                      onTap: (){
+                        Provider.of<DbService>(context,listen: false).studentMidPoint(context, widget.lecture, students[i].id!,);
+                      },
+                      onDoubleTap: (){
+                        Provider.of<DbService>(context,listen: false).studentCheckOut(context, widget.lecture, students[i].id!,"fingerprint");
+                      },
+                      child: Card(
+                        color: Colors.white,
+                        child: Container(
+                          width: MediaQuery.of(context).size.width,
+                          margin: EdgeInsets.symmetric(
+                              horizontal: 5,vertical: 10
+                          ),
+                          padding: EdgeInsets.symmetric(horizontal: 2,vertical: 3),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(7),
 
 
-                        ),
-                        child:
-                        Column(
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Expanded(
-                                  flex: 1,
-                                  child: CircleAvatar(
-                                    backgroundColor: Theme.of(context).primaryColor,
-                                    radius:21,
-                                    child: Icon(PhosphorIconsDuotone.student,color: Colors.white,size: 32,),
-                                  ),
-                                ),
-                                SizedBox(width:5,),
-                                Expanded(
-                                  flex:4,
-                                  child: Column(
-                                    // mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(RMFuncts.getSentenceCase(students[i].name),style: TextStyle(fontWeight: FontWeight.w600),),
-                                      SizedBox(height: 3,),
-                                      Text(students[i].email,style: TextStyle(color: Colors.grey),),
-                                      SizedBox(height: 10,),
-                                    ],),
-                                ),
-                                Expanded(child: Column(
-                                  children: [
-                                    _statusBadge(students[i].id!,widget.lecture),
-                                  ],
-                                ))
-                              ],),
-                            SizedBox(height: 5,width: 2,),
-                            Divider(color: Colors.grey.shade300,),
-                            SizedBox(height: 5,width: 2,),
-                            if(widget.lecture.attendance?.firstWhereOrNull((element) => element.sid==students[i].id)?.status=="present" ||widget.lecture.attendance?.firstWhereOrNull((element) => element.sid==students[i].id)?.status=="late")...[
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                SizedBox(width: 10,),
-                                Expanded(child: Row(
-                                  children: [
-                                    Flexible(child: Container(
-                                        padding: EdgeInsets.all(8),
-                                        decoration: BoxDecoration(
-
-                                          color: Theme.of(context).primaryColor.withOpacity(0.15),
-                                          borderRadius: BorderRadius.circular(8),
-                                        ),
-                                        child:Image.asset("assets/icons/checkin.png",height: 25,width: 25,)
-                                    ),),
-                                    SizedBox(width:7,),
-                                    Flexible(child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text("Check-in ",style: TextStyle(fontSize: 13),),
-                                        Text(
-                                          widget.lecture.attendance?[i].checkin?.format(context) ?? "--:--",
-                                          style: TextStyle(
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.w700,
-                                            color: Theme.of(context).primaryColor,
-                                          ),
-                                        ),                                      ],
-                                    )),
-                                  ],
-                                )),
-                                SizedBox(width: 10,),
-                                Expanded(child: Row(
-                                  children: [
-                                    Flexible(child: Container(
-                                        padding: EdgeInsets.all(8),
-                                        decoration: BoxDecoration(
-
-                                          color: Colors.orange.withOpacity(0.15),
-                                          borderRadius: BorderRadius.circular(8),
-                                        ),
-                                        child:Icon(PhosphorIconsBold.target,size: 25,color: Colors.orange,)
-                                    ),),
-                                    SizedBox(width:7,),
-                                    Flexible(child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text("mid-point",maxLines: 1,overflow: TextOverflow.ellipsis,style: TextStyle(fontSize: 13),),
-                                        Icon(widget.lecture.attendance?.firstWhereOrNull((element) => element.sid==students[i].id)?.mid_point!=null && widget.lecture.attendance?.firstWhereOrNull((element) => element.sid==students[i].id)?.mid_point==true?CupertinoIcons.checkmark_alt:Icons.radio_button_unchecked,color: Colors.orange,)
-                                      ],
-                                    )),
-                                  ],
-                                )),
-                                SizedBox(width: 10,),
-                                Expanded(child: Row(
-                                  children: [
-                                    Flexible(child: Container(
-                                        padding: EdgeInsets.all(8),
-                                        decoration: BoxDecoration(
-
-                                          color: Colors.red.withOpacity(0.15),
-                                          borderRadius: BorderRadius.circular(8),
-                                        ),
-                                        child:Image.asset("assets/icons/checkout.png",height: 25,width: 25,)
-                                    ),),
-                                    SizedBox(width:7,),
-                                    Flexible(child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text("Check-out",maxLines: 1,overflow: TextOverflow.ellipsis,style: TextStyle(fontSize: 13),),
-                                        Text(widget.lecture.attendance?.firstWhereOrNull((element) => element.sid==students[i].id)?.checkout==null?"00:00 AM":widget.lecture.attendance?[i].checkout?.format(context) ?? "--:--",
-                                        style: TextStyle(fontSize: 13,fontWeight: FontWeight.w700,color: Colors.red),),
-                                      ],
-                                    )),
-                                  ],
-                                )),
-                              ],
-                            ),
-                            SizedBox(height: 5,width: 2,),
-                            Divider(color: Colors.grey.shade300,),
-                            SizedBox(height: 5,width: 2,),
-                            Row(children: [
-                              SizedBox(width: 10,),
-                              Expanded(
-                                  flex: 2,
-                                  child: Text("Attendance Method")),
-                              Expanded(child: SizedBox()),
-                              Expanded(child: Container(
-                                  padding: EdgeInsets.all(5),
-                                  decoration: BoxDecoration(
-
-                                    color: Theme.of(context).primaryColor.withOpacity(0.15),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child:Container(
-                                      margin: EdgeInsets.all(5),
-                                      child: PhosphorIcon(PhosphorIconsBold.handTap,color: Theme.of(context).primaryColor,))
-                              )),
-                            ],)
-                            ]else...[
+                          ),
+                          child:
+                          Column(
+                            children: [
                               Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Expanded(child: Row(
+                                  Expanded(
+                                    flex: 1,
+                                    child: CircleAvatar(
+                                      backgroundColor: Theme.of(context).primaryColor,
+                                      radius:21,
+                                      child: Icon(PhosphorIconsDuotone.student,color: Colors.white,size: 32,),
+                                    ),
+                                  ),
+                                  SizedBox(width:5,),
+                                  Expanded(
+                                    flex:4,
+                                    child: Column(
+                                      // mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(RMFuncts.getSentenceCase(students[i].name),style: TextStyle(fontWeight: FontWeight.w600),),
+                                        SizedBox(height: 3,),
+                                        Text(students[i].email,style: TextStyle(color: Colors.grey),),
+                                        SizedBox(height: 10,),
+                                      ],),
+                                  ),
+                                  Expanded(child: Column(
                                     children: [
-                                      Expanded(child: SizedBox()),
-                                      Expanded(child:ElevatedButton(
-
-                                          style: ButtonStyle(
-                                            //radius
-                                            shape: MaterialStateProperty.all<RoundedRectangleBorder>(
-                                                RoundedRectangleBorder(
-                                                  borderRadius: BorderRadius.circular(8.0),
-                                                )
-                                            ),
-                                            backgroundColor: MaterialStateColor.resolveWith((states) => Theme.of(context).primaryColor),
-                                          ),
-                                          onPressed: (){
-                                            Provider.of<DbService>(context,listen: false).studentCheckIn(context, widget.lecture, students[i].id!,"manual");
-                                          }, child: Text("Mark Attendance",style: TextStyle(color: Colors.white),))),
+                                      _statusBadge(students[i].id!,widget.lecture),
                                     ],
                                   ))
-                                ],
-                              )
-                            ]
+                                ],),
+                              SizedBox(height: 5,width: 2,),
+                              Divider(color: Colors.grey.shade300,),
+                              SizedBox(height: 5,width: 2,),
+                              if(widget.lecture.attendance?.firstWhereOrNull((element) => element.sid==students[i].id)?.status=="present" ||widget.lecture.attendance?.firstWhereOrNull((element) => element.sid==students[i].id)?.status=="late")...[
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    SizedBox(width: 10,),
+                                    Expanded(child: Row(
+                                      children: [
+                                        Flexible(child: Container(
+                                            padding: EdgeInsets.all(8),
+                                            decoration: BoxDecoration(
 
-                          ],
+                                              color: Theme.of(context).primaryColor.withOpacity(0.15),
+                                              borderRadius: BorderRadius.circular(8),
+                                            ),
+                                            child:Image.asset("assets/icons/checkin.png",height: 25,width: 25,)
+                                        ),),
+                                        SizedBox(width:7,),
+                                        Flexible(child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text("Check-in ",style: TextStyle(fontSize: 13),),
+                                            Text(
+                                            widget.lecture.attendance
+                                                ?.firstWhereOrNull((element) => element.sid == students[i].id)
+                                                ?.checkin
+                                                ?.format(context) ??
+                                            "--:--",
+                                              style: TextStyle(
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w700,
+                                                color: Theme.of(context).primaryColor,
+                                              ),
+                                            ),                                      ],
+                                        )),
+                                      ],
+                                    )),
+                                    SizedBox(width: 10,),
+                                    Expanded(child: Row(
+                                      children: [
+                                        Flexible(child: Container(
+                                            padding: EdgeInsets.all(8),
+                                            decoration: BoxDecoration(
+
+                                              color: Colors.orange.withOpacity(0.15),
+                                              borderRadius: BorderRadius.circular(8),
+                                            ),
+                                            child:Icon(PhosphorIconsBold.target,size: 25,color: Colors.orange,)
+                                        ),),
+                                        SizedBox(width:7,),
+                                        Flexible(child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text("mid-point",maxLines: 1,overflow: TextOverflow.ellipsis,style: TextStyle(fontSize: 13),),
+                                            Icon(widget.lecture.attendance?.firstWhereOrNull((element) => element.sid==students[i].id)?.mid_point!=null && widget.lecture.attendance?.firstWhereOrNull((element) => element.sid==students[i].id)?.mid_point==true?CupertinoIcons.checkmark_alt:Icons.radio_button_unchecked,color: Colors.orange,)
+                                          ],
+                                        )),
+                                      ],
+                                    )),
+                                    SizedBox(width: 10,),
+                                    Expanded(child: Row(
+                                      children: [
+                                        Flexible(child: Container(
+                                            padding: EdgeInsets.all(8),
+                                            decoration: BoxDecoration(
+
+                                              color: Colors.red.withOpacity(0.15),
+                                              borderRadius: BorderRadius.circular(8),
+                                            ),
+                                            child:Image.asset("assets/icons/checkout.png",height: 25,width: 25,)
+                                        ),),
+                                        SizedBox(width:7,),
+                                        Flexible(child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text("Check-out",maxLines: 1,overflow: TextOverflow.ellipsis,style: TextStyle(fontSize: 13),),
+                                            Text(
+                                              widget.lecture.attendance?.firstWhereOrNull((element) => element.sid==students[i].id)?.checkout!=null?
+                                              widget.lecture.attendance
+                                                  ?.firstWhereOrNull((element) => element.sid == students[i].id)
+                                                  ?.checkout
+                                                  ?.format(context) ??
+                                                  "--:--":"00:00 AM",
+                                              style: TextStyle(fontSize: 13,fontWeight: FontWeight.w700,color: Colors.red),),
+                                          ],
+                                        )),
+                                      ],
+                                    )),
+                                  ],
+                                ),
+                                SizedBox(height: 5,width: 2,),
+                                Divider(color: Colors.grey.shade300,),
+                                SizedBox(height: 5,width: 2,),
+                                Row(children: [
+                                  SizedBox(width: 10,),
+                                  Expanded(
+                                      flex: 2,
+                                      child: Text("Attendance Method")),
+                                  Expanded(child: SizedBox()),
+                                  Expanded(child: Container(
+                                      padding: EdgeInsets.all(5),
+                                      decoration: BoxDecoration(
+
+                                        color: Theme.of(context).primaryColor.withOpacity(0.15),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child:Container(
+                                          margin: EdgeInsets.all(5),
+                                          child:_attIcon(widget.lecture.attendance?.firstWhereOrNull((element) => element.sid==students[i].id)?.method))
+                                  )),
+                                ],)
+                              ]else...[
+                                Row(
+                                  children: [
+                                    Expanded(child: Row(
+                                      children: [
+                                        Expanded(child: SizedBox()),
+                                        Expanded(child:ElevatedButton(
+
+                                            style: ButtonStyle(
+                                              //radius
+                                              shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                                                  RoundedRectangleBorder(
+                                                    borderRadius: BorderRadius.circular(8.0),
+                                                  )
+                                              ),
+                                              backgroundColor: MaterialStateColor.resolveWith((states) => Theme.of(context).primaryColor),
+                                            ),
+                                            onPressed: (){
+                                              Provider.of<DbService>(context,listen: false).studentCheckIn(context, widget.lecture, students[i].id!,"manual");
+                                            }, child: Text("Mark Attendance",style: TextStyle(color: Colors.white),))),
+                                      ],
+                                    ))
+                                  ],
+                                )
+                              ]
+
+                            ],
+                          ),
                         ),
                       ),
                     );
@@ -294,6 +316,16 @@ class _AttendViewState extends State<AttendView> {
         backgroundColor: Colors.red,
         child: const Text("A", style: TextStyle(color: Colors.white)),
       );
+    }
+  }
+
+  Widget? _attIcon(String? method) {
+    if(method=="fingerprint"){
+     return PhosphorIcon(PhosphorIconsBold.fingerprint,color: Theme.of(context).primaryColor,);
+    }else if(method=="facial"){
+     return PhosphorIcon(Icons.face,color: Theme.of(context).primaryColor,);
+    }else{
+      return Icon(PhosphorIconsBold.handTap,color: Theme.of(context).primaryColor,);
     }
   }
 }
