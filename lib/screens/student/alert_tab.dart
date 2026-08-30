@@ -42,14 +42,13 @@ class _AlertTabState extends State<AlertTab> {
   }
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text("Announcements",style: TextStyle(color: Colors.white),),
-        centerTitle: true,
-        iconTheme: IconThemeData(color: Colors.white),
-        backgroundColor: Theme.of(context).primaryColor,
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: 10,
+        vertical:15
       ),
-      body:
+
+      child:
       SafeArea(child: Container(
         padding: EdgeInsets.symmetric(
           horizontal: 5,
@@ -96,6 +95,11 @@ class _AlertTabState extends State<AlertTab> {
                 int events=announcements.where((element) => element.an_type=="event").length;
                 return ListView(
                   children: [
+                  Text(
+                  "Announcements",
+                  style: TextStyle(fontWeight: FontWeight.w500, fontSize: 20)),
+                    const SizedBox(height: 3),
+                    const Text("Latest Announcements", style: TextStyle(color: Colors.grey)),
                     SizedBox(height: 20,),
                     AdminAnnGrid(total: total, urgent:urgent, events: events),
                     SizedBox(height: 15,),

@@ -37,7 +37,7 @@ class _InsAdminSettingState extends State<InsAdminSetting> {
       Table(
         border:
         TableBorder.all(
-          color: Colors.grey,
+          color: Colors.white,
           width: 0.2,
         ),
         children: [

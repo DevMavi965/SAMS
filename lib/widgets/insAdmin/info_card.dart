@@ -27,7 +27,7 @@ class _Ins_info_cardState extends State<Ins_info_card> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
-          color: Colors.grey,
+          color: Colors.white,
           width: 0.2,
         ),
       ),

@@ -46,13 +46,6 @@ class _AdminHomeState extends State<AdminHome> {
     "course_management",
     "session_management",
   ];
-  List<DepartmentalAlerts> dept_alerts=[
-    DepartmentalAlerts(id: "4ft5", content: "Cs depart has 4 new students", type: "positive", created_at: DateTime(2026,4,13)),
-    DepartmentalAlerts(id: "32d4", content: "14 students have below 75% attendance", type: "negative", created_at: DateTime(2026,3,21)),
-    DepartmentalAlerts(id: "654a", content: "New faculty onboarding pending", type: "neutral", created_at: DateTime(2026,4,7)),
-
-
-  ];
   @override
   Widget build(BuildContext context) {
     return SafeArea(child: ListView(children: [
@@ -600,11 +593,7 @@ class _AdminHomeState extends State<AdminHome> {
 
         ],
       ),
-      SizedBox(height: 15,),
-      Row(children: [Text("Recent Alerts",style: TextStyle(fontWeight: FontWeight.w400,fontSize: 16),)],),
-      SizedBox(height: 15,),
-      for(int i=0;i<dept_alerts.length;i++)
-        DeprtAlerCard(dept_alert: dept_alerts[i])
+      SizedBox(height: 35,),
     ],));
   }
 

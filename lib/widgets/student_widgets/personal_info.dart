@@ -26,7 +26,7 @@ class PersonalInfo extends StatelessWidget {
       Table(
         border:
         TableBorder.all(
-          color: Colors.grey,
+          color: Colors.white,
           width: 0.2,
         ),
         children: [

@@ -29,56 +29,61 @@ class _AdminProfileState extends State<AdminProfile> {
         Text("My Duties",style: TextStyle(fontSize: 16,fontWeight: FontWeight.w500),),
         SizedBox(height: 10,),
         // admin_info_card(admin: widget._admin),
-        Container(
-          clipBehavior: Clip.hardEdge,
-          // height: 265,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(10),
-            // border: Border.all(
-            //   color: Colors.grey,
-            //   width: 0.2,
-            // ),
-          ),
-          child: Table(
-            border:
-          TableBorder.all(
-            color: Colors.grey,
-            width: 0.2,
-          ),
-            children: [
-              for(int i=0;i<widget._admin.permissions!.length;i++)
-                TableRow(
-                    children: [
-                       Padding(
-                          padding: const EdgeInsets.all(12.0),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 45,
-                                height: 45,
-                                decoration: BoxDecoration(
-                                  color: Colors.green.shade50,
-                                  shape: BoxShape.circle,
+        InkWell(
+          onTap: (){
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Access it from dashboard "),backgroundColor: Theme.of(context).primaryColor,));
+          },
+          child: Container(
+            clipBehavior: Clip.hardEdge,
+            // height: 265,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(10),
+              // border: Border.all(
+              //   color: Colors.grey,
+              //   width: 0.2,
+              // ),
+            ),
+            child: Table(
+              border:
+            TableBorder.all(
+              color: Colors.white,
+              width: 0.2,
+            ),
+              children: [
+                for(int i=0;i<widget._admin.permissions!.length;i++)
+                  TableRow(
+                      children: [
+                         Padding(
+                            padding: const EdgeInsets.all(12.0),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 45,
+                                  height: 45,
+                                  decoration: BoxDecoration(
+                                    color: Colors.green.shade50,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(PhosphorIconsBold.scroll,size: 25,color: Theme.of(context).primaryColor,),
                                 ),
-                                child: Icon(PhosphorIconsBold.scroll,size: 25,color: Theme.of(context).primaryColor,),
-                              ),
-                              SizedBox(width: 10,),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(widget._admin.permissions![i].split("_").join(" "),),
-                                  Text("Manage ${widget._admin.permissions![i].split("_").join(" ")} operations",style: TextStyle(color: Colors.grey),),
-                                ],
-                              ),
+                                SizedBox(width: 10,),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(widget._admin.permissions![i].split("_").join(" "),),
+                                    Text("Manage ${widget._admin.permissions![i].split("_").join(" ")} operations",style: TextStyle(color: Colors.grey),),
+                                  ],
+                                ),
 
-                            ],
+                              ],
+                            ),
                           ),
-                        ),
 
-                    ]
-                ),
-            ],
+                      ]
+                  ),
+              ],
+            ),
           ),
         ),
         SizedBox(height: 25,),

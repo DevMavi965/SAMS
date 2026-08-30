@@ -36,7 +36,7 @@ class _AdminSettingCardState extends State<AdminSettingCard> {
       Table(
         border:
         TableBorder.all(
-          color: Colors.grey,
+          color: Colors.white,
           width: 0.2,
         ),
         children: [
