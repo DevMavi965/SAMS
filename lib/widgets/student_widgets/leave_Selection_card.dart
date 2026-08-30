@@ -1,11 +1,10 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:smas3/models/Leave_Application_Model.dart';
+
 class LeaveSelectionCard extends StatefulWidget {
   final List<LeaveApplication> leaveApplications;
 
-
-  @override
   const LeaveSelectionCard({super.key, required this.leaveApplications});
 
   @override
@@ -13,138 +12,32 @@ class LeaveSelectionCard extends StatefulWidget {
 }
 
 class _LeaveSelectionCardState extends State<LeaveSelectionCard> {
+  bool check = true; // true = Pending, false = History
 
-
-  bool check = true;
-List<LeaveApplication> pendingApplications(List<LeaveApplication> leaveApplications){
-  List<LeaveApplication> pendingA = [];
-  for (int i = 0; i < leaveApplications.length; i++) {
-    if(leaveApplications[i].status == "pending"){
-      pendingA.add(leaveApplications[i]);
-
+  List<LeaveApplication> pendingApplications(List<LeaveApplication> leaveApplications) {
+    List<LeaveApplication> pendingA = [];
+    for (int i = 0; i < leaveApplications.length; i++) {
+      if (leaveApplications[i].status == "pending") {
+        pendingA.add(leaveApplications[i]);
+      }
     }
+    return pendingA;
   }
- return pendingA;
 
-}
   List<LeaveApplication> pendingleaveApplications = [];
-@override
-  void initState() {
-  pendingleaveApplications = pendingApplications(widget.leaveApplications);
 
-  // TODO: implement initState
+  @override
+  void initState() {
+    pendingleaveApplications = pendingApplications(widget.leaveApplications);
     super.initState();
   }
+
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        SizedBox(height: 20,),
+        const SizedBox(height: 20),
 
-        // Container(
-        //   width: 300,
-        //   decoration: BoxDecoration(
-        //       color: Colors.grey.shade300,
-        //       borderRadius: BorderRadius.circular(15),
-        //       border: Border.all(
-        //         color: Colors.grey,
-        //         width: 1,
-        //
-        //       )
-        //   ),
-        //   child: Row(
-        //     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        //     children: [
-        //       check?
-        //       AnimatedContainer(
-        //         duration: Duration(milliseconds: 1300),
-        //         // height: 40,
-        //         width: 140,
-        //         margin: EdgeInsets.all(3),
-        //         decoration: BoxDecoration(
-        //             color: Colors.white,
-        //             border: Border.all(
-        //               color: Colors.grey,
-        //               width: 1,
-        //             ),
-        //             borderRadius: BorderRadius.all(
-        //               Radius.circular(15),
-        //             )
-        //         ),
-        //         child: Padding(
-        //           padding: const EdgeInsets.all(8.0),
-        //           child: Text("Pending",textAlign: TextAlign.center,style: TextStyle(color: Colors.black),),
-        //         ),
-        //       ):
-        //       InkWell(
-        //         onTap: (){
-        //           setState(() {
-        //             check = !check;
-        //           });
-        //         },
-        //         child: Container(
-        //           // height: 40,
-        //           width: 140,
-        //           margin: EdgeInsets.all(3),
-        //           decoration: BoxDecoration(
-        //             // color: Colors.white,
-        //               borderRadius: BorderRadius.all(
-        //                 Radius.circular(15),
-        //               )
-        //           ),
-        //           child: Padding(
-        //             padding: const EdgeInsets.all(8.0),
-        //             child: Text("Pending",textAlign: TextAlign.center,style: TextStyle(color: Colors.black),),
-        //           ),
-        //         ),
-        //       ),
-        //       check?
-        //       InkWell(
-        //         onTap: (){
-        //           setState(() {
-        //             check = !check;
-        //           });
-        //         },
-        //         child: Container(
-        //           // height: 40,
-        //           width: 140,
-        //           margin: EdgeInsets.all(3),
-        //           decoration: BoxDecoration(
-        //             // color: Colors.white,
-        //               borderRadius: BorderRadius.all(
-        //                 Radius.circular(15),
-        //               )
-        //           ),
-        //           child: Padding(
-        //             padding: const EdgeInsets.all(8.0),
-        //             child: Text("History",textAlign: TextAlign.center,style: TextStyle(color: Colors.black),),
-        //           ),
-        //         ),
-        //       ):
-        //       AnimatedContainer(
-        //         duration: Duration(milliseconds: 1300),
-        //         // height: 40,
-        //         width: 140,
-        //         margin: EdgeInsets.all(3),
-        //         decoration: BoxDecoration(
-        //             color: Colors.white,
-        //             border: Border.all(
-        //               color: Colors.grey,
-        //               width: 1,
-        //             ),
-        //             borderRadius: BorderRadius.all(
-        //               Radius.circular(15),
-        //             )
-        //         ),
-        //         child: Padding(
-        //           padding: const EdgeInsets.all(8.0),
-        //           child: Text("History",textAlign: TextAlign.center,style: TextStyle(color: Colors.black),),
-        //         ),
-        //       ),
-        //
-        //     ],
-        //   ),
-        // ),
         Container(
           width: 300,
           height: 50,
@@ -155,7 +48,7 @@ List<LeaveApplication> pendingApplications(List<LeaveApplication> leaveApplicati
           ),
           child: Stack(
             children: [
-              // 👇 This AnimatedAlign is the moving white box
+              // Moving white box
               AnimatedAlign(
                 alignment: check ? Alignment.centerLeft : Alignment.centerRight,
                 duration: const Duration(milliseconds: 400),
@@ -171,11 +64,11 @@ List<LeaveApplication> pendingApplications(List<LeaveApplication> leaveApplicati
                 ),
               ),
 
-              // Text buttons on top
+              // Text buttons
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Pending button
+                  // Pending button (LEFT)
                   InkWell(
                     onTap: () {
                       setState(() {
@@ -186,17 +79,16 @@ List<LeaveApplication> pendingApplications(List<LeaveApplication> leaveApplicati
                       width: 140,
                       alignment: Alignment.center,
                       child: Text(
-                        "History",
+                        "Pending", // This should show Pending
                         style: TextStyle(
                           color: Colors.black,
-                          fontWeight:
-                          check ? FontWeight.bold : FontWeight.w500,
+                          fontWeight: check ? FontWeight.bold : FontWeight.w500,
                         ),
                       ),
                     ),
                   ),
 
-                  // History button
+                  // History button (RIGHT)
                   InkWell(
                     onTap: () {
                       setState(() {
@@ -207,11 +99,10 @@ List<LeaveApplication> pendingApplications(List<LeaveApplication> leaveApplicati
                       width: 140,
                       alignment: Alignment.center,
                       child: Text(
-                        "Pending",
+                        "History", // This should show History
                         style: TextStyle(
                           color: Colors.black,
-                          fontWeight:
-                          !check ? FontWeight.bold : FontWeight.w500,
+                          fontWeight: !check ? FontWeight.bold : FontWeight.w500,
                         ),
                       ),
                     ),
@@ -221,36 +112,37 @@ List<LeaveApplication> pendingApplications(List<LeaveApplication> leaveApplicati
             ],
           ),
         ),
-        SizedBox(height: 20,),
-         for (int i = 0; i < (check?widget.leaveApplications.length:pendingleaveApplications.length); i++)
-           _buildLeaveApplicationCard(check?widget.leaveApplications[i]:pendingleaveApplications[i]),
 
+        const SizedBox(height: 20),
 
-
-
+        // Display the correct list based on the toggle
+        for (int i = 0; i < (check ? pendingleaveApplications.length : widget.leaveApplications.length); i++)
+          _buildLeaveApplicationCard(
+              check ? pendingleaveApplications[i] : widget.leaveApplications[i]
+          ),
       ],
     );
   }
-  Widget _buildLeaveApplicationCard(LeaveApplication leaveApplication){
-    return  Container(
-      margin: EdgeInsets.only(
-          top: 10,
-          bottom: 7
-      ),
-      height: 150,
-      // #D89A20
-      decoration: BoxDecoration(
-          color: leaveApplication.status=="rejected"?Colors.red.shade100:
-          (leaveApplication.status=="approved"?Color.fromARGB(60, 0, 153, 136):
-          Colors.brown.shade50),
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: leaveApplication.status=="rejected"?Colors.red:
-            (leaveApplication.status=="approved"?Color.fromARGB(255, 0, 153, 136):
-            Colors.brown),
-            width: 0.4,
 
-          )
+  Widget _buildLeaveApplicationCard(LeaveApplication leaveApplication) {
+    return Container(
+      margin: const EdgeInsets.only(top: 10, bottom: 7),
+      height: 150,
+      decoration: BoxDecoration(
+        color: leaveApplication.status == "rejected"
+            ? Colors.red.shade100
+            : (leaveApplication.status == "approved"
+            ? const Color.fromARGB(60, 0, 153, 136)
+            : Colors.brown.shade50),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: leaveApplication.status == "rejected"
+              ? Colors.red
+              : (leaveApplication.status == "approved"
+              ? const Color.fromARGB(255, 0, 153, 136)
+              : Colors.brown),
+          width: 0.4,
+        ),
       ),
       child: Padding(
         padding: const EdgeInsets.all(8.0),
@@ -262,23 +154,37 @@ List<LeaveApplication> pendingApplications(List<LeaveApplication> leaveApplicati
                 children: [
                   Row(
                     children: [
-                      Icon(leaveApplication.status=="rejected"?CupertinoIcons.xmark_circle:(leaveApplication.status=="pending"?CupertinoIcons.clock:Icons.check_circle_outline),
-                        color:leaveApplication.status=="rejected"?Colors.red:
-                        (leaveApplication.status=="approved"?Color.fromARGB(255, 0, 153, 136):
-                        Colors.brown) ,size: 25,),
-                      SizedBox(width: 12,),
-                      Text("${leaveApplication.type} Leave",style: TextStyle(fontSize: 17),),
+                      Icon(
+                        leaveApplication.status == "rejected"
+                            ? CupertinoIcons.xmark_circle
+                            : (leaveApplication.status == "pending"
+                            ? CupertinoIcons.clock
+                            : Icons.check_circle_outline),
+                        color: leaveApplication.status == "rejected"
+                            ? Colors.red
+                            : (leaveApplication.status == "approved"
+                            ? const Color.fromARGB(255, 0, 153, 136)
+                            : Colors.brown),
+                        size: 25,
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        "${leaveApplication.type} Leave",
+                        style: const TextStyle(fontSize: 17),
+                      ),
                     ],
                   ),
-                  // SizedBox(width: 2,),
-                  // SizedBox(width: 2,),
                   Badge(
-                    padding: EdgeInsets.all(5),
-                    label: Text(leaveApplication.status,style: TextStyle(color: Colors.white,fontSize: 9),),
-                    backgroundColor: leaveApplication.status=="rejected"?Colors.red:
-                    (leaveApplication.status=="approved"?Color.fromARGB(255, 0, 153, 136):
-                    Colors.brown),
-
+                    padding: const EdgeInsets.all(5),
+                    label: Text(
+                      leaveApplication.status,
+                      style: const TextStyle(color: Colors.white, fontSize: 9),
+                    ),
+                    backgroundColor: leaveApplication.status == "rejected"
+                        ? Colors.red
+                        : (leaveApplication.status == "approved"
+                        ? const Color.fromARGB(255, 0, 153, 136)
+                        : Colors.brown),
                   )
                 ],
               ),
@@ -286,42 +192,68 @@ List<LeaveApplication> pendingApplications(List<LeaveApplication> leaveApplicati
             Flexible(
               child: Row(
                 children: [
-                  SizedBox(width: 40,),
-                  Flexible(child: Text("${leaveApplication.fromDate.day}/${leaveApplication.fromDate.month}/${leaveApplication.fromDate.year} to ${leaveApplication.tillDate.day}/${leaveApplication.tillDate.month}/${leaveApplication.tillDate.year}",overflow: TextOverflow.ellipsis,style: TextStyle(color: Colors.grey,fontSize: 12),)),
+                  const SizedBox(width: 40),
+                  Flexible(
+                    child: Text(
+                      "${leaveApplication.fromDate.day}/${leaveApplication.fromDate.month}/${leaveApplication.fromDate.year} to ${leaveApplication.tillDate.day}/${leaveApplication.tillDate.month}/${leaveApplication.tillDate.year}",
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(color: Colors.grey, fontSize: 12),
+                    ),
+                  ),
                 ],
               ),
             ),
-            SizedBox(height: 10,),
+            const SizedBox(height: 10),
             Row(
               children: [
-                SizedBox(width: 40,),
+                const SizedBox(width: 40),
                 Flexible(
                   fit: FlexFit.loose,
-                  child: Text(leaveApplication.reason,maxLines: 1,overflow: TextOverflow.ellipsis,style: TextStyle(color: leaveApplication.status=="rejected"?Colors.red:
-                  (leaveApplication.status=="approved"?Color.fromARGB(255, 0, 153, 136):
-                  Colors.brown))),
+                  child: Text(
+                    leaveApplication.reason,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: leaveApplication.status == "rejected"
+                          ? Colors.red
+                          : (leaveApplication.status == "approved"
+                          ? const Color.fromARGB(255, 0, 153, 136)
+                          : Colors.brown),
+                    ),
+                  ),
                 ),
               ],
             ),
-            SizedBox(height: 10,),
+            const SizedBox(height: 10),
             Row(
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
-                SizedBox(width: 40,),
-                Icon(Icons.calendar_today_outlined,color: Colors.grey,size: 13,),
-                SizedBox(width: 5,),
-                Text("applied ${leaveApplication.appliedDate.day}/${leaveApplication.appliedDate.month}/${leaveApplication.appliedDate.year} ",style: TextStyle(color: Colors.grey,fontSize: 12),),
+                const SizedBox(width: 40),
+                const Icon(Icons.calendar_today_outlined,
+                    color: Colors.grey, size: 13),
+                const SizedBox(width: 5),
+                Text(
+                  "applied ${leaveApplication.appliedDate.day}/${leaveApplication.appliedDate.month}/${leaveApplication.appliedDate.year}",
+                  style: const TextStyle(color: Colors.grey, fontSize: 12),
+                ),
               ],
             ),
-            SizedBox(height: 10,),
-            leaveApplication.approvedby!=null? Row(
+            const SizedBox(height: 10),
+            leaveApplication.approvedby != null
+                ? Row(
               children: [
-                SizedBox(width: 40,),
-                Icon(Icons.person,color: Colors.grey,size: 13,),
-                SizedBox(width: 5,),
-                Text(leaveApplication.approvedby!=null?"approved by ${leaveApplication.approvedby}":"pending",style: TextStyle(color: Colors.grey,fontSize: 12),)
+                const SizedBox(width: 40),
+                const Icon(Icons.person, color: Colors.grey, size: 13),
+                const SizedBox(width: 5),
+                Text(
+                  leaveApplication.approvedby != null
+                      ? "approved by ${leaveApplication.approvedby}"
+                      : "pending",
+                  style: const TextStyle(color: Colors.grey, fontSize: 12),
+                )
               ],
-            ):SizedBox()
+            )
+                : const SizedBox(),
           ],
         ),
       ),
