@@ -7,12 +7,6 @@ import 'package:intl/intl.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:smas3/models/lecture.dart';
 
-/// Schedule-level state, derived purely from the clock — except
-/// [completed], which additionally requires that at least one student
-/// was actually marked present/late. A lecture whose end time has passed
-/// with zero present/late records was never actually conducted (nobody
-/// took attendance, or it was cancelled) — that's [notConducted], kept
-/// distinct from a lecture that genuinely ran.
 enum _LectureState { upcoming, ongoing, completed, notConducted }
 
 DateTime _combine(DateTime date, TimeOfDay time) {
@@ -20,7 +14,6 @@ DateTime _combine(DateTime date, TimeOfDay time) {
 }
 
 String _pad2(int n) => n.toString().padLeft(2, '0');
-
 String _dateLabel(DateTime date) {
   final now = DateTime.now();
   if (DateUtils.isSameDay(date, now)) return "Today";
@@ -36,35 +29,21 @@ class _StatusInfo {
   const _StatusInfo(this.label, this.color, this.icon);
 }
 
-/// Shows a lecture with a live status badge.
-///
-/// Schedule state (upcoming/ongoing/completed) is derived from
-/// `DateTime.now()` vs the lecture's real start/end time, not the stale
-/// `status` field on the lecture doc (written once at creation, never
-/// updated). "Completed" additionally requires at least one present/late
-/// attendance record class-wide — a lecture whose time simply elapsed
-/// with nobody marked shows as "Not conducted" instead, since the clock
-/// alone can't tell "class happened" from "class never started."
-///
-/// Once a lecture is genuinely completed, pass [studentId] to show this
-/// student's own outcome — Present / Late / Absent — read from the
-/// lecture's `attendance` list, separately from the class-wide check
-/// above.
-class UpcomingClassCard extends StatefulWidget {
+class UpcomingClassCardFacFac extends StatefulWidget {
   final LectureModel lectureModel;
   final String? studentId;
 
-  const UpcomingClassCard({
+  const UpcomingClassCardFacFac({
     super.key,
     required this.lectureModel,
     this.studentId,
   });
 
   @override
-  State<UpcomingClassCard> createState() => _UpcomingClassCardState();
+  State<UpcomingClassCardFacFac> createState() => _UpcomingClassCardFacFacState();
 }
 
-class _UpcomingClassCardState extends State<UpcomingClassCard> {
+class _UpcomingClassCardFacFacState extends State<UpcomingClassCardFacFac> {
   Timer? _timer;
 
   @override
@@ -163,6 +142,8 @@ class _UpcomingClassCardState extends State<UpcomingClassCard> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              // Status-colored accent bar — the card reads at a glance
+              // before you even read the pill.
               Container(width: 5, color: status.color),
               Expanded(
                 child: Container(

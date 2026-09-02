@@ -45,6 +45,8 @@ dependencies:
   google_sign_in: ^7.2.0
   font_awesome_flutter: ^11.0.0
   collection: ^1.19.1
+  flutter_local_notifications: ^22.3.0
+  timezone: ^0.11.1
 
 dev_dependencies:
   flutter_test:

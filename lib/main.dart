@@ -5,18 +5,19 @@ import 'package:smas3/firebase_options.dart';
 import 'package:smas3/models/Routes.dart';
 import 'package:smas3/providers/theme_Provider.dart';
 import 'package:smas3/services/db_service.dart';
+import 'package:smas3/services/notification_helper.dart';
 
 void main()async {
   WidgetsFlutterBinding.ensureInitialized();
+
  await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform
   );
+await NotifHelper.initialize();
   runApp(MyApp());
 }
-
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
-
   @override
   Widget build(BuildContext context) {
     return MultiProvider(providers: [

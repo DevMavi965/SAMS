@@ -14,7 +14,6 @@ import 'package:smas3/screens/student/leave_tab.dart';
 import 'package:smas3/screens/student/profile_tab.dart';
 import 'package:smas3/screens/student/scheduleTab.dart';
 import 'package:smas3/screens/student/std_home.dart';
-import 'package:smas3/widgets/in_Notif_model.dart';
 import 'package:smas3/widgets/student_widgets/Custome_line_chart.dart';
 import 'package:smas3/widgets/student_widgets/att_rec_card.dart';
 import 'package:smas3/widgets/student_widgets/daily_status_card.dart';

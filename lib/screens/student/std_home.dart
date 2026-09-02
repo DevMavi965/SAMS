@@ -9,10 +9,14 @@ import 'package:smas3/maxins/rm_functions.dart';
 import 'package:smas3/models/announcement_model.dart';
 import 'package:smas3/models/lecture.dart';
 import 'package:smas3/models/course.dart';
+import 'package:smas3/screens/student/std_lecAtd.dart';
+
 
 import '../../models/attendance.dart';
 import '../../models/student_model.dart';
 import '../../services/db_service.dart';
+
+import '../../services/notification_helper.dart';
 import '../../widgets/student_widgets/Custome_line_chart.dart';
 import '../../widgets/student_widgets/att_rec_card.dart';
 import '../../widgets/student_widgets/daily_status_card.dart';
@@ -89,13 +93,6 @@ class _StudentStats {
   );
 }
 
-/// Student home / dashboard screen.
-///
-/// One cached fetch (`_statsFuture`) pulls every lecture across the
-/// student's courses and derives today's status row, the current
-/// present/late streak, this-month vs last-month attendance, semester
-/// present/late/absent totals, and a real monthly trend — all from the
-/// same data set, computed in `initState` so rebuilds don't re-query.
 class StdHome extends StatefulWidget {
   const StdHome({super.key,required this.student});
 
@@ -114,7 +111,7 @@ class _StdHomeState extends State<StdHome> {
     _statsFuture = _fetchStudentStats();
   }
 
-  // ---- parsing helpers ----
+
 
   static TimeOfDay? _toTimeOfDay(dynamic v) {
     if (v == null) return null;
@@ -159,26 +156,78 @@ class _StdHomeState extends State<StdHome> {
       course: data['course_name'] ?? '',
     );
   }
+  Future<void> scheduleLectureNotificationBeforeStart(LectureModel lecture) async {
+    // 10 min before the lecture
+    final lectureStart = _combineDateAndTime(
+      lecture.dated,
+      lecture.start_time,
+    );
 
-  /// This student's attendance status for a lecture, or null if no record
-  /// exists yet (lecture hasn't been marked / hasn't happened).
+    // Don't schedule lectures that have already started
+    if (lectureStart.isBefore(DateTime.now())) {
+      return;
+    }
+
+   final notifDate=lectureStart.subtract(const Duration(minutes: 10));
+    await NotifHelper.scheduledNotification("lecture", "chek-in reminder :", " ${lecture.course} lecture starting [Room # ${lecture.room}] in 10 minutes , make sure to not be mark late", notifDate);
+  }
+  Future<void> scheduleLectureNotificationStart(LectureModel lecture) async {
+    // 10 min before the lecture
+    final lectureStart = _combineDateAndTime(
+      lecture.dated,
+      lecture.start_time,
+    );
+
+    // Don't schedule lectures that have already started
+    if (lectureStart.isBefore(DateTime.now())) {
+      return;
+    }
+    await NotifHelper.scheduledNotification("lecture", "chek-in reminder :", " ${lecture.course} lecture started in [Room # ${lecture.room}], make sure to not be mark late", lectureStart);
+  }
+  Future<void> scheduleLectureNotificationEnd(LectureModel lecture) async {
+    // 10 min before the lecture
+    final lectureEnd = _combineDateAndTime(
+      lecture.dated,
+      lecture.end_time,
+    );
+
+    // Don't schedule lectures that have already started
+    if (lectureEnd.isBefore(DateTime.now())) {
+      return;
+    }
+    await NotifHelper.scheduledNotification("lecture", "chek-out remainder :", " ${lecture.course} lecture ended , make sure to check-out", lectureEnd);
+  }
+  Future<void> scheduleLectureNotificationBeforeEnd(LectureModel lecture) async {
+    // 10 min before the lecture
+    final lectureEnd = _combineDateAndTime(
+      lecture.dated,
+      lecture.end_time,
+    );
+
+    // Don't schedule lectures that have already started
+    if (lectureEnd.isBefore(DateTime.now())) {
+      return;
+    }
+
+   final notifDate=lectureEnd.subtract(const Duration(minutes: 5));
+    await NotifHelper.scheduledNotification("lecture", "chek-in remainder :", " ${lecture.course} lecture ending soon in few minutes , make sure to check-out", notifDate);
+  }
+
+
   static String? _statusFor(LectureModel lecture, String studentId) {
     final record =
     (lecture.attendance ?? []).firstWhereOrNull((a) => a.sid == studentId);
     return record?.status;
   }
 
-  /// A conducted lecture with no attendance record at all is treated as
-  /// absent — it was marked and the student simply has no entry, rather
-  /// than being silently excluded from every average.
+
   static String _resolvedStatus(LectureModel lecture, String studentId) {
     return _statusFor(lecture, studentId) ?? 'absent';
   }
 
   static bool _isAttended(String status) => status == 'present' || status == 'late';
 
-  // ---- fetch ----
-
+  // vvvv=== fetchhing std ststz
   Future<_StudentStats> _fetchStudentStats() async {
     try {
       final dbService = Provider.of<DbService>(context, listen: false);
@@ -194,14 +243,8 @@ class _StdHomeState extends State<StdHome> {
           .where("session_id", isEqualTo: student.sessionId)
           .where("semester_id", isEqualTo: student.semesterId)
           .get();
-
+      debugPrint('courses: ${myCourses.docs.length}');
       if (myCourses.docs.isEmpty) return _StudentStats.empty;
-
-      // Every lecture across every course, fetched in parallel — one read
-      // per course's lectures subcollection, not one read per lecture.
-      // These courses were already filtered to the student's exact
-      // department/session/semester above, so the path below is safe to
-      // build directly from the student's own ids.
       final lectureSnapshots = await Future.wait(myCourses.docs.map((courseDoc) {
         return dbService.dbref
             .collection("ins_admins")
@@ -225,7 +268,18 @@ class _StdHomeState extends State<StdHome> {
           for (final doc in snap.docs) _lectureFromDoc(doc.id, doc.data()),
       ];
 
+      for (final lecture in allLectures) {
+        try {
+          await scheduleLectureNotificationBeforeStart(lecture);
+          await scheduleLectureNotificationStart(lecture);
+          await scheduleLectureNotificationBeforeEnd(lecture);
+          await scheduleLectureNotificationEnd(lecture);
+        }catch(e){
+          print("error-x $e");
+        }
+      }
       return _buildStats(allLectures, studentId);
+
     } catch (e) {
       debugPrint("StdHome._fetchStudentStats error: $e");
       return _StudentStats.empty;
@@ -250,10 +304,7 @@ class _StdHomeState extends State<StdHome> {
     }).toList();
 
     final conducted = resolved.where((r) => r.conducted).toList()
-      ..sort((a, b) => b.start.compareTo(a.start)); // most recent first
-
-    // Streak: consecutive present/late lectures counting back from the
-    // most recent conducted one; stops at the first absence.
+      ..sort((a, b) => b.start.compareTo(a.start));
     var streak = 0;
     for (final r in conducted) {
       if (_isAttended(_resolvedStatus(r.lecture, studentId))) {
@@ -295,10 +346,7 @@ class _StdHomeState extends State<StdHome> {
     final lastMonthEnd = thisMonthStart;
     final lastMonth = countsForRange(lastMonthStart, lastMonthEnd);
 
-    // Trend: percentage per month for the last 6 months that actually had
-    // conducted lectures, oldest first — feeds the line chart with real,
-    // matching-length month labels + percentages instead of a hardcoded
-    // 7-point series plotted against a fixed 12-month label list.
+
     final trendMonths = <String>[];
     final trendPercentages = <double>[];
     for (var i = 5; i >= 0; i--) {
@@ -370,8 +418,6 @@ class _StdHomeState extends State<StdHome> {
             future: _statsFuture,
             builder: (context, snapshot) {
               final stats = snapshot.data ?? _StudentStats.empty;
-              // totalDays feeds a division in OverAllAttCard — floor it at
-              // 1 so an empty/loading state shows 0% instead of NaN%.
               final totalDays = stats.thisMonth.total > 0 ? stats.thisMonth.total.toDouble() : 1.0;
               final thisMonthAttended = stats.thisMonth.total > 0 ? stats.thisMonth.attended.toDouble() : 0.0;
               return OverAllAttCard(
@@ -411,11 +457,6 @@ class _StdHomeState extends State<StdHome> {
                 return Text("Error: ${snapshot.error}");
               }
 
-              // Every lecture scheduled today — upcoming, ongoing, and
-              // already completed — sorted by start time. Each card
-              // derives its own upcoming/ongoing/completed badge live
-              // from the clock (see UpcomingClassCard), so nothing here
-              // needs to filter by time or by the stale `status` field.
               final todaysLectures = List<LectureModel>.from(
                   (snapshot.data ?? _StudentStats.empty).todaysLectures)
                 ..sort((a, b) => _combineDateAndTime(a.dated, a.start_time)
@@ -434,9 +475,13 @@ class _StdHomeState extends State<StdHome> {
               return Column(
                 children: [
                   for (final lecture in todaysLectures)
-                    UpcomingClassCard(
-                      lectureModel: lecture,
-                      studentId: studentId,
+                    Column(
+                      children: [
+                        InkWell(
+                          child: UpcomingClassCard(lectureModel: lecture, studentId: studentId),
+                        ),
+                        LectureAttendanceSection(lectureModel: lecture, studentId: studentId),
+                      ],
                     ),
                 ],
               );
@@ -696,4 +741,5 @@ class _SectionHeader extends StatelessWidget {
       ],
     );
   }
+
 }

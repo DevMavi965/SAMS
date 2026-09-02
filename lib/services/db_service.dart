@@ -159,7 +159,7 @@ class DbService with ChangeNotifier{
           "ins_admin_id": _insAdminId,
           "institute_id": instituteId,
           "password":password,
-          "role":admin.role
+          "role":admin.role,
         });
       } else {
         print("invalid email or password for admin");
@@ -1002,7 +1002,6 @@ class DbService with ChangeNotifier{
         lectureModel.dated.day,
         lectureModel.start_time.hour,
         lectureModel.start_time.minute,
-
       );
       DateTime end_time_date=DateTime(
         lectureModel.dated.year,
@@ -1010,45 +1009,52 @@ class DbService with ChangeNotifier{
         lectureModel.dated.day,
         lectureModel.end_time.hour,
         lectureModel.end_time.minute,
-
       );
-      final lectureRef=await dbref.
-      collection("ins_admins").doc(insAdminId)
+
+      final lectureRef = dbref
+          .collection("ins_admins").doc(insAdminId)
           .collection("institutes").doc(instituteId)
           .collection("departments").doc(departId)
           .collection("sessions").doc(sessionId)
           .collection("semesters").doc(semesterId)
-          .collection("courses")
-          .doc(courseId).collection("lectures")
-          .add({
-            "dated":Timestamp.fromDate(lectureModel.dated),//datetime
-            "start_time":Timestamp.fromDate(start_time_date),//datetime to timestamp",
-            "end_time":Timestamp.fromDate(end_time_date),//datetime to timestamp",
-            "attendance":[],
-            "room":lectureModel.room,
-            "course_name":lectureModel.course,
-            "status":"upcoming",
-          });
-         lectureModel.id=lectureRef.id;
-         await indexDoc.doc(lectureModel.id).set({
-           "ins_admin_id":insAdminId,
-           "institute_id":instituteId,
-           "department_id":departId,
-           "session_id":sessionId,
-           "semester_id":semesterId,
-           "course_id":courseId,
-           "type":"lecture",
-           "status":"upcoming",
-           "dated":lectureModel.dated,
-         });
-         print("lecture Added Successfully of ${lectureModel.course}");
-         if(context.mounted){
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("lecture Added Successfully")));}
+          .collection("courses").doc(courseId)
+          .collection("lectures").doc(); // pre-generate id, don't await
+
+      final batch = FirebaseFirestore.instance.batch();
+
+      batch.set(lectureRef, {
+        "dated": Timestamp.fromDate(lectureModel.dated),
+        "start_time": Timestamp.fromDate(start_time_date),
+        "end_time": Timestamp.fromDate(end_time_date),
+        "attendance": [],
+        "room": lectureModel.room,
+        "course_name": lectureModel.course,
+        "status": "upcoming",
+      });
+
+      batch.set(indexDoc.doc(lectureRef.id), {
+        "ins_admin_id": insAdminId,
+        "institute_id": instituteId,
+        "department_id": departId,
+        "session_id": sessionId,
+        "semester_id": semesterId,
+        "course_id": courseId,
+        "type": "lecture",
+        "status": "upcoming",
+        "dated": lectureModel.dated,
+      });
+
+      await batch.commit(); // single round trip, both writes succeed or neither does
+
+      lectureModel.id = lectureRef.id;
+      print("lecture Added Successfully of ${lectureModel.course}");
+      if(context.mounted){
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("lecture Added Successfully")));
+      }
     }catch(e){
       if(context.mounted){
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));}
-    }finally{
-
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      }
     }
   }
   addFaculty(BuildContext context,String insAdminId,String instituteId,String departId,Lecturer lecturer)async{
@@ -1553,44 +1559,57 @@ class DbService with ChangeNotifier{
 
     }
   }
-  updateLecture(BuildContext context,LectureModel lectureModel)async{
-    try{
-
-      final dox=await indexDoc.doc(lectureModel.id).get();
-      DateTime start_time_date=DateTime(
+  updateLecture(
+      BuildContext context,
+      LectureModel lectureModel, {
+        required String insAdminId,
+        required String instituteId,
+        required String departmentId,
+        required String sessionId,
+        required String semesterId,
+        required String courseId,
+      }) async {
+    try {
+      DateTime start_time_date = DateTime(
         lectureModel.dated.year,
         lectureModel.dated.month,
         lectureModel.dated.day,
         lectureModel.start_time.hour,
         lectureModel.start_time.minute,
       );
-      DateTime end_time_date=DateTime(
+      DateTime end_time_date = DateTime(
         lectureModel.dated.year,
         lectureModel.dated.month,
         lectureModel.dated.day,
         lectureModel.end_time.hour,
         lectureModel.end_time.minute,
       );
-      final lecRef=await dbref.
-      collection("ins_admins").doc(dox.get("ins_admin_id"))
-          .collection("institutes").doc(dox.get("institute_id"))
-          .collection("departments").doc(dox.get("department_id"))
-          .collection("sessions").doc(dox.get("session_id"))
-          .collection("semesters").doc(dox.get("semester_id"))
-          .collection("courses")
-          .doc(dox.get("course_id")).collection("lectures")
-          .doc(lectureModel.id).update({
-        "start_time":start_time_date,//datetime to timestamp",
-        "end_time":end_time_date,//datetime to timestamp",
-        "room":lectureModel.room,
-        "course_name":lectureModel.course,//will take course_name using id back in ui
-        "status":lectureModel.status,
-      });
-      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("lecture updated Successfully")));
-    }catch(e){
-      if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
-    }finally{
 
+      await dbref
+          .collection("ins_admins").doc(insAdminId)
+          .collection("institutes").doc(instituteId)
+          .collection("departments").doc(departmentId)
+          .collection("sessions").doc(sessionId)
+          .collection("semesters").doc(semesterId)
+          .collection("courses").doc(courseId)
+          .collection("lectures").doc(lectureModel.id)
+          .update({
+        "start_time": start_time_date,
+        "end_time": end_time_date,
+        "room": lectureModel.room,
+        "course_name": lectureModel.course,
+        "status": lectureModel.status,
+      });
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("lecture updated Successfully")),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      }
     }
   }
   studentCheckIn(BuildContext context, LectureModel lectureModel, String studentId, String method) async {
@@ -1889,6 +1908,98 @@ class DbService with ChangeNotifier{
     }
   }
 
+  markAbsentForMissedMidpoint(
+      BuildContext? context, LectureModel lectureModel, String studentId) async {    try {
+      final currentAttendance = lectureModel.attendance ?? [];
+      final existing =
+      currentAttendance.firstWhereOrNull((a) => a.sid == studentId);
+      if (existing == null || existing.mid_point == true || existing.status == 'absent') {
+        return; // already resolved one way or another -- nothing to do
+      }
+
+      final updatedRecord = Attendance(
+        sid: studentId,
+        checkin: existing.checkin,
+        checkout: null,
+        mid_point: existing.mid_point,
+        method: existing.method,
+        status: 'absent',
+      );
+
+      final updatedAttendance = [
+        ...currentAttendance.where((a) => a.sid != studentId),
+        updatedRecord,
+      ];
+      final attendanceMaps =
+      updatedAttendance.map((a) => a.toMap(onDate: lectureModel.dated)).toList();
+
+      final dox = await indexDoc.doc(lectureModel.id).get();
+      await dbref
+          .collection("ins_admins").doc(dox.get("ins_admin_id"))
+          .collection("institutes").doc(dox.get("institute_id"))
+          .collection("departments").doc(dox.get("department_id"))
+          .collection("sessions").doc(dox.get("session_id"))
+          .collection("semesters").doc(dox.get("semester_id"))
+          .collection("courses").doc(dox.get("course_id"))
+          .collection("lectures").doc(lectureModel.id)
+          .update({"attendance": attendanceMaps});
+
+      lectureModel.attendance = updatedAttendance;
+      notifyListeners();
+    } catch (e) {
+      print(e.toString());
+    }
+  }
+
+  //lazmi::: Run once a lecture's end time has passed: any enrolled student with NO attendance record at all is written in as "absent". Safe to call more than once -- students who already have a record (present/late/absent) are left untouched.
+
+
+  autoMarkRemainingAbsentees(BuildContext? context, LectureModel lectureModel,
+      List<String> allStudentIds) async {
+    try {
+      final currentAttendance = lectureModel.attendance ?? [];
+      final alreadyRecorded = currentAttendance.map((a) => a.sid).toSet();
+      final missing =
+      allStudentIds.where((id) => !alreadyRecorded.contains(id)).toList();
+      if (missing.isEmpty) return;
+
+      final newRecords = missing
+          .map((id) => Attendance(
+        sid: id,
+        checkin: null,
+        checkout: null,
+        mid_point: null,
+        method: 'auto',
+        status: 'absent',
+      ))
+          .toList();
+
+      final updatedAttendance = [...currentAttendance, ...newRecords];
+      final attendanceMaps =
+      updatedAttendance.map((a) => a.toMap(onDate: lectureModel.dated)).toList();
+
+      final dox = await indexDoc.doc(lectureModel.id).get();
+      await dbref
+          .collection("ins_admins").doc(dox.get("ins_admin_id"))
+          .collection("institutes").doc(dox.get("institute_id"))
+          .collection("departments").doc(dox.get("department_id"))
+          .collection("sessions").doc(dox.get("session_id"))
+          .collection("semesters").doc(dox.get("semester_id"))
+          .collection("courses").doc(dox.get("course_id"))
+          .collection("lectures").doc(lectureModel.id)
+          .update({"attendance": attendanceMaps});
+
+      lectureModel.attendance = updatedAttendance;
+      notifyListeners();
+      if (context != null && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("${newRecords.length} student(s) auto-marked absent")),
+        );
+      }
+    } catch (e) {
+      print(e.toString());
+    }
+  }
 
   markAttendancePresentGroup(BuildContext context, LectureModel lectureModel, List<String> studentIds, String method) async {
     loading = true;

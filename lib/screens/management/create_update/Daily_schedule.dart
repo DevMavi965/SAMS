@@ -13,6 +13,7 @@ import 'package:smas3/models/department.dart';
 import 'package:smas3/models/ins_admin.dart';
 import 'package:smas3/models/institute.dart';
 import 'package:smas3/models/lecture.dart';
+import 'package:smas3/services/notification_helper.dart';
 
 import '../../../models/semester.dart';
 import '../../../models/session.dart';
@@ -276,7 +277,7 @@ class _DailyScheduleState extends State<DailySchedule> {
       ),
       body: ListView(
         padding: EdgeInsets.symmetric(
-          horizontal: 10
+            horizontal: 10
         ),
         children: [
           const SizedBox(height: 0),
@@ -292,137 +293,137 @@ class _DailyScheduleState extends State<DailySchedule> {
             const Center(child: Text("No lectures today, add first",style: TextStyle(color: Colors.black54),))
           else
             for (var lecture in todayLectures)
-              // ListTile(
-              //   onTap: () {
-              //
-              //   },
-              //   title: Text(lecture.course),
-              //   subtitle: Text(
-              //     "${lecture.start_time.format(context)} - ${lecture.end_time.format(context)}",
-              //   ),
-              //   trailing: Text(lecture.room),
-              //   leading: IconButton(onPressed: (){
-              //     Provider.of<DbService>(context,listen: false).removeLecture(context, lecture.id!);
-              //   }, icon: Icon(Icons.delete)),
-              // ),
-             InkWell(
-               onTap: (){
-                 final course = _courseForLecture(lecture);
-                 if (course == null) {
-                   ScaffoldMessenger.of(context).showSnackBar(
-                     const SnackBar(
-                       content:
-                       Text("Course for this lecture no longer exists"),
-                     ),
-                   );
-                   return;
-                 }
-                 _openLectureSheet(context,
-                     lecture: lecture, courseId: course.id);
-               },
-               child: Container(
-                 margin: EdgeInsets.only(
-                   bottom: 5
-                 ),
-                 padding: EdgeInsets.symmetric(
-                   horizontal: 3,
-                   vertical: 12
-                 ),
-                 decoration: BoxDecoration(
-                 borderRadius: BorderRadius.circular(10),
-                   color: Theme.of(context).primaryColor.withOpacity(0.1),
-                   border: Border.all(
-                     color: Theme.of(context).primaryColor,
-                     width: 2
-                   )
-                 ),
-                 child:
-                 Row(
-                   children: [
-                     Expanded(
-                         child:CircleAvatar(
-                       backgroundColor: Theme.of(context).primaryColor,
-                       radius: 27,
-                       child: Text(RMFuncts.getFirstLetters(lecture.course),style: TextStyle(color: Colors.white,fontSize: 16),)
-                     )
-                     ),
-                     SizedBox(width: 8,),
-                     Expanded(
-                       flex: 3,
-                       child: Column(
-                         mainAxisSize: MainAxisSize.min,
-                         children: [
-                           Flexible(
-                             child: Row(
-                               children: [
+            // ListTile(
+            //   onTap: () {
+            //
+            //   },
+            //   title: Text(lecture.course),
+            //   subtitle: Text(
+            //     "${lecture.start_time.format(context)} - ${lecture.end_time.format(context)}",
+            //   ),
+            //   trailing: Text(lecture.room),
+            //   leading: IconButton(onPressed: (){
+            //     Provider.of<DbService>(context,listen: false).removeLecture(context, lecture.id!);
+            //   }, icon: Icon(Icons.delete)),
+            // ),
+              InkWell(
+                onTap: (){
+                  final course = _courseForLecture(lecture);
+                  if (course == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content:
+                        Text("Course for this lecture no longer exists"),
+                      ),
+                    );
+                    return;
+                  }
+                  _openLectureSheet(context,
+                      lecture: lecture, courseId: course.id);
+                },
+                child: Container(
+                  margin: EdgeInsets.only(
+                      bottom: 5
+                  ),
+                  padding: EdgeInsets.symmetric(
+                      horizontal: 3,
+                      vertical: 12
+                  ),
+                  decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(10),
+                      color: Theme.of(context).primaryColor.withOpacity(0.1),
+                      border: Border.all(
+                          color: Theme.of(context).primaryColor,
+                          width: 2
+                      )
+                  ),
+                  child:
+                  Row(
+                    children: [
+                      Expanded(
+                          child:CircleAvatar(
+                              backgroundColor: Theme.of(context).primaryColor,
+                              radius: 27,
+                              child: Text(RMFuncts.getFirstLetters(lecture.course),style: TextStyle(color: Colors.white,fontSize: 16),)
+                          )
+                      ),
+                      SizedBox(width: 8,),
+                      Expanded(
+                        flex: 3,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Flexible(
+                              child: Row(
+                                children: [
 
-                                 Text(lecture.course,style: TextStyle(
-                                   fontWeight: FontWeight.w500,fontSize: 16
-                                 ),),
-                               ],
-                             ),
-                           ),
-                           SizedBox(height: 5,),
-                           Flexible(
-                             child: Row(
-                               children: [
-                                 Icon(CupertinoIcons.person_crop_circle),
-                                 SizedBox(width: 10,),
-                                 Text(courses.firstWhere((e)=>e.name==lecture.course).lecturer_name!,),
-                               ],
-                             ),
-                           ),
-                           SizedBox(height: 5,),
-                           Flexible(
-                             child: Row(
-                               children: [
-                                 Icon(CupertinoIcons.clock),
-                                 SizedBox(width: 10,),
-                                 Text("${lecture.start_time.format(context)}  to  ${lecture.end_time.format(context)}",style: TextStyle(color: Colors.black87),),
-                               ],
-                             ),
-                           ),
-                           SizedBox(height: 5,),
-                           Flexible(
-                             child: Row(
-                               children: [
-                                 Icon(Icons.door_front_door_outlined),
-                                 SizedBox(width: 10,),
-                                 Text("Room no :${lecture.room}"),
-                               ],
-                             ),
-                           ),
-                           SizedBox(height: 5,),
-                           Flexible(
-                             child: Row(
-                               children: [
-                                 Icon(Icons.calendar_today_outlined),
-                                 SizedBox(width: 10,),
-                                 Text("Scheduled on:${DateFormat("dd MMM yyyy").format(lecture.dated)}"),
-                               ],
-                             ),
-                           ),
+                                  Text(lecture.course,style: TextStyle(
+                                      fontWeight: FontWeight.w500,fontSize: 16
+                                  ),),
+                                ],
+                              ),
+                            ),
+                            SizedBox(height: 5,),
+                            Flexible(
+                              child: Row(
+                                children: [
+                                  Icon(CupertinoIcons.person_crop_circle),
+                                  SizedBox(width: 10,),
+                                  Text(courses.firstWhere((e)=>e.name==lecture.course).lecturer_name!,),
+                                ],
+                              ),
+                            ),
+                            SizedBox(height: 5,),
+                            Flexible(
+                              child: Row(
+                                children: [
+                                  Icon(CupertinoIcons.clock),
+                                  SizedBox(width: 10,),
+                                  Text("${lecture.start_time.format(context)}  to  ${lecture.end_time.format(context)}",style: TextStyle(color: Colors.black87),),
+                                ],
+                              ),
+                            ),
+                            SizedBox(height: 5,),
+                            Flexible(
+                              child: Row(
+                                children: [
+                                  Icon(Icons.door_front_door_outlined),
+                                  SizedBox(width: 10,),
+                                  Text("Room no :${lecture.room}"),
+                                ],
+                              ),
+                            ),
+                            SizedBox(height: 5,),
+                            Flexible(
+                              child: Row(
+                                children: [
+                                  Icon(Icons.calendar_today_outlined),
+                                  SizedBox(width: 10,),
+                                  Text("Scheduled on:${DateFormat("dd MMM yyyy").format(lecture.dated)}"),
+                                ],
+                              ),
+                            ),
 
-                         ],
-                       ),
-                     ),
-                     Expanded(child: Column(
-                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                       children: [
-                         Badge(
-                           backgroundColor: Theme.of(context).primaryColor,
-                           label: Text(lecture.status==null?"Completed":lecture.status!,style: TextStyle(color: Colors.white),),
-                         ),
-                         SizedBox(height: 10,),
-                         IconButton(onPressed: (){
+                          ],
+                        ),
+                      ),
+                      Expanded(child: Column(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Badge(
+                            backgroundColor: Theme.of(context).primaryColor,
+                            label: Text(lecture.status==null?"Completed":lecture.status!,style: TextStyle(color: Colors.white),),
+                          ),
+                          SizedBox(height: 10,),
+                          IconButton(onPressed: (){
                             Provider.of<DbService>(context,listen: false).removeLecture(context, lecture.id!);
-                         }, icon: Icon(CupertinoIcons.delete))
-                       ],
-                     ))
-                   ],
-                 ),
-               ),
-             ),
+                          }, icon: Icon(CupertinoIcons.delete))
+                        ],
+                      ))
+                    ],
+                  ),
+                ),
+              ),
 
           const SizedBox(height: 20),
 
@@ -762,18 +763,30 @@ class _DailyScheduleState extends State<DailySchedule> {
                             room: room.text.trim(),
                             status: getStatus(lecture.dated, startTime!, endTime!),
                           );
-                          await db.updateLecture(context, updated);
+                          await db.updateLecture(context, updated,
+                            insAdminId: widget.insAdmin.id!,
+                            instituteId: widget.institute.id!,
+                            departmentId: widget.department.id!,
+                            sessionId:widget.session.id!,
+                            semesterId: widget.semester.id!,
+                            courseId: courseId!,
+                          );
+                          await NotifHelper.show(
+                            "lectures",
+                            "Lecture Updated".toUpperCase(),
+                            "${lecture.course} has been updated for ${lecture.start_time.format(context)} to ${lecture.end_time.format(context)}",
+                          );
                         } else {
                           final courseV = courses
                               .firstWhere((e) => e.id == selectedCourse);
                           final newLecture = LectureModel(
-                            course: courseV.name,
-                            dated: widget.date,
-                            start_time: startTime!,
-                            end_time: endTime!,
-                            attendance: [],
-                            room: room.text.trim(),
-                            status: getStatus(widget.date, startTime!, endTime!)
+                              course: courseV.name,
+                              dated: widget.date,
+                              start_time: startTime!,
+                              end_time: endTime!,
+                              attendance: [],
+                              room: room.text.trim(),
+                              status: getStatus(widget.date, startTime!, endTime!)
                           );
                           await db.addLecture(
                             context,
@@ -784,6 +797,11 @@ class _DailyScheduleState extends State<DailySchedule> {
                             widget.semester.id!,
                             selectedCourse!,
                             newLecture,
+                          );
+                          await NotifHelper.show(
+                            "lectures",
+                            "Lecture added".toUpperCase(),
+                            "${newLecture.course} has been added for ${newLecture.start_time.format(context)} to ${newLecture.end_time.format(context)}",
                           );
                         }
 

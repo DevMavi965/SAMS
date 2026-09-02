@@ -36,7 +36,7 @@ class _InsAdminDashboardState extends State<InsAdminDashboard> {
   late List<Widget> screens=[
     InsAdminHome(insAdmin: widget.insAdmin,institute: widget.institute,),
     ManageAdmins(insAdmin: widget.insAdmin,institute:widget.institute ,),
-    InsReports(),
+    InsReports(insAdmin: widget.insAdmin,institute:widget.institute ),
     insAdminProfile(insAdmin: widget.insAdmin,institute: widget.institute,)
   ];
   logout()async{
