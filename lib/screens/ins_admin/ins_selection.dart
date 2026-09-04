@@ -191,169 +191,183 @@ class InstituteCard extends StatefulWidget {
 class _InstituteCardState extends State<InstituteCard> {
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onDoubleTap: (){
-        Navigator.push(context, MaterialPageRoute(builder: (_)=>Update_Institute(insAdmin: widget.insAdmin, institute: widget.institute)));
-      },
-      child: Card(
-        color: Colors.white,
-        elevation: 4,
-        margin: const EdgeInsets.symmetric(
-          horizontal: 12,
-          vertical: 8,
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  CircleAvatar(
-                    radius: 32,
-                    backgroundColor: Theme.of(context).primaryColor.withOpacity(1),
-                    // fontawseome icon
-                    child: FaIcon(FontAwesomeIcons.buildingColumns,size: 28,color: Colors.white,)
-                  ),
+    return Card(
+      color:Colors.white,
+      elevation: 4,
+      margin: const EdgeInsets.symmetric(
+        horizontal: 12,
+        vertical: 8,
+      ),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                CircleAvatar(
+                  radius: 32,
+                  backgroundColor: Theme.of(context).primaryColor.withOpacity(1),
+                  // fontawseome icon
+                  child: FaIcon(FontAwesomeIcons.buildingColumns,size: 28,color: Colors.white,)
+                ),
 
-                  const SizedBox(width: 14),
+                const SizedBox(width: 14),
 
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment:
-                      CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          widget.institute.name,
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment:
+                    CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.institute.name,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
                         ),
-
-                        const SizedBox(height: 4),
-
-                        Text(
-                          "${getCapName(widget.insAdmin.name)} (Institute Admin)",
-                          style: TextStyle(
-                            color: Theme.of(context).primaryColor.withOpacity(0.8),
-                            fontWeight: FontWeight.w700,
-                            fontSize: 15
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  IconButton(onPressed: (){
-                    showDialog(context: context, builder: (_)=>AlertDialog(
-                      title: Text("Delete institute"),
-                      content: Text("Are you sure you want to delete this institute?"),
-                     actions: [
-                       TextButton(onPressed: (){
-                         Navigator.pop(context);
-                       }, child: Text("No")),
-                       TextButton(onPressed: (){
-                         Provider.of<DbService>(context,listen: false).removeInstitute(context, widget.institute.id!);
-                         Navigator.pop(context);
-                       }, child: Text("Yes")),
-                     ],
-                    ));
-
-                  }, icon: Icon(CupertinoIcons.delete,color: Theme.of(context).primaryColor,))
-                ],
-              ),
-
-              const SizedBox(height: 16),
-
-              /// address.
-              Row(
-                children: [
-                  const Icon(Icons.location_on_outlined),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(widget.institute.address),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 8),
-
-              /// contacthere
-              Row(
-                children: [
-                  const Icon(Icons.phone_outlined),
-                  const SizedBox(width: 8),
-                  Text(widget.institute.contact.toString()),
-                ],
-              ),
-
-              const SizedBox(height: 16),
-
-              Divider(color: Colors.grey.shade300),
-
-              const SizedBox(height: 12),
-
-              /// otherstats
-              Row(
-                mainAxisAlignment:
-                MainAxisAlignment.spaceBetween,
-                children: [
-                  _stat(
-                    Icons.school,
-                    widget.students.toString(),
-                    "Students",
-                  ),
-                  _stat(
-                    Icons.person,
-                    widget.faculty.toString(),
-                    "Faculty",
-                  ),
-                  _stat(
-                    Icons.admin_panel_settings,
-                    widget.admins.toString(),
-                    "Admins",
-                  ),
-                  _stat(
-                    Icons.apartment,
-                    widget.departments.toString(),
-                    "Departments",
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 18),
-
-              /// footerHere
-              Row(
-                mainAxisAlignment:
-                MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    "active since :${DateFormat('dd MMM yyyy').format(widget.institute.created_at)}",
-                    style: TextStyle(
-                      color: Colors.grey.shade600,
-                    ),
-                  ),
-
-                  FilledButton.icon(
-                    style: ButtonStyle(
-                      backgroundColor: MaterialStateProperty.all(
-                        Theme.of(context).primaryColor,
                       ),
-                    ),
-                    onPressed: () {
-                      Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_)=>
-                          InsAdminDashboard(insAdmin: widget.insAdmin,institute: widget.institute,)), (t)=>false);
-                    },
-                    icon: const Icon(Icons.arrow_forward),
-                    label: const Text("Open"),
+
+                      const SizedBox(height: 4),
+
+                      Text(
+                        "${getCapName(widget.insAdmin.name)} (Institute Admin)",
+                        style: TextStyle(
+                          color: Theme.of(context).primaryColor.withOpacity(0.8),
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            ],
-          ),
+                ),
+                IconButton(onPressed: (){
+                  showDialog(context: context, builder: (_)=>AlertDialog(
+                    title: Text("Delete institute"),
+                    content: Text("Are you sure you want to delete this institute?"),
+                   actions: [
+                     ElevatedButton(
+                         style: ButtonStyle(
+                           backgroundColor: MaterialStateProperty.all(Theme.of(context).primaryColor),
+                         ),
+                         onPressed: (){
+                       Navigator.pop(context);
+                     }, child: Text("No",style: TextStyle(color: Colors.white),)),
+                     ElevatedButton(
+                         style: ButtonStyle(
+                           backgroundColor: MaterialStateProperty.all(Colors.red),
+                         ),
+                         onPressed: (){
+                       Provider.of<DbService>(context,listen: false).removeInstitute(context, widget.institute.id!);
+                       Navigator.pop(context);
+                     }, child: Text("Yes",style: TextStyle(color: Colors.white),)),
+                   ],
+                  ));
+
+                }, icon: Icon(CupertinoIcons.delete_simple,color: Theme.of(context).primaryColor,))
+              ],
+            ),
+
+            const SizedBox(height: 16),
+
+            /// address.
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Flexible(
+                  child: Row(
+                    children: [
+                      const Icon(Icons.location_on_outlined),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(widget.institute.address),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(onPressed: (){
+                  Navigator.push(context, MaterialPageRoute(builder: (_)=>Update_Institute(insAdmin: widget.insAdmin, institute: widget.institute)));
+                },icon:FaIcon(FontAwesomeIcons.edit,color: Theme.of(context).primaryColor,size: 18,)
+                  ,),
+              ],
+            ),
+
+            const SizedBox(height: 8),
+
+            /// contacthere
+            Row(
+              children: [
+                const Icon(Icons.phone_outlined),
+                const SizedBox(width: 8),
+                Text(widget.institute.contact.toString()),
+              ],
+            ),
+
+            const SizedBox(height: 16),
+
+            Divider(color: Theme.of(context).primaryColor.withOpacity(0.3),thickness: 2),
+
+            const SizedBox(height: 12),
+
+            /// otherstats
+            Row(
+              mainAxisAlignment:
+              MainAxisAlignment.spaceBetween,
+              children: [
+                _stat(
+                  Icons.school,
+                  widget.students.toString(),
+                  "Students",
+                ),
+                _stat(
+                  Icons.person,
+                  widget.faculty.toString(),
+                  "Faculty",
+                ),
+                _stat(
+                  Icons.admin_panel_settings,
+                  widget.admins.toString(),
+                  "Admins",
+                ),
+                _stat(
+                  Icons.apartment,
+                  widget.departments.toString(),
+                  "Departments",
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 18),
+
+            /// footerHere
+            Row(
+              mainAxisAlignment:
+              MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  "active since :${DateFormat('dd MMM yyyy').format(widget.institute.created_at)}",
+                  style: TextStyle(
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+
+                FilledButton.icon(
+                  style: ButtonStyle(
+                    backgroundColor: MaterialStateProperty.all(
+                      Theme.of(context).primaryColor,
+                    ),
+                  ),
+                  onPressed: () {
+                    Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_)=>
+                        InsAdminDashboard(insAdmin: widget.insAdmin,institute: widget.institute,)), (t)=>false);
+                  },
+                  icon: const Icon(Icons.arrow_forward),
+                  label: const Text("Open"),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );

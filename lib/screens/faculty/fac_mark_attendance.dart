@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:lottie/lottie.dart';
 import 'package:provider/provider.dart';
 import 'package:smas3/models/attendance.dart';
@@ -12,6 +13,7 @@ import 'package:smas3/models/lecture.dart';
 import 'package:smas3/screens/faculty/attend_view.dart';
 
 import '../../services/db_service.dart';
+import '../../services/geo_location_service.dart';
 // import the attendance-marking screen once it exists, e.g.:
 // import 'mark_attendance_screen.dart';
 
@@ -232,23 +234,30 @@ class _FacMarkAttendanceTabState extends State<FacMarkAttendanceTab> {
                               lecture: lecture,
                               start: start,
                               end: end,
-                              onTapWhileOngoing: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (_) =>
-                                          AttendView(
-                                            lecture: lecture,
-                                            insAdminId: widget.insAdmin.id!,
-                                            instituteId: widget.institute.id!,
-                                            departmentId: entry.departmentId,
-                                            sessionId: entry.sessionId,
-                                            semesterId: entry.semesterId,
-                                            courseId: entry.courseId,
-                                          )
+                              onTapWhileOngoing: () async {
+                              Fluttertoast.showToast(msg: "validating your location");
+                              final bool inside = await GeofenceService.validateGeofence(
+                                context: context,
+                                targetLatitude: widget.institute.location['lat'],
+                                targetLongitude: widget.institute.location['long'],
+                              );
+                              if (!inside) return; // GeofenceService presumably already shows its own "too far" feedback
+
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => AttendView(
+                                    lecture: lecture,
+                                    insAdminId: widget.insAdmin.id!,
+                                    instituteId: widget.institute.id!,
+                                    departmentId: entry.departmentId,
+                                    sessionId: entry.sessionId,
+                                    semesterId: entry.semesterId,
+                                    courseId: entry.courseId,
                                   ),
-                                );
-                              },
+                                ),
+                              );
+                            },
                             );
                           },
                         ),
@@ -677,4 +686,4 @@ class _LectureStatusBadgeState extends State<_LectureStatusBadge> {
           child: Text("ongoing")));
     }
   }
-}
+}//Navigator

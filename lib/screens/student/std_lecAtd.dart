@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:collection/collection.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -341,12 +342,14 @@ class _LectureAttendanceSectionState extends State<LectureAttendanceSection> {
                     icon: CupertinoIcons.hand_raised_fill,
                     label: "Fingerprint",
                     busy: _busy,
-                    onTap: () {
-                      if(GeofenceService.validateGeofence(
+                    onTap: ()async {
+                      Fluttertoast.showToast(msg: "validating your location");
+                      bool inside=await GeofenceService.validateGeofence(
                           context: context,
                           targetLatitude: widget.institute.location['lat'],
                           targetLongitude: widget.institute.location['long']
-                      )){
+                      );
+                      if(inside){
                         _run(() => _db.studentCheckIn(
                           //
                             context, _lecture, widget.studentId, "fingerprint"));
@@ -360,13 +363,13 @@ class _LectureAttendanceSectionState extends State<LectureAttendanceSection> {
                     icon: CupertinoIcons.person_crop_circle_fill,
                     label: "Face ID",
                     busy: _busy,
-                    onTap: () {
-
-                      if(GeofenceService.validateGeofence(
+                    onTap: () async{
+                      bool isInside =await GeofenceService.validateGeofence(
                           context: context,
                           targetLatitude: widget.institute.location['lat'],
                           targetLongitude: widget.institute.location['long']
-                      )){
+                      );
+                      if(isInside){
                         _run(() => _db.studentCheckIn(
                             context, _lecture, widget.studentId, "facial")
                         );
@@ -509,8 +512,17 @@ class _LectureAttendanceSectionState extends State<LectureAttendanceSection> {
               icon: CupertinoIcons.checkmark_alt_circle_fill,
               label: "Mark Midpoint",
               busy: _busy || remaining.isNegative,
-              onTap: () =>
-                  _run(() => _db.studentMidPoint(context, _lecture, widget.studentId)),
+              onTap: ()async {
+                  bool isInside =await GeofenceService.validateGeofence(
+                  context: context,
+                  targetLatitude: widget.institute.location['lat'],
+                  targetLongitude: widget.institute.location['long']
+                );
+                  if(isInside){
+                    _run(() => _db.studentMidPoint(context, _lecture, widget.studentId));
+                  }
+               }
+
             ),
           ],
         ),
