@@ -6,6 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:smas3/maxins/rm_functions.dart';
 import 'package:smas3/models/Leave_Application_Model.dart';
 import 'package:smas3/models/announcement_model.dart';
 import 'package:smas3/models/attendance.dart';
@@ -1626,8 +1627,9 @@ class DbService with ChangeNotifier{
         }
         return;
       }
+      final lectureStart=RMFuncts.combineDateAndTime(lectureModel.dated, lectureModel.start_time);
       // late function marks student status late ,if he is 10 mins late
-      if(DateTime.now().difference(lectureModel.dated).inMinutes>10){
+      if(DateTime.now().difference(lectureStart).inMinutes>10){
         status_var="late";
       }else{
         status_var="present";
@@ -1953,7 +1955,107 @@ class DbService with ChangeNotifier{
 
   //lazmi::: Run once a lecture's end time has passed: any enrolled student with NO attendance record at all is written in as "absent". Safe to call more than once -- students who already have a record (present/late/absent) are left untouched.
 
+  finalizeLectureAttendance(BuildContext? context, LectureModel lectureModel) async {
+    try {
+      final dox = await indexDoc.doc(lectureModel.id).get();
+      if (!dox.exists) return;
+      if (dox.data()?['attendance_finalized'] == true) return; // already done
 
+      final insAdminId = dox.get("ins_admin_id");
+      final instituteId = dox.get("institute_id");
+      final departmentId = dox.get("department_id");
+      final sessionId = dox.get("session_id");
+      final semesterId = dox.get("semester_id");
+      final courseId = dox.get("course_id");
+
+      // Fast, single-collection roster lookup -- see class-level note.
+      final rosterSnap = await indexDoc
+          .where("role", isEqualTo: "student")
+          .where("ins_admin_id", isEqualTo: insAdminId)
+          .where("institute_id", isEqualTo: instituteId)
+          .where("department_id", isEqualTo: departmentId)
+          .where("session_id", isEqualTo: sessionId)
+          .where("semester_id", isEqualTo: semesterId)
+          .get();
+      final rosterIds = rosterSnap.docs.map((d) => d.id).toList();
+      if (rosterIds.isEmpty) return;
+
+      final currentAttendance = lectureModel.attendance ?? [];
+      final bySid = {for (var a in currentAttendance) a.sid: a};
+
+      bool changed = false;
+      final finalAttendance = <Attendance>[];
+
+      for (final sid in rosterIds) {
+        final existing = bySid[sid];
+        final complete = existing != null &&
+            existing.mid_point == true &&
+            existing.checkin != null &&
+            existing.checkout != null;
+
+        if (complete) {
+          finalAttendance.add(existing);
+          continue;
+        }
+
+        changed = true;
+        finalAttendance.add(Attendance(
+          sid: sid,
+          checkin: existing?.checkin, // keep for the audit trail if they at least checked in
+          checkout: null,
+          mid_point: existing?.mid_point,
+          method: existing?.method ?? 'auto',
+          status: 'absent',
+        ));
+      }
+
+      // Keep any records for students the roster query didn't return
+      // (e.g. since transferred out) rather than silently dropping them.
+      final rosterIdSet = rosterIds.toSet();
+      for (final a in currentAttendance) {
+        if (!rosterIdSet.contains(a.sid)) finalAttendance.add(a);
+      }
+
+      final lectureRef = dbref
+          .collection("ins_admins").doc(insAdminId)
+          .collection("institutes").doc(instituteId)
+          .collection("departments").doc(departmentId)
+          .collection("sessions").doc(sessionId)
+          .collection("semesters").doc(semesterId)
+          .collection("courses").doc(courseId)
+          .collection("lectures").doc(lectureModel.id);
+
+      if (!changed) {
+        // Nothing flipped, but stamp finalized so future calls short-circuit.
+        await indexDoc.doc(lectureModel.id).update({"attendance_finalized": true});
+        return;
+      }
+
+      final attendanceMaps =
+      finalAttendance.map((a) => a.toMap(onDate: lectureModel.dated)).toList();
+
+      final batch = FirebaseFirestore.instance.batch();
+      batch.update(lectureRef, {
+        "attendance": attendanceMaps,
+        "attendance_finalized": true,
+      });
+      batch.update(indexDoc.doc(lectureModel.id), {
+        "attendance_finalized": true,
+      });
+      await batch.commit();
+
+      lectureModel.attendance = finalAttendance;
+      notifyListeners();
+
+      if (context != null && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Attendance finalized for ${lectureModel.course}")),
+        );
+      }
+    } catch (e) {
+      print(e.toString());
+    }
+  }
   autoMarkRemainingAbsentees(BuildContext? context, LectureModel lectureModel,
       List<String> allStudentIds) async {
     try {
@@ -2008,7 +2110,8 @@ class DbService with ChangeNotifier{
       final currentAttendance = lectureModel.attendance ?? [];
 
       // late function marks student status late, if they are 10 mins late
-      String status_var = DateTime.now().difference(lectureModel.dated).inMinutes > 10
+      final lectureStart = RMFuncts.combineDateAndTime(lectureModel.dated, lectureModel.start_time);
+      String status_var = DateTime.now().difference(lectureStart).inMinutes > 10
           ? "late"
           : "present";
 

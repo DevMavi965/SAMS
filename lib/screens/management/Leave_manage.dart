@@ -194,21 +194,21 @@ class _Leave_manage_rState extends State<Leave_manage_r> {
           }),
         ],
       ),
-      floatingActionButton: FloatingActionButton(onPressed: (){
-        Provider.of<DbService>(context,listen: false).addStudentLeaveApplication(context, widget.insAdmin.id!, widget.institute.id!,
-        LeaveApplication(
-            appliedDate: DateTime.now(),
-            type: "medical",
-            fromDate: DateTime.now(),
-            tillDate: DateTime.now().add(Duration(days: 3)),
-            reason: "this is reason",
-            status: "pending",
-            std_name: "sadia",
-            std_id: "5650",
-            approvedby: null
-        )
-        );
-      },child: Icon(Icons.add),),
+      // floatingActionButton: FloatingActionButton(onPressed: (){
+      //   Provider.of<DbService>(context,listen: false).addStudentLeaveApplication(context, widget.insAdmin.id!, widget.institute.id!,
+      //   LeaveApplication(
+      //       appliedDate: DateTime.now(),
+      //       type: "medical",
+      //       fromDate: DateTime.now(),
+      //       tillDate: DateTime.now().add(Duration(days: 3)),
+      //       reason: "this is reason",
+      //       status: "pending",
+      //       std_name: "sadia",
+      //       std_id: "5650",
+      //       approvedby: null
+      //   )
+      //   );
+      // },child: Icon(Icons.add),),
     );
   }
 

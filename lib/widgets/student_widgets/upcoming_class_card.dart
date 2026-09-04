@@ -83,7 +83,7 @@ class _UpcomingClassCardState extends State<UpcomingClassCard> {
     _timer?.cancel();
     super.dispose();
   }
-
+//room
   DateTime get _start =>
       _combine(widget.lectureModel.dated, widget.lectureModel.start_time);
   DateTime get _end =>
@@ -199,10 +199,10 @@ class _UpcomingClassCardState extends State<UpcomingClassCard> {
                             text: "${_pad2(lectureModel.start_time.hour)}:${_pad2(lectureModel.start_time.minute)}"
                                 " - ${_pad2(lectureModel.end_time.hour)}:${_pad2(lectureModel.end_time.minute)}",
                           ),
-                          if (lectureModel.room != null && lectureModel.room!.isNotEmpty)
+                          if (lectureModel.room != null && lectureModel.room.isNotEmpty)
                             _InfoChip(
                               icon: CupertinoIcons.location_solid,
-                              text: lectureModel.room!,
+                              text: "room ${lectureModel.room}",
                             ),
                         ],
                       ),

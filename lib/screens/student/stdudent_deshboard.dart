@@ -184,7 +184,10 @@ class _StudentDeshboardState extends State<StudentDeshboard> {
 
 
   List<Widget> get _screens => [
-    StdHome(student: widget.student),
+    StdHome(
+        insAdmin: insAdmin!,
+        institute: institute!,
+        student: widget.student),
     Scheduletab(
       insAdmin: insAdmin!,
       institute: institute!,

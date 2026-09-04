@@ -14,6 +14,7 @@ DateTime _combine(DateTime date, TimeOfDay time) {
 }
 
 String _pad2(int n) => n.toString().padLeft(2, '0');
+
 String _dateLabel(DateTime date) {
   final now = DateTime.now();
   if (DateUtils.isSameDay(date, now)) return "Today";
@@ -29,21 +30,22 @@ class _StatusInfo {
   const _StatusInfo(this.label, this.color, this.icon);
 }
 
-class UpcomingClassCardFacFac extends StatefulWidget {
+
+class LectureCardFac extends StatefulWidget {
   final LectureModel lectureModel;
   final String? studentId;
 
-  const UpcomingClassCardFacFac({
+  const LectureCardFac({
     super.key,
     required this.lectureModel,
     this.studentId,
   });
 
   @override
-  State<UpcomingClassCardFacFac> createState() => _UpcomingClassCardFacFacState();
+  State<LectureCardFac> createState() => _LectureCardFacState();
 }
 
-class _UpcomingClassCardFacFacState extends State<UpcomingClassCardFacFac> {
+class _LectureCardFacState extends State<LectureCardFac> {
   Timer? _timer;
 
   @override
@@ -102,6 +104,9 @@ class _UpcomingClassCardFacFacState extends State<UpcomingClassCardFacFac> {
       case _LectureState.notConducted:
         return const _StatusInfo("Not conducted", Colors.grey, CupertinoIcons.minus_circle);
       case _LectureState.completed:
+        if (widget.studentId == null) {
+          return _facultySummary(context);
+        }
         switch (_attendanceStatus) {
           case 'present':
             return _StatusInfo(
@@ -116,6 +121,23 @@ class _UpcomingClassCardFacFacState extends State<UpcomingClassCardFacFac> {
             return const _StatusInfo("Not marked", Colors.grey, CupertinoIcons.question_circle);
         }
     }
+  }
+
+
+  _StatusInfo _facultySummary(BuildContext context) {
+    final attendance = widget.lectureModel.attendance ?? [];
+    final total = attendance.length;
+    final present =
+        attendance.where((a) => a.status == 'present' || a.status == 'late').length;
+    final ratio = total > 0 ? present / total : 0.0;
+
+    final color = ratio >= 0.75
+        ? Theme.of(context).primaryColor
+        : ratio >= 0.5
+        ? Colors.orange
+        : Colors.red;
+
+    return _StatusInfo("$present/$total present", color, CupertinoIcons.chart_bar_alt_fill);
   }
 
   @override
@@ -142,8 +164,6 @@ class _UpcomingClassCardFacFacState extends State<UpcomingClassCardFacFac> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Status-colored accent bar — the card reads at a glance
-              // before you even read the pill.
               Container(width: 5, color: status.color),
               Expanded(
                 child: Container(

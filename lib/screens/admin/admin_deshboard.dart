@@ -30,7 +30,7 @@ class _AdminDeshboardState extends State<AdminDeshboard> {
   ];
   late List<Widget> screens=[
    AdminHome(insAdmin:insAdmin!,institute:institute!,admin: widget.admin,),
-    AdminReports(),
+    AdminReports(insAdmin:insAdmin!,institute:institute!,admin: widget.admin,),
     AdminAnnouncements(insAdmin:insAdmin!,institute: institute!,),
     AdminProfile(admin: widget.admin,)
 

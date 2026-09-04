@@ -102,4 +102,8 @@ mixin RMFuncts{
     if (now.isAfter(end))    return "completed";
     return "ongoing";
   }
+  static DateTime combineDateAndTime(DateTime date, TimeOfDay time) {
+    return DateTime(date.year, date.month, date.day, time.hour, time.minute);
+  }
+
 }

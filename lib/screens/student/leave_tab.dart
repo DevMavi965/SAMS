@@ -141,6 +141,7 @@ class _LeaveTabState extends State<LeaveTab> {
               if (snapshot.hasData) {
                 List<LeaveApplication> leaveApplications = [];
                 for (var leave in snapshot.data!.docs) {
+                  if (leave['student_id'] != widget.student.id) continue;
                   leaveApplications.add(LeaveApplication(
                     appliedDate: leave['applied_date'].toDate(),
                     type: leave['type'],

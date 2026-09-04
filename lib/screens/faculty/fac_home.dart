@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -8,11 +10,13 @@ import 'package:smas3/models/fac_model.dart';
 import 'package:smas3/models/lecture.dart';
 import 'package:smas3/widgets/fac_widgets/fac_class_card.dart';
 import 'package:smas3/widgets/fac_widgets/fac_home_grid.dart';
+import 'package:smas3/widgets/student_widgets/upcoming_class_card.dart';
 
 import '../../models/department.dart';
 import '../../models/ins_admin.dart';
 import '../../models/institute.dart';
 import '../../services/db_service.dart';
+import '../../services/notification_helper.dart';
 
 class FacHomeTab extends StatefulWidget {
   final InsAdmin insAdmin;
@@ -38,6 +42,11 @@ class _FacHomeTabState extends State<FacHomeTab> {
   // 5 separate uncached Futures that were each re-triggered on every
   // rebuild and each re-fetching the same lecture docs independently.
   late Future<Map<String, dynamic>> _weeklyStatsFuture;
+
+  // One in-app Timer per today's lecture, firing at that lecture's end
+  // time to auto-finalize its attendance (see _armAutoFinalize below).
+  // Cancelled in dispose so they don't fire against an unmounted state.
+  final List<Timer> _autoFinalizeTimers = [];
 
   // ---- shared helpers for parsing the "attendance" field stored on a lecture doc ----
 
@@ -142,6 +151,22 @@ class _FacHomeTabState extends State<FacHomeTab> {
 
           todaysLectures.add(_lectureFromDoc(lectureDoc.id, lectureDoc.data()!));
         }
+      }//Today
+      try{
+        for (var lecture in todaysLectures) {
+          await scheduleLectureNotificationBeforeStart(lecture);
+          await scheduleLectureNotificationStart(lecture);
+          await scheduleLectureNotificationEnd(lecture);
+          await scheduleLectureNotificationBeforeEnd(lecture);
+        }
+      }catch(e){
+        print("fac schedule error:$e");
+      }
+
+      // Arm (or immediately run) automatic attendance finalization for
+      // each of today's lectures — see _armAutoFinalize below.
+      for (var lecture in todaysLectures) {
+        _armAutoFinalize(lecture);
       }
 
       return todaysLectures;
@@ -149,6 +174,22 @@ class _FacHomeTabState extends State<FacHomeTab> {
       print(e.toString());
       return [];
     }
+  }
+  void _armAutoFinalize(LectureModel lecture) {
+    final dbService = Provider.of<DbService>(context, listen: false);
+    final end = _combineDateAndTime(lecture.dated, lecture.end_time);
+    final now = DateTime.now();
+
+    if (!now.isBefore(end)) {
+      dbService.finalizeLectureAttendance(null, lecture);
+      return;
+    }
+
+    final timer = Timer(end.difference(now), () {
+      if (!mounted) return;
+      dbService.finalizeLectureAttendance(null, lecture);
+    });
+    _autoFinalizeTimers.add(timer);
   }
 
   @override
@@ -158,6 +199,14 @@ class _FacHomeTabState extends State<FacHomeTab> {
     _weeklyStatsFuture = _computeWeeklyStats(
       context, widget.insAdmin.id!, widget.institute.id!, widget.department.id!,
     );
+  }
+
+  @override
+  void dispose() {
+    for (final t in _autoFinalizeTimers) {
+      t.cancel();
+    }
+    super.dispose();
   }
 
   @override
@@ -220,7 +269,7 @@ class _FacHomeTabState extends State<FacHomeTab> {
               physics: NeverScrollableScrollPhysics(),
               itemCount: snapshot.data!.length,
               itemBuilder: (context, index) {
-                return FacClassCard( lectureModel:snapshot.data![index],);
+                return UpcomingClassCard( lectureModel:snapshot.data![index],);
               },
             );
           },
@@ -416,9 +465,7 @@ class _FacHomeTabState extends State<FacHomeTab> {
     ));
   }
 
-  /// Runs the shared "lectures this week for this department" scan once and
-  /// hands back the raw index docs, so the stat helpers below don't each
-  /// repeat the same Firestore round trip.
+
   Future<List<QueryDocumentSnapshot<Map<String, dynamic>>>> _lectureIndexDocsThisWeek(
       BuildContext context, String insAdminId, String instituteId, String departmentId) async
   {
@@ -446,20 +493,7 @@ class _FacHomeTabState extends State<FacHomeTab> {
     }).toList();
   }
 
-  /// Single source of truth for every "this week" stat shown in the card:
-  /// total lectures, conducted lectures (+ % conducted), average attendance
-  /// rate, and present/late/absent counts. Replaces five separate,
-  /// uncached, inconsistently-defined queries that were each re-triggered
-  /// on every rebuild and each re-fetched the same lecture docs independently.
-  ///
-  /// "Conducted" is defined once, consistently, as: the lecture's scheduled
-  /// end time has passed — NOT whether a `status == "completed"` field was
-  /// set (that field is never actually written elsewhere in the app) and
-  /// NOT whether any attendance was recorded (a lecture with zero students
-  /// present is still a conducted lecture).
-  ///
-  /// A student counts as "present" only if status is present/late AND a
-  /// checkout was recorded — checked-in-but-never-checked-out does not count.
+
   Future<Map<String, dynamic>> _computeWeeklyStats(
       BuildContext context, String insAdminId, String instituteId, String departmentId) async {
     try {
@@ -513,9 +547,6 @@ class _FacHomeTabState extends State<FacHomeTab> {
       }
 
       final totalMarks = presentCount + absentCount; // presentCount already includes late
-      // Fraction 0.0–1.0 of attendance marks that were present/late — this is
-      // what the UI expects: raw value feeds LinearProgressIndicator directly,
-      // and ×100 for the percentage label.
       final avgAttendance = totalMarks > 0 ? (presentCount / totalMarks) : 0.0;
       final totalLectures = docs.length;
       final percentageConducted = totalLectures > 0 ? (conductedLectures / totalLectures) * 100 : 0;
@@ -543,13 +574,6 @@ class _FacHomeTabState extends State<FacHomeTab> {
     }
   }
 
-  /// Returns true once the lecture's scheduled end time has passed — the
-  /// single definition of "conducted" used throughout this stats block.
-  ///
-  /// Field names/types match `_lectureFromDoc` above: date lives in `dated`
-  /// (not `date`), and `end_time` is stored as a `Timestamp` (not a
-  /// {hour, minute} map) — a mismatch here previously threw inside the
-  /// try/catch and silently forced avg_attendance to 0.0 every time.
   bool _isLectureTimeElapsed(Map<String, dynamic> lectureData, DateTime now) {
     final dateTs = lectureData['dated'] as Timestamp?;
     final endTs = lectureData['end_time'] as Timestamp?;
@@ -601,5 +625,65 @@ class _FacHomeTabState extends State<FacHomeTab> {
         ],
       ),
     );
+  }
+  Future<void> scheduleLectureNotificationBeforeStart(LectureModel lecture) async {
+    // 10 min before the lecture
+    final lectureStart = _combineDateAndTime(
+      lecture.dated,
+      lecture.start_time,
+    );
+
+    // Don't schedule lectures that have already started
+    if (lectureStart.isBefore(DateTime.now())) {
+      return;
+    }
+
+    final notifDate=lectureStart.subtract(const Duration(minutes: 10));
+    await NotifHelper.scheduledNotification("lecture", "lecture start remainder:", " ${lecture.course} lecture starting [Room # ${lecture.room}] in 10 minutes ", notifDate,100);
+  }
+  Future<void> scheduleLectureNotificationStart(LectureModel lecture) async {
+    // 10 min before the lecture
+    final lectureStart = _combineDateAndTime(
+      lecture.dated,
+      lecture.start_time,
+    );
+
+    // Don't schedule lectures that have already started
+    if (lectureStart.isBefore(DateTime.now())) {
+      return;
+    }
+    await NotifHelper.scheduledNotification("lecture", "lecture-start reminder :", " ${lecture.course} lecture started in [Room # ${lecture.room}], make sure to be at time", lectureStart,100);
+  }
+  Future<void> scheduleLectureNotificationEnd(LectureModel lecture) async {
+    // 10 min before the lecture
+    final lectureEnd = _combineDateAndTime(
+      lecture.dated,
+      lecture.end_time,
+    );
+
+    // Don't schedule lectures that have already started
+    if (lectureEnd.isBefore(DateTime.now())) {
+      return;
+    }
+    await NotifHelper.scheduledNotification("lecture", "chek-out remainder :", " ${lecture.course} lecture ended , make sure  students check-out ", lectureEnd,100);
+  }
+  Future<void> scheduleLectureNotificationBeforeEnd(LectureModel lecture) async {
+    // 10 min before the lecture
+    final lectureEnd = _combineDateAndTime(
+      lecture.dated,
+      lecture.end_time,
+    );
+
+    // Don't schedule lectures that have already started
+    if (lectureEnd.isBefore(DateTime.now())) {
+      return;
+    }
+
+    final notifDate=lectureEnd.subtract(const Duration(minutes: 5));
+    await NotifHelper.scheduledNotification("lecture", "lecture-ending remainder :", " ${lecture.course} lecture ending soon in few minutes , make sure students check-out ", notifDate,100);
+  }
+
+  DateTime _combineDateAndTime(DateTime date, TimeOfDay time) {
+    return DateTime(date.year, date.month, date.day, time.hour, time.minute);
   }
 }

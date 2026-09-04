@@ -49,7 +49,7 @@ class NotifHelper {
         notificationDetails: notificationDetails
     );
   }
-  static Future<void> scheduledNotification(String channel, String title, String body, DateTime dt) async {
+  static Future<void> scheduledNotification(String channel, String title, String body, DateTime dt,int id) async {
     AndroidNotificationDetails android = AndroidNotificationDetails("channelId", channel);
     DarwinNotificationDetails ios = DarwinNotificationDetails();
     NotificationDetails notificationDetails = NotificationDetails(android: android, iOS: ios);
@@ -62,7 +62,6 @@ class NotifHelper {
       return;
     }
 
-    final id = Random().nextInt(5000);
     await notificationsPlugin.zonedSchedule(
       id: id,
       title: title,

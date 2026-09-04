@@ -590,7 +590,6 @@ class _AdminHomeState extends State<AdminHome> {
               ),
             ),
           ),
-
         ],
       ),
       SizedBox(height: 35,),

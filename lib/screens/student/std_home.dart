@@ -7,9 +7,12 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:smas3/maxins/rm_functions.dart';
 import 'package:smas3/models/announcement_model.dart';
+import 'package:smas3/models/ins_admin.dart';
+import 'package:smas3/models/institute.dart';
 import 'package:smas3/models/lecture.dart';
 import 'package:smas3/models/course.dart';
 import 'package:smas3/screens/student/std_lecAtd.dart';
+import 'package:smas3/services/geo_location_service.dart';
 
 
 import '../../models/attendance.dart';
@@ -94,9 +97,11 @@ class _StudentStats {
 }
 
 class StdHome extends StatefulWidget {
-  const StdHome({super.key,required this.student});
+  const StdHome({super.key,required this.student, required this.insAdmin, required this.institute});
 
   final Student student;
+  final InsAdmin insAdmin;
+  final Institute institute;
 
   @override
   State<StdHome> createState() => _StdHomeState();
@@ -169,7 +174,7 @@ class _StdHomeState extends State<StdHome> {
     }
 
    final notifDate=lectureStart.subtract(const Duration(minutes: 10));
-    await NotifHelper.scheduledNotification("lecture", "chek-in reminder :", " ${lecture.course} lecture starting [Room # ${lecture.room}] in 10 minutes , make sure to not be mark late", notifDate);
+    await NotifHelper.scheduledNotification("lecture", "chek-in reminder :", " ${lecture.course} lecture starting [Room # ${lecture.room}] in 10 minutes , make sure to not be mark late", notifDate,200);
   }
   Future<void> scheduleLectureNotificationStart(LectureModel lecture) async {
     // 10 min before the lecture
@@ -182,7 +187,7 @@ class _StdHomeState extends State<StdHome> {
     if (lectureStart.isBefore(DateTime.now())) {
       return;
     }
-    await NotifHelper.scheduledNotification("lecture", "chek-in reminder :", " ${lecture.course} lecture started in [Room # ${lecture.room}], make sure to not be mark late", lectureStart);
+    await NotifHelper.scheduledNotification("lecture", "chek-in reminder :", " ${lecture.course} lecture started in [Room # ${lecture.room}], make sure to not be mark late", lectureStart,200);
   }
   Future<void> scheduleLectureNotificationEnd(LectureModel lecture) async {
     // 10 min before the lecture
@@ -195,7 +200,7 @@ class _StdHomeState extends State<StdHome> {
     if (lectureEnd.isBefore(DateTime.now())) {
       return;
     }
-    await NotifHelper.scheduledNotification("lecture", "chek-out remainder :", " ${lecture.course} lecture ended , make sure to check-out", lectureEnd);
+    await NotifHelper.scheduledNotification("lecture", "chek-out remainder :", " ${lecture.course} lecture ended , make sure to check-out", lectureEnd,200);
   }
   Future<void> scheduleLectureNotificationBeforeEnd(LectureModel lecture) async {
     // 10 min before the lecture
@@ -210,7 +215,7 @@ class _StdHomeState extends State<StdHome> {
     }
 
    final notifDate=lectureEnd.subtract(const Duration(minutes: 5));
-    await NotifHelper.scheduledNotification("lecture", "chek-in remainder :", " ${lecture.course} lecture ending soon in few minutes , make sure to check-out", notifDate);
+    await NotifHelper.scheduledNotification("lecture", "chek-in remainder :", " ${lecture.course} lecture ending soon in few minutes , make sure to check-out", notifDate,200);
   }
 
 
@@ -478,9 +483,16 @@ class _StdHomeState extends State<StdHome> {
                     Column(
                       children: [
                         InkWell(
-                          child: UpcomingClassCard(lectureModel: lecture, studentId: studentId),
+                          child: UpcomingClassCard(
+                              lectureModel: lecture,
+                              studentId: studentId
+                          ),
                         ),
-                        LectureAttendanceSection(lectureModel: lecture, studentId: studentId),
+                        LectureAttendanceSection(
+                            insAdmin: widget.insAdmin,
+                            institute: widget.institute,
+                            lectureModel: lecture,
+                            studentId: studentId),
                       ],
                     ),
                 ],
@@ -517,12 +529,17 @@ class _WelcomeHeader extends StatelessWidget {
                 "Welcome back!",
                 style: TextStyle(fontSize: 13, color: Colors.black54),
               ),
-              Text(
-                RMFuncts.getSentenceCase(studentName),
-                style: const TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w500,
-                ),
+              Row(
+                children: [
+                  Text(
+                    RMFuncts.getSentenceCase(studentName),
+                    style: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    
+                  ),
+                ],
               ),
               const Text(
                 "Have a productive day!",
@@ -680,7 +697,7 @@ class _TodayAttendanceCard extends StatelessWidget {
     );
   }
 }
-
+// x=
 class _StatItem extends StatelessWidget {
   const _StatItem({
     required this.icon,
