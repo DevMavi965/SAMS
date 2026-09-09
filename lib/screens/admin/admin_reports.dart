@@ -26,8 +26,6 @@ class _AdminReportsState extends State<AdminReports> {
   late final CollectionReference indexDocRef;
   late final _AttendanceAggregator _aggregator;
 
-  static const weekdayLabels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-
   static const List<Color> palette = [
     Color.fromARGB(255, 0, 153, 136),
     Color(0xFFFF6B6B),
@@ -105,7 +103,7 @@ class _AdminReportsState extends State<AdminReports> {
                   }
 
                   final deptStats = _aggregator.computeDepartmentStats();
-                  final weekly = _aggregator.computeWeeklyPercentages();
+                  final weeklyPoints = _aggregator.computeWeeklyPercentages();
                   final overallPercent = _aggregator.computeOverallPercentage();
                   final conductedCount = _aggregator.computeConductedLectureCount();
                   final todayStats = _aggregator.computeTodayStats();
@@ -162,8 +160,8 @@ class _AdminReportsState extends State<AdminReports> {
                           const SizedBox(height: 20),
 
                           AdminCustomLinechart(
-                            days: weekdayLabels,
-                            daily_attendance_percentage: weekly,
+                            days: weeklyPoints.map((e) => e.key).toList(),
+                            daily_attendance_percentage: weeklyPoints.map((e) => e.value).toList(),
                           ),
                           const SizedBox(height: 20),
 
@@ -216,7 +214,6 @@ class _AdminReportsState extends State<AdminReports> {
                                 }),
                                 breakdown: _aggregator.computeDepartmentBreakdown(row["id"]),
                                 trend: _aggregator.computeDeptWeeklyTrend(row["id"]),
-                                weekdayLabels: weekdayLabels,
                               ),
 
                           const SizedBox(height: 20),
@@ -463,6 +460,10 @@ class _GroupedAnalyticsChart extends StatelessWidget {
 // Interactive, expandable department card — real present/late/absent
 // counts and a real per-department 7-day trend, both computed straight
 // from live lecture data (no placeholders).
+//
+// `trend` now carries its own weekday labels (List<MapEntry<String, double>>)
+// instead of a separately-passed static weekdayLabels list, since the
+// labels must match whichever 5 real weekdays the trend actually covers.
 // ---------------------------------------------------------------------------
 
 class _DepartmentDetailCard extends StatelessWidget {
@@ -472,8 +473,7 @@ class _DepartmentDetailCard extends StatelessWidget {
   final bool expanded;
   final VoidCallback onTap;
   final Map<String, int> breakdown; // present, late, absent, total
-  final List<double> trend; // 7 values
-  final List<String> weekdayLabels;
+  final List<MapEntry<String, double>> trend; // (weekday label, percent)
 
   const _DepartmentDetailCard({
     super.key,
@@ -484,7 +484,6 @@ class _DepartmentDetailCard extends StatelessWidget {
     required this.onTap,
     required this.breakdown,
     required this.trend,
-    required this.weekdayLabels,
   });
 
   @override
@@ -600,7 +599,7 @@ class _DepartmentDetailCard extends StatelessWidget {
             ),
           ],
           const SizedBox(height: 14),
-          Text("Last 7 days", style: TextStyle(fontSize: 11, color: Colors.grey.shade600, fontWeight: FontWeight.w600)),
+          Text("Last 5 class days", style: TextStyle(fontSize: 11, color: Colors.grey.shade600, fontWeight: FontWeight.w600)),
           const SizedBox(height: 6),
           SizedBox(
             height: 70,
@@ -620,8 +619,8 @@ class _DepartmentDetailCard extends StatelessWidget {
                       reservedSize: 18,
                       getTitlesWidget: (v, meta) {
                         final i = v.toInt();
-                        if (i < 0 || i >= weekdayLabels.length) return const SizedBox();
-                        return Text(weekdayLabels[i], style: const TextStyle(fontSize: 9));
+                        if (i < 0 || i >= trend.length) return const SizedBox();
+                        return Text(trend[i].key, style: const TextStyle(fontSize: 9));
                       },
                     ),
                   ),
@@ -633,7 +632,7 @@ class _DepartmentDetailCard extends StatelessWidget {
                     barWidth: 2,
                     dotData: const FlDotData(show: false),
                     belowBarData: BarAreaData(show: true, color: Theme.of(context).primaryColor.withOpacity(0.12)),
-                    spots: [for (int i = 0; i < trend.length; i++) FlSpot(i.toDouble(), trend[i])],
+                    spots: [for (int i = 0; i < trend.length; i++) FlSpot(i.toDouble(), trend[i].value)],
                   ),
                 ],
               ),
@@ -757,12 +756,25 @@ class _StatCard extends StatelessWidget {
 // ---------------------------------------------------------------------------
 // Live attendance aggregator.
 //
-// Extended from the original: each lecture entry now also carries
-// session_id/semester_id (already present on the indexDoc pointer, just
-// wasn't being kept before), and the aggregator lazily fetches the real
-// session `name` and semester `semester_no` the first time each id is
-// seen -- one-time reads, cached, never re-fetched. Everything else stays
-// realtime via the existing per-lecture snapshot listeners.
+// FIX (this revision): every "has this lecture happened yet?" check used
+// to trust the lecture doc's stored `status` field (e.g. "upcoming").
+// That field is written once at creation and never updated afterwards, so
+// a lecture that was actually conducted (and has real attendance data)
+// could still read `status: "upcoming"` forever — silently dropping it
+// from every stat below (overall %, department %, today's stats, weekly
+// chart, conducted-lecture count). Replaced every such check with
+// `_isConducted`, which instead looks at whether the lecture actually has
+// attendance entries recorded — a signal that reflects reality regardless
+// of whether `status` was ever rewritten.
+//
+// FIX (this revision): `computeWeeklyPercentages` / `computeDeptWeeklyTrend`
+// used to plot the trailing 7 *calendar* days against a hardcoded
+// Mon..Sun label array, which only lined up if "today" happened to be a
+// Sunday, and always included Saturday/Sunday even though no lectures are
+// held then (so those slots always read 0%, which reads as a data problem
+// rather than "no class"). Both now walk backwards from today, keep only
+// weekdays, take the most recent 5, and derive each label from the actual
+// date — so labels are always correct and weekends never appear.
 // ---------------------------------------------------------------------------
 
 class _DeptAttendance {
@@ -775,6 +787,8 @@ class _AttendanceAggregator {
   final DbService db;
   final String insAdminId;
   final String instituteId;
+
+  static const _weekdayAbbrev = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
   _AttendanceAggregator({
     required this.db,
@@ -923,11 +937,18 @@ class _AttendanceAggregator {
     return s == 'present' || s == 'late';
   }
 
+  /// Whether a lecture has actually happened — derived from whether
+  /// attendance was recorded, NOT from the (unreliable, never-updated)
+  /// `status` field. See class doc comment above.
+  static bool _isConducted(Map<String, dynamic> l) {
+    final attendance = (l['attendance'] as List?) ?? [];
+    return attendance.isNotEmpty;
+  }
+
   Map<String, _DeptAttendance> computeDepartmentStats() {
     final Map<String, _DeptAttendance> stats = {};
     for (final l in _lectureData.values) {
-      final status = (l['status'] ?? '').toString();
-      if (status == 'upcoming') continue;
+      if (!_isConducted(l)) continue;
       final deptId = l['department_id']?.toString();
       if (deptId == null) continue;
 
@@ -944,8 +965,7 @@ class _AttendanceAggregator {
   Map<String, _DeptAttendance> computeSessionStats() {
     final Map<String, _DeptAttendance> stats = {};
     for (final l in _lectureData.values) {
-      final status = (l['status'] ?? '').toString();
-      if (status == 'upcoming') continue;
+      if (!_isConducted(l)) continue;
       final sessionId = l['session_id']?.toString();
       if (sessionId == null) continue;
 
@@ -962,8 +982,7 @@ class _AttendanceAggregator {
   Map<String, _DeptAttendance> computeSemesterStats() {
     final Map<String, _DeptAttendance> stats = {};
     for (final l in _lectureData.values) {
-      final status = (l['status'] ?? '').toString();
-      if (status == 'upcoming') continue;
+      if (!_isConducted(l)) continue;
       final semesterId = l['semester_id']?.toString();
       if (semesterId == null) continue;
 
@@ -983,8 +1002,7 @@ class _AttendanceAggregator {
     int present = 0, late = 0, absent = 0;
     for (final l in _lectureData.values) {
       if (l['department_id']?.toString() != deptId) continue;
-      final status = (l['status'] ?? '').toString();
-      if (status == 'upcoming') continue;
+      if (!_isConducted(l)) continue;
       final attendance = (l['attendance'] as List?) ?? [];
       for (final a in attendance) {
         final s = (a is Map ? a['status'] : null)?.toString();
@@ -1000,15 +1018,16 @@ class _AttendanceAggregator {
     return {'present': present, 'late': late, 'absent': absent, 'total': present + late + absent};
   }
 
-  List<double> computeDeptWeeklyTrend(String deptId) {
-    final now = DateTime.now();
-    final days = List.generate(7, (i) => DateTime(now.year, now.month, now.day - (6 - i)));
+  /// Last 5 real weekdays (Mon–Fri, walking back from today, skipping
+  /// Sat/Sun entirely) for one department, each paired with its own
+  /// correct weekday label.
+  List<MapEntry<String, double>> computeDeptWeeklyTrend(String deptId) {
+    final days = _lastFiveWeekdays();
     final Map<String, List<int>> perDay = {for (final d in days) _dayKey(d): [0, 0]};
 
     for (final l in _lectureData.values) {
       if (l['department_id']?.toString() != deptId) continue;
-      final status = (l['status'] ?? '').toString();
-      if (status == 'upcoming') continue;
+      if (!_isConducted(l)) continue;
 
       final tsRaw = l['dated'];
       if (tsRaw is! Timestamp) continue;
@@ -1021,20 +1040,24 @@ class _AttendanceAggregator {
       perDay[key]![1] += attendance.length;
     }
 
-    return days.map((d) {
-      final vals = perDay[_dayKey(d)]!;
-      return vals[1] == 0 ? 0.0 : (vals[0] / vals[1]) * 100;
-    }).toList();
+    return [
+      for (final d in days)
+        MapEntry(
+          _weekdayAbbrev[d.weekday - 1],
+          perDay[_dayKey(d)]![1] == 0 ? 0.0 : (perDay[_dayKey(d)]![0] / perDay[_dayKey(d)]![1]) * 100,
+        ),
+    ];
   }
 
-  List<double> computeWeeklyPercentages() {
-    final now = DateTime.now();
-    final days = List.generate(7, (i) => DateTime(now.year, now.month, now.day - (6 - i)));
+  /// Last 5 real weekdays across the whole institute, each paired with its
+  /// own correct weekday label. Weekends are never included, and the label
+  /// always matches the actual date it represents.
+  List<MapEntry<String, double>> computeWeeklyPercentages() {
+    final days = _lastFiveWeekdays();
     final Map<String, List<int>> perDay = {for (final d in days) _dayKey(d): [0, 0]};
 
     for (final l in _lectureData.values) {
-      final status = (l['status'] ?? '').toString();
-      if (status == 'upcoming') continue;
+      if (!_isConducted(l)) continue;
 
       final tsRaw = l['dated'];
       if (tsRaw is! Timestamp) continue;
@@ -1047,17 +1070,31 @@ class _AttendanceAggregator {
       perDay[key]![1] += attendance.length;
     }
 
-    return days.map((d) {
-      final vals = perDay[_dayKey(d)]!;
-      return vals[1] == 0 ? 0.0 : (vals[0] / vals[1]) * 100;
-    }).toList();
+    return [
+      for (final d in days)
+        MapEntry(
+          _weekdayAbbrev[d.weekday - 1],
+          perDay[_dayKey(d)]![1] == 0 ? 0.0 : (perDay[_dayKey(d)]![0] / perDay[_dayKey(d)]![1]) * 100,
+        ),
+    ];
+  }
+
+  /// Walks back from today far enough to gather the most recent 5
+  /// Monday–Friday dates, oldest first.
+  List<DateTime> _lastFiveWeekdays() {
+    final now = DateTime.now();
+    final candidates = <DateTime>[];
+    for (int i = 0; candidates.length < 5 && i < 14; i++) {
+      final d = DateTime(now.year, now.month, now.day - i);
+      if (d.weekday <= DateTime.friday) candidates.add(d);
+    }
+    return candidates.reversed.toList();
   }
 
   double computeOverallPercentage() {
     int present = 0, total = 0;
     for (final l in _lectureData.values) {
-      final status = (l['status'] ?? '').toString();
-      if (status == 'upcoming') continue;
+      if (!_isConducted(l)) continue;
       final attendance = (l['attendance'] as List?) ?? [];
       present += attendance.where(_isPresentLike).length;
       total += attendance.length;
@@ -1066,7 +1103,7 @@ class _AttendanceAggregator {
   }
 
   int computeConductedLectureCount() {
-    return _lectureData.values.where((l) => (l['status'] ?? '').toString() != 'upcoming').length;
+    return _lectureData.values.where(_isConducted).length;
   }
 
   /// Present/total across every lecture dated today (regardless of
@@ -1079,8 +1116,7 @@ class _AttendanceAggregator {
       if (tsRaw is! Timestamp) continue;
       final d = tsRaw.toDate();
       if (!(d.year == now.year && d.month == now.month && d.day == now.day)) continue;
-      final status = (l['status'] ?? '').toString();
-      if (status == 'upcoming') continue;
+      if (!_isConducted(l)) continue;
       final attendance = (l['attendance'] as List?) ?? [];
       present += attendance.where(_isPresentLike).length;
       total += attendance.length;
@@ -1094,7 +1130,7 @@ class _AttendanceAggregator {
     _indexSub?.cancel();
     for (final s in _lectureSubs.values) {
       s.cancel();
-    }//bar
+    }
     _controller.close();
   }
 }

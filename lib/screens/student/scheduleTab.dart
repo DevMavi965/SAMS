@@ -9,6 +9,7 @@ import 'package:smas3/models/institute.dart';
 import 'package:smas3/models/lecture.dart';
 import 'package:smas3/models/semester.dart';
 import 'package:smas3/models/session.dart';
+import 'package:smas3/models/student_model.dart';
 
 import '../../models/attendance.dart';
 import '../../services/db_service.dart';
@@ -42,14 +43,14 @@ class Scheduletab extends StatefulWidget {
   final Department department;
   final Session session;
   final Semester semester;
-
+  final Student student;
   const Scheduletab({
     super.key,
     required this.insAdmin,
     required this.institute,
     required this.department,
     required this.session,
-    required this.semester,
+    required this.semester, required this.student,
   });
 
   @override
@@ -300,7 +301,7 @@ class _ScheduletabState extends State<Scheduletab> {
                 return Column(
                   children: [
                     for (final lecture in dayLectures)
-                      UpcomingClassCard(lectureModel: lecture),
+                      UpcomingClassCard(lectureModel: lecture,studentId: widget.student.id,),
                   ],
                 );
               },

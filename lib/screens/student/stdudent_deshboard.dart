@@ -194,6 +194,7 @@ class _StudentDeshboardState extends State<StudentDeshboard> {
       department: department!,
       session: session!,
       semester: semester!,
+      student: widget.student,
     ),
     LeaveTab(student: widget.student,
       insAdmin: insAdmin!,

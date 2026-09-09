@@ -13,8 +13,10 @@ class GeofenceService {
       // 1. Check if location services are enabled
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
-       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Location services are disabled. Please turn on GPS")));
-       return false;
+        if(context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(
+              "Location services are disabled. Please turn on GPS")));
+        }return false;
       }
 
       // 2. Check and request permissions
@@ -22,14 +24,20 @@ class GeofenceService {
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
         if (permission == LocationPermission.denied) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Location permissions are denied.")));
+          if(context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text("Location permissions are denied.")));
+          }
           return false;
         }
       }
 
       if (permission == LocationPermission.deniedForever) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Location permissions are permanently denied, enable them in settings.")));
-       return false;
+        if(context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(
+              "Location permissions are permanently denied, enable them in settings.")));
+        }
+        return false;
       }
 
       // 3 Fetchiing high-accuracy current position
@@ -46,16 +54,27 @@ class GeofenceService {
       );
       print(currentPosition.toString());
       if (distanceInMeters <= allowedRadiusMeters) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Within boundary. You are ${distanceInMeters.toStringAsFixed(1)}m away (Max allowed: ${allowedRadiusMeters}m)'),backgroundColor: Theme.of(context).primaryColor,));
-        return true;
+        if(context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(
+              'Within boundary. You are ${distanceInMeters.toStringAsFixed(
+                  1)}m away (Max allowed: ${allowedRadiusMeters}m)'),
+            backgroundColor: Theme
+                .of(context)
+                .primaryColor,));
+        }return true;
       } else {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Out of bounds. You are ${distanceInMeters.toStringAsFixed(1)}m away (Max allowed: ${allowedRadiusMeters}m')));
-      return false;
+        if(context.mounted){
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(
+            'Out of bounds. You are ${distanceInMeters.toStringAsFixed(
+                1)}m away (Max allowed: ${allowedRadiusMeters}m')));
+      }return false;
       }
 
     } catch (e) {
       print("Error: $e");
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e")));
+      if(context.mounted){
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e")));
+      }
       return false;
     }
   }

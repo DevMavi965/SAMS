@@ -10,11 +10,15 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:smas3/models/ins_admin.dart';
 import 'package:smas3/models/institute.dart';
+import 'package:smas3/models/student_model.dart';
+import 'package:smas3/services/face_net_service/std_fac_checkin.dart';
+import 'package:smas3/services/face_net_service/std_fac_midp.dart';
 import 'package:smas3/services/geo_location_service.dart';
 
 import '../../models/attendance.dart';
 import '../../models/lecture.dart';
 import '../../services/db_service.dart';
+import '../../services/face_net_service/std_fac_check_out.dart';
 import '../../services/notification_helper.dart';
 
 /// Checkout is only allowed within this window around the lecture's
@@ -27,55 +31,25 @@ const Duration kCheckoutWindowAfter = Duration(minutes: 5);
 /// absent for the lecture.
 const Duration kMidpointWindowDuration = Duration(minutes: 5);
 
-/// Buffer kept clear at the start and end of the lecture so the window
-/// can never open in the first/last 5 minutes.
+/// Buffer kept clear at the end of the lecture so the window can never
+/// open in the last 5 minutes.
 const Duration kMidpointLectureBuffer = Duration(minutes: 5);
-
+//hasCheckedIn
 DateTime _combine(DateTime date, TimeOfDay time) =>
     DateTime(date.year, date.month, date.day, time.hour, time.minute);
 
 enum _LecState { upcoming, ongoing, completed }
 
-/// Attendance-actions section meant to sit directly below
-/// UpcomingClassCard for a given lecture/student pair.
-///
-/// - Ongoing lecture, no attendance record yet -> check-in buttons
-///   (fingerprint / face ID).
-/// - Ongoing lecture, checked in but this student's midpoint window has
-///   not opened yet -> locked card showing when the button will become
-///   available.
-/// - Ongoing lecture, midpoint window is open -> midpoint button + a
-///   countdown to when the window closes (opensAt + 5 min). Miss it and
-///   attendance flips to "absent" automatically.
-/// - Ongoing lecture, midpoint done -> checkout button, enabled only
-///   in the +/-5 minute window around the lecture's end time.
-/// - Completed lecture -> a read-only timeline of whatever the
-///   student actually did (checkin / midpoint / checkout), each line
-///   shown only if that step happened; nothing rendered at all if the
-///   student has no attendance record.
-///
-/// **Midpoint timing rule**
-/// Each student gets their own randomly-timed 5-minute window, chosen
-/// once between [lectureStart + 5 min] and [lectureEnd − 10 min] (so the
-/// 5-minute window itself never bleeds past lectureEnd − 5 min). The
-/// instant is generated locally on the student's device the first time
-/// it's needed and cached in on-device storage (SharedPreferences) --
-/// nothing is written to Firestore and nothing is derived from a shared
-/// seed, so two students in the same lecture never see the same window.
-///
-/// **Important**: the student must check in FIRST before the midpoint
-/// button becomes available, even if their random window has already
-/// opened.
 class LectureAttendanceSection extends StatefulWidget {
   const LectureAttendanceSection({
     super.key,
     required this.lectureModel,
-    required this.studentId, required this.insAdmin, required this.institute,
+    required this.student, required this.insAdmin, required this.institute,
   });
   final InsAdmin insAdmin;
   final Institute institute;
   final LectureModel lectureModel;
-  final String studentId;
+  final Student student;
 
   @override
   State<LectureAttendanceSection> createState() =>
@@ -90,8 +64,8 @@ class _LectureAttendanceSectionState extends State<LectureAttendanceSection> {
   bool _busy = false;
 
   // This student's locally-generated midpoint window for this lecture.
-  // Null until loaded/generated, or permanently null if the lecture is
-  // too short to fit a window at all.
+  // Null until loaded/generated (requires checkin first), or permanently
+  // null if there isn't enough time left after checkin to fit a window.
   DateTime? _midpointOpensAt;
   DateTime? _midpointClosesAt;
   bool _midpointWindowReady = false;
@@ -115,10 +89,21 @@ class _LectureAttendanceSectionState extends State<LectureAttendanceSection> {
       _midpointWindowReady = false;
       _midpointOpensAt = null;
       _midpointClosesAt = null;
+      _autoAbsentFired = false;
+      _initMidpointWindow();
+      return;
+    }
+
+    // Same lecture. If checkin just appeared (or changed), the window
+    // needs to be (re)computed against the new checkin time. Otherwise
+    // just re-evaluate the auto-absent timer (e.g. attendance changed
+    // in some other way).
+    final oldCheckin = _asDateTimeFor(oldWidget.lectureModel);
+    final newCheckin = _asDateTime(_myRecord?.checkin);
+
+    if (newCheckin != null && newCheckin != oldCheckin) {
       _initMidpointWindow();
     } else {
-      // Same lecture, but attendance may have just changed (e.g. the
-      // student just checked in) -> re-evaluate the auto-absent timer.
       _armAutoAbsentTimer();
     }
   }
@@ -146,32 +131,70 @@ class _LectureAttendanceSectionState extends State<LectureAttendanceSection> {
   }
 
   Attendance? get _myRecord => (_lecture.attendance ?? [])
-      .firstWhereOrNull((a) => a.sid == widget.studentId);
+      .firstWhereOrNull((a) => a.sid == widget.student.id);
 
   DateTime? _asDateTime(TimeOfDay? t) =>
       t == null ? null : _combine(_lecture.dated, t);
 
+  /// Same as [_asDateTime] but pulls the checkin off an arbitrary
+  /// [LectureModel] (used in [didUpdateWidget] to compare old vs new).
+  DateTime? _asDateTimeFor(LectureModel lecture) {
+    final record = (lecture.attendance ?? [])
+        .firstWhereOrNull((a) => a.sid == widget.student.id);
+    final t = record?.checkin;
+    return t == null ? null : _combine(lecture.dated, t);
+  }
+
   String get _midpointPrefsKey =>
-      "midpoint_window_${_lecture.id}_${widget.studentId}";
+      "midpoint_window_${_lecture.id}_${widget.student.id}";
+
+  String get _midpointCheckinBasisKey =>
+      "midpoint_window_checkin_${_lecture.id}_${widget.student.id}";
 
   /// Loads this student's local midpoint window from on-device storage,
   /// generating and persisting a fresh one the first time it's needed.
+  /// Requires a checkin timestamp to exist -- the window is anchored to
+  /// when the student actually checked in, not the scheduled lecture
+  /// start, so a late-but-valid checkin still gets a fair full window.
   Future<void> _initMidpointWindow() async {
-    final earliestOpen = _start.add(kMidpointLectureBuffer);
+    final checkinAt = _asDateTime(_myRecord?.checkin);
+
+    // Can't pick a window until the student has actually checked in.
+    if (checkinAt == null) {
+      if (mounted) {
+        setState(() {
+          _midpointWindowReady = false;
+          _midpointOpensAt = null;
+          _midpointClosesAt = null;
+        });
+      }
+      return;
+    }
+
+    final earliestOpen = checkinAt;
     final latestOpen =
     _end.subtract(kMidpointLectureBuffer + kMidpointWindowDuration);
 
     if (!earliestOpen.isBefore(latestOpen)) {
-      // Lecture too short for a midpoint window at all.
-      if (mounted) setState(() => _midpointWindowReady = true);
+      // Not enough time left between checkin and lecture end for a
+      // midpoint window at all.
+      if (mounted) {
+        setState(() {
+          _midpointWindowReady = true;
+          _midpointOpensAt = null;
+          _midpointClosesAt = null;
+        });
+      }
       return;
     }
 
     final prefs = await SharedPreferences.getInstance();
     final storedMs = prefs.getInt(_midpointPrefsKey);
+    final storedCheckinMs = prefs.getInt(_midpointCheckinBasisKey);
     DateTime opensAt;
 
     if (storedMs != null &&
+        storedCheckinMs == checkinAt.millisecondsSinceEpoch &&
         _isWithin(
           DateTime.fromMillisecondsSinceEpoch(storedMs),
           earliestOpen,
@@ -179,7 +202,7 @@ class _LectureAttendanceSectionState extends State<LectureAttendanceSection> {
         )) {
       opensAt = DateTime.fromMillisecondsSinceEpoch(storedMs);
     } else {
-      opensAt = _generateAndStore(prefs, earliestOpen, latestOpen);
+      opensAt = _generateAndStore(prefs, earliestOpen, latestOpen, checkinAt);
     }
 
     if (!mounted) return;
@@ -198,15 +221,16 @@ class _LectureAttendanceSectionState extends State<LectureAttendanceSection> {
       !v.isBefore(start) && !v.isAfter(end);
 
   /// Draws a fresh, unseeded random instant in [earliestOpen, latestOpen]
-  /// and caches it on-device so it's stable across rebuilds/restarts.
-  /// Unseeded (unlike the old lecture-id-hash approach) so every student
-  /// gets an independent draw -- no two students share a window.
-  DateTime _generateAndStore(
-      SharedPreferences prefs, DateTime earliestOpen, DateTime latestOpen) {
+  /// and caches it on-device (along with the checkin time it was derived
+  /// from) so it's stable across rebuilds/restarts. Unseeded so every
+  /// student gets an independent draw -- no two students share a window.
+  DateTime _generateAndStore(SharedPreferences prefs, DateTime earliestOpen,
+      DateTime latestOpen, DateTime checkinAt) {
     final windowSeconds = latestOpen.difference(earliestOpen).inSeconds;
     final offsetSeconds = Random().nextInt(windowSeconds);
     final opensAt = earliestOpen.add(Duration(seconds: offsetSeconds));
     prefs.setInt(_midpointPrefsKey, opensAt.millisecondsSinceEpoch);
+    prefs.setInt(_midpointCheckinBasisKey, checkinAt.millisecondsSinceEpoch);
     return opensAt;
   }
 
@@ -289,7 +313,7 @@ class _LectureAttendanceSectionState extends State<LectureAttendanceSection> {
       return;
     }
     _autoAbsentFired = true;
-    await _db.markAbsentForMissedMidpoint(null, _lecture, widget.studentId);
+    await _db.markAbsentForMissedMidpoint(null, _lecture, widget.student.id!);
     if (mounted) setState(() {});
   }
 
@@ -339,42 +363,45 @@ class _LectureAttendanceSectionState extends State<LectureAttendanceSection> {
               children: [
                 Expanded(
                   child: _ActionButton(
-                    icon: CupertinoIcons.hand_raised_fill,
-                    label: "Fingerprint",
-                    busy: _busy,
-                    onTap: ()async {
-                      Fluttertoast.showToast(msg: "validating your location");
-                      bool inside=await GeofenceService.validateGeofence(
-                          context: context,
-                          targetLatitude: widget.institute.location['lat'],
-                          targetLongitude: widget.institute.location['long']
-                      );
-                      if(inside){
-                        _run(() => _db.studentCheckIn(
-                          //
-                            context, _lecture, widget.studentId, "fingerprint"));
-                      }
-                    }
+                      icon: CupertinoIcons.hand_raised_fill,
+                      label: "Fingerprint",
+                      busy: _busy,
+                onTap: () async{
+                  bool isInside =await GeofenceService.validateGeofence(
+                      context: context,
+                      targetLatitude: widget.institute.location['lat'],
+                      targetLongitude: widget.institute.location['long']
+                  );
+                  if(isInside){
+                    _run(() => _db.studentCheckIn(
+                        context, _lecture, widget.student.id!, "facial")
+                    );
+                  }
+                }//33.587951929093414, 72.97910990043208
+
                   ),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: _ActionButton(
-                    icon: CupertinoIcons.person_crop_circle_fill,
-                    label: "Face ID",
-                    busy: _busy,
-                    onTap: () async{
-                      bool isInside =await GeofenceService.validateGeofence(
-                          context: context,
-                          targetLatitude: widget.institute.location['lat'],
-                          targetLongitude: widget.institute.location['long']
-                      );
-                      if(isInside){
-                        _run(() => _db.studentCheckIn(
-                            context, _lecture, widget.studentId, "facial")
+                      icon: CupertinoIcons.person_crop_circle_fill,
+                      label: "Face ID",
+                      busy: _busy,
+                      onTap: ()async {
+                        Fluttertoast.showToast(msg: "validating your location");
+                        bool inside=await GeofenceService.validateGeofence(
+                            context: context,
+                            targetLatitude: widget.institute.location['lat'],
+                            targetLongitude: widget.institute.location['long']
                         );
+                        if(inside){
+                          _run(() => Navigator.push(
+                              context, MaterialPageRoute(
+                              builder: (_)=>FaceAttendanceScreenChecIn(lecture:_lecture,  student: widget.student,)
+                          )
+                          ));
+                        }
                       }
-                    }
                   ),
                 ),
               ],
@@ -385,7 +412,7 @@ class _LectureAttendanceSectionState extends State<LectureAttendanceSection> {
     }
 
     // --- Case 2: Student was marked absent ---
-    if (record.status == 'absent') {
+    if (record.status == 'absent' && DateTime.now().isAfter(_end)) {
       return _card(
         child: const Text(
           "You missed the midpoint window and were marked absent for this lecture.",
@@ -415,13 +442,15 @@ class _LectureAttendanceSectionState extends State<LectureAttendanceSection> {
       final opensAt = _midpointOpensAt;
       final closesAt = _midpointClosesAt;
       final now = DateTime.now();
-
-      // Guard: lecture window too short to have a midpoint slot
+//_buildOngoing mid-point
+      // Guard: not enough time left after checkin for a midpoint slot
       if (opensAt == null || closesAt == null) {
         return _card(
-          child: const Text(
-            "Lecture is too short for a midpoint check.",
-            style: TextStyle(color: Colors.grey),
+          child: Text(
+            checkinAt == null
+                ? "Check in first to access midpoint"
+                : "Not enough time left for a midpoint check.",
+            style: const TextStyle(color: Colors.grey),
           ),
         );
       }
@@ -431,9 +460,8 @@ class _LectureAttendanceSectionState extends State<LectureAttendanceSection> {
           !now.isBefore(opensAt) && now.isBefore(closesAt);
       final bool canMarkMidpoint = hasCheckedIn && isMidpointWindowOpen;
 
-      // --- Phase 1: student hasn't checked in, window not yet open, or
-      // window already closed (and the auto-absent timer hasn't caught
-      // up yet) ---
+      // --- Phase 1: window not yet open, or already closed (and the
+      // auto-absent timer hasn't caught up yet) ---
       if (!canMarkMidpoint) {
         String message;
         IconData iconData;
@@ -444,7 +472,7 @@ class _LectureAttendanceSectionState extends State<LectureAttendanceSection> {
           iconData = CupertinoIcons.hand_raised_slash;
           iconColor = Colors.grey;
         } else if (now.isBefore(opensAt)) {
-          message = "Midpoint opens at ${DateFormat.jm().format(opensAt)}";
+          message = "You'll be notified when midpoint opens";
           iconData = CupertinoIcons.lock_fill;
           iconColor = Colors.grey;
         } else {
@@ -509,19 +537,26 @@ class _LectureAttendanceSectionState extends State<LectureAttendanceSection> {
             ),
             const SizedBox(height: 10),
             _ActionButton(
-              icon: CupertinoIcons.checkmark_alt_circle_fill,
-              label: "Mark Midpoint",
-              busy: _busy || remaining.isNegative,
-              onTap: ()async {
+                icon: CupertinoIcons.checkmark_alt_circle_fill,
+                label: "Mark Midpoint",
+                busy: _busy || remaining.isNegative,
+                onTap: ()async {
                   bool isInside =await GeofenceService.validateGeofence(
-                  context: context,
-                  targetLatitude: widget.institute.location['lat'],
-                  targetLongitude: widget.institute.location['long']
-                );
+                      context: context,
+                      targetLatitude: widget.institute.location['lat'],
+                      targetLongitude: widget.institute.location['long']
+                  );
                   if(isInside){
-                    _run(() => _db.studentMidPoint(context, _lecture, widget.studentId));
+                    _run(
+                            // _db.studentMidPoint(context, _lecture, widget.student.id)
+                            () => Navigator.push(
+                                context, MaterialPageRoute(
+                                builder: (_)=>FaceAttendanceScreenMidP(lecture:_lecture,  student: widget.student,)
+                            )
+                            )
+                    );
                   }
-               }
+                }
 
             ),
           ],
@@ -569,7 +604,7 @@ class _LectureAttendanceSectionState extends State<LectureAttendanceSection> {
                   label: "Fingerprint",
                   busy: _busy,
                   onTap: () => _run(() => _db.studentCheckOut(
-                      context, _lecture, widget.studentId, "fingerprint")),
+                      context, _lecture, widget.student.id!, "fingerprint")),
                 ),
               ),
               const SizedBox(width: 10),
@@ -578,8 +613,16 @@ class _LectureAttendanceSectionState extends State<LectureAttendanceSection> {
                   icon: CupertinoIcons.person_crop_circle_fill,
                   label: "Face ID",
                   busy: _busy,
-                  onTap: () => _run(() => _db.studentCheckOut(
-                      context, _lecture, widget.studentId, "facial")),
+                  //_db.studentCheckOut(
+                  //                       context, _lecture, widget.student.id!, "facial")
+                  onTap: () => _run(() => Navigator.push(
+                      context, MaterialPageRoute(
+                      builder: (_)=>FaceAttendanceScreenCheckOut(
+                          student: widget.student,
+                          lecture: _lecture)
+                  )
+                  )
+                  ),
                 ),
               ),
             ],

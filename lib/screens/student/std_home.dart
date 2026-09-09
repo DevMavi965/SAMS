@@ -174,7 +174,12 @@ class _StdHomeState extends State<StdHome> {
     }
 
    final notifDate=lectureStart.subtract(const Duration(minutes: 10));
-    await NotifHelper.scheduledNotification("lecture", "chek-in reminder :", " ${lecture.course} lecture starting [Room # ${lecture.room}] in 10 minutes , make sure to not be mark late", notifDate,200);
+    await NotifHelper.scheduledNotification(
+        "lecture",
+        "chek-in reminder :",
+        " ${lecture.course} lecture starting [Room # ${lecture.room}] in 10 minutes , make sure to not be mark late",
+        notifDate,
+        _notifId("before-start", lecture));
   }
   Future<void> scheduleLectureNotificationStart(LectureModel lecture) async {
     // 10 min before the lecture
@@ -187,7 +192,11 @@ class _StdHomeState extends State<StdHome> {
     if (lectureStart.isBefore(DateTime.now())) {
       return;
     }
-    await NotifHelper.scheduledNotification("lecture", "chek-in reminder :", " ${lecture.course} lecture started in [Room # ${lecture.room}], make sure to not be mark late", lectureStart,200);
+    await NotifHelper.scheduledNotification(
+        "lecture",
+        "chek-in reminder :",
+        " ${lecture.course} lecture started in [Room # ${lecture.room}], make sure to not be mark late",
+        lectureStart,_notifId("sart", lecture));
   }
   Future<void> scheduleLectureNotificationEnd(LectureModel lecture) async {
     // 10 min before the lecture
@@ -200,7 +209,10 @@ class _StdHomeState extends State<StdHome> {
     if (lectureEnd.isBefore(DateTime.now())) {
       return;
     }
-    await NotifHelper.scheduledNotification("lecture", "chek-out remainder :", " ${lecture.course} lecture ended , make sure to check-out", lectureEnd,200);
+    await NotifHelper.scheduledNotification(
+        "lecture", "chek-out remainder :",
+        " ${lecture.course} lecture ended , make sure to check-out",
+        lectureEnd,_notifId("end", lecture));
   }
   Future<void> scheduleLectureNotificationBeforeEnd(LectureModel lecture) async {
     // 10 min before the lecture
@@ -215,7 +227,10 @@ class _StdHomeState extends State<StdHome> {
     }
 
    final notifDate=lectureEnd.subtract(const Duration(minutes: 5));
-    await NotifHelper.scheduledNotification("lecture", "chek-in remainder :", " ${lecture.course} lecture ending soon in few minutes , make sure to check-out", notifDate,200);
+    await NotifHelper.scheduledNotification(
+        "lecture", "chek-in remainder :",
+        " ${lecture.course} lecture ending soon in few minutes , make sure to check-out",
+        notifDate,_notifId("bofore-end", lecture));
   }
 
 
@@ -290,7 +305,10 @@ class _StdHomeState extends State<StdHome> {
       return _StudentStats.empty;
     }
   }
-
+  int _notifId(String type, LectureModel lecture) {
+    // Stable per lecture+type, small enough for plugin's int id.
+    return (lecture.id.hashCode ^ type.hashCode) & 0x7FFFFFFF % 100000;
+  }
   _StudentStats _buildStats(List<LectureModel> allLectures, String studentId) {
     final now = DateTime.now();
 
@@ -488,11 +506,11 @@ class _StdHomeState extends State<StdHome> {
                               studentId: studentId
                           ),
                         ),
-                        LectureAttendanceSection(
+                        LectureAttendanceSection(//not conducted
                             insAdmin: widget.insAdmin,
                             institute: widget.institute,
                             lectureModel: lecture,
-                            studentId: studentId),
+                            student: widget.student,),
                       ],
                     ),
                 ],

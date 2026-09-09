@@ -101,6 +101,15 @@ class _UpcomingClassCardState extends State<UpcomingClassCard> {
     final now = DateTime.now();
     if (now.isBefore(_start)) return _LectureState.upcoming;
     if (!now.isAfter(_end)) return _LectureState.ongoing;
+
+    // Lecture time has elapsed. A specific record for *this* student
+    // (present, late, or absent) is authoritative — it means the lecture
+    // existed for them, regardless of how the rest of the class did.
+    if (_attendanceStatus != null) return _LectureState.completed;
+
+    // No per-student record available (either no studentId was passed —
+    // e.g. the faculty view — or this student truly has none yet). Fall
+    // back to the class-wide "did anyone attend" signal.
     return _classWasConducted ? _LectureState.completed : _LectureState.notConducted;
   }
 

@@ -164,7 +164,7 @@ class InsAdminGrid1 extends StatelessWidget {
                   return Text("${snap.data}",style: TextStyle(fontSize: 13,fontWeight: FontWeight.w500),);
                 }return Text("0");
               }),
-              Text("Total Departments",style: TextStyle(color: Colors.grey,fontSize: 12),)
+              Text("Total Departments",style: TextStyle(color: Colors.grey,fontSize: 10),)
             ],
           ),
         ),

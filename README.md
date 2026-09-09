@@ -743,7 +743,7 @@ Contributions are welcome.
 | --------------------- |----------------------|
 | Ameer Muawiya         | Team Lead +Developer |
 | Muhammad Huzaifa Khan | Researcher           |
-| Aliyan Sagheer        | Researcher            |
+| Aliyan Sagheer        | ----------           |
 
 ---
 

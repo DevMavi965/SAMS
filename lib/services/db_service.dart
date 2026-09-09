@@ -11,6 +11,7 @@ import 'package:smas3/models/Leave_Application_Model.dart';
 import 'package:smas3/models/announcement_model.dart';
 import 'package:smas3/models/attendance.dart';
 import 'package:smas3/models/fac_model.dart';
+import 'package:smas3/models/holidayModel.dart';
 import 'package:smas3/models/ins_admin.dart';
 import 'package:smas3/models/institute.dart';
 import 'package:smas3/models/lecture.dart';
@@ -45,6 +46,7 @@ class DbService with ChangeNotifier{
   List<LeaveApplication> leaveApplications=[];
   final dbref=FirebaseFirestore.instance.collection("SAMS").doc("SAMS_DB");
   final indexDoc=FirebaseFirestore.instance.collection("SAMS").doc("SAMS_DB").collection("index");
+  final embeddingsDoc=FirebaseFirestore.instance.collection("SAMS").doc("SAMS_DB").collection("embeddings");
   bool loading=false;
   int count=0;
   final eauth=FirebaseAuth.instance;
@@ -1185,7 +1187,6 @@ class DbService with ChangeNotifier{
       }
     }
   }
-
   //removing data from db
   removeInsAdmin(BuildContext context,String insAdminId)async{
     try{
@@ -1952,9 +1953,7 @@ class DbService with ChangeNotifier{
       print(e.toString());
     }
   }
-
   //lazmi::: Run once a lecture's end time has passed: any enrolled student with NO attendance record at all is written in as "absent". Safe to call more than once -- students who already have a record (present/late/absent) are left untouched.
-
   finalizeLectureAttendance(BuildContext? context, LectureModel lectureModel) async {
     try {
       final dox = await indexDoc.doc(lectureModel.id).get();
@@ -2056,27 +2055,36 @@ class DbService with ChangeNotifier{
       print(e.toString());
     }
   }
-  autoMarkRemainingAbsentees(BuildContext? context, LectureModel lectureModel,
-      List<String> allStudentIds) async {
+  markAbsentForMissedCheckout(
+      BuildContext? context, LectureModel lectureModel, String studentId) async {
     try {
       final currentAttendance = lectureModel.attendance ?? [];
-      final alreadyRecorded = currentAttendance.map((a) => a.sid).toSet();
-      final missing =
-      allStudentIds.where((id) => !alreadyRecorded.contains(id)).toList();
-      if (missing.isEmpty) return;
+      final existing =
+      currentAttendance.firstWhereOrNull((a) => a.sid == studentId);
 
-      final newRecords = missing
-          .map((id) => Attendance(
-        sid: id,
-        checkin: null,
+      // Only applies once checkin + midpoint are both done but checkout
+      // never happened. Anyone earlier in the flow is already handled by
+      // markAbsentForMissedMidpoint.
+      if (existing == null ||
+          existing.mid_point != true ||
+          existing.checkout != null ||
+          existing.status == 'absent') {
+        return; // already resolved one way or another
+      }
+
+      final updatedRecord = Attendance(
+        sid: studentId,
+        checkin: existing.checkin,
         checkout: null,
-        mid_point: null,
-        method: 'auto',
+        mid_point: existing.mid_point,
+        method: existing.method,
         status: 'absent',
-      ))
-          .toList();
+      );
 
-      final updatedAttendance = [...currentAttendance, ...newRecords];
+      final updatedAttendance = [
+        ...currentAttendance.where((a) => a.sid != studentId),
+        updatedRecord,
+      ];
       final attendanceMaps =
       updatedAttendance.map((a) => a.toMap(onDate: lectureModel.dated)).toList();
 
@@ -2093,11 +2101,6 @@ class DbService with ChangeNotifier{
 
       lectureModel.attendance = updatedAttendance;
       notifyListeners();
-      if (context != null && context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("${newRecords.length} student(s) auto-marked absent")),
-        );
-      }
     } catch (e) {
       print(e.toString());
     }
@@ -2539,6 +2542,96 @@ class DbService with ChangeNotifier{
       if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
     }finally{
 
+    }
+  }
+
+
+
+  // September onging dev-part
+  addStudentEmbedding(List<double> fembedding,String studentId)async{
+   try{
+     await embeddingsDoc.doc(studentId).set(
+       {
+         "embeddings":fembedding
+       }
+     );
+   }catch(e){
+     debugPrint("error in embeddings:$e");
+   }
+  }
+  Future<void> addHolidays(
+      BuildContext context,
+      String insAdminId,
+      String instituteId,
+      Holidaymodel holiday,
+      ) async {
+    try {
+      // Check if holiday already exists for this date
+      QuerySnapshot holidaySnapshot = await dbref
+          .collection("ins_admins")
+          .doc(insAdminId)
+          .collection("institutes")
+          .doc(instituteId)
+          .collection("holidays")
+          .where("dated", isEqualTo: Timestamp.fromDate(holiday.dated))
+          .get();
+
+      // If holiday already exists, show message and return
+      if (holidaySnapshot.docs.isNotEmpty) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Holiday already added for this date"),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return; // Prevent adding duplicate holiday
+      }
+
+      // If no duplicate found, add the holiday
+      await dbref
+          .collection("ins_admins")
+          .doc(insAdminId)
+          .collection("institutes")
+          .doc(instituteId)
+          .collection("holidays")
+          .doc(holiday.id)
+          .set(holiday.toMap());
+
+      // Show success message
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Holiday added successfully"),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      print("Error adding holiday: $e");
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Failed to add holiday: $e"),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+  updateHolidays(BuildContext context,String insAdminId,String instituteId,Holidaymodel holiday)async{
+    try{
+      await dbref.collection("ins_admins").doc(insAdminId).collection("institutes").doc(instituteId).collection("holidays").doc(holiday.id).set(holiday.toMap());
+    }catch(e){
+      print(e.toString());
+    }
+  }
+  removeHolidays(BuildContext context,String insAdminId,String instituteId,Holidaymodel holiday)async{
+    try{
+      await dbref.collection("ins_admins").doc(insAdminId).collection("institutes").doc(instituteId).collection("holidays").doc(holiday.id).delete();
+    }catch(e){
+      print(e.toString());
     }
   }
 

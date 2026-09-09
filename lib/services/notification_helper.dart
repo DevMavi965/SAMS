@@ -12,6 +12,7 @@ class NotifHelper {
     DarwinInitializationSettings ios = DarwinInitializationSettings();
     WebInitializationSettings web = WebInitializationSettings();
     tz.initializeTimeZones();
+    tz.setLocalLocation(tz.getLocation('Asia/Karachi'));
     InitializationSettings settings = InitializationSettings(
         android: android, iOS: ios, web: web);
     await notificationsPlugin.initialize(settings: settings);
@@ -56,7 +57,6 @@ class NotifHelper {
 
     final tz.TZDateTime scheduledTime = tz.TZDateTime.from(dt, tz.local);
     debugPrint("SCHEDULING '$title' at $scheduledTime, now: ${tz.TZDateTime.now(tz.local)}");
-
     if (scheduledTime.isBefore(tz.TZDateTime.now(tz.local))) {
       debugPrint("SKIPPED — time already passed");
       return;

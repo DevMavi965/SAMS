@@ -4,7 +4,6 @@ class Student{
    String sessionId,departId,semesterId;
    String email,role;
    DateTime? created_at=DateTime.now();
-
   Student({
     this.id,
     required this.role,

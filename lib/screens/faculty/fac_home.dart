@@ -3,11 +3,14 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:provider/provider.dart';
+import 'package:smas3/maxins/rm_functions.dart';
 import 'package:smas3/models/attendance.dart';
 import 'package:smas3/models/fac_model.dart';
 import 'package:smas3/models/lecture.dart';
+import 'package:smas3/services/geo_location_service.dart';
 import 'package:smas3/widgets/fac_widgets/fac_class_card.dart';
 import 'package:smas3/widgets/fac_widgets/fac_home_grid.dart';
 import 'package:smas3/widgets/student_widgets/upcoming_class_card.dart';
@@ -17,6 +20,7 @@ import '../../models/ins_admin.dart';
 import '../../models/institute.dart';
 import '../../services/db_service.dart';
 import '../../services/notification_helper.dart';
+import 'attend_view.dart';
 
 class FacHomeTab extends StatefulWidget {
   final InsAdmin insAdmin;
@@ -269,7 +273,41 @@ class _FacHomeTabState extends State<FacHomeTab> {
               physics: NeverScrollableScrollPhysics(),
               itemCount: snapshot.data!.length,
               itemBuilder: (context, index) {
-                return UpcomingClassCard( lectureModel:snapshot.data![index],);
+                return InkWell(
+                    onTap: ()async{
+                      var docLec=await Provider.of<DbService>(context,listen: false).indexDoc.doc(snapshot.data?[index].id).get();
+                      String sessionId=docLec["session_id"];
+                      String semesterId=docLec["semester_id"];
+                      String courseId=docLec["course_id"];
+                      DateTime now=DateTime.now();
+                      DateTime lectureStart=RMFuncts.combineDateAndTime(snapshot.data![index].dated, snapshot.data![index].start_time);
+                      DateTime lectureEnd=RMFuncts.combineDateAndTime(snapshot.data![index].dated, snapshot.data![index].end_time);
+                      if(now.isAfter(lectureStart) && now.isBefore(lectureEnd)){
+                        final bool inside = await GeofenceService.validateGeofence(
+                          context: context,
+                          targetLatitude: widget.institute.location['lat'],
+                          targetLongitude: widget.institute.location['long'],
+                        );
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => AttendView(
+                              lecture: snapshot.data![index],
+                              insAdminId: widget.insAdmin.id!,
+                              instituteId: widget.institute.id!,
+                              departmentId: widget.department.id!,
+                              sessionId:sessionId,
+                              semesterId: semesterId,
+                              courseId: courseId ,
+                            ),
+                          ),
+                        );
+                      }else{
+                        // ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("not available in other times")));
+                        Fluttertoast.showToast(msg:"only accessible in allocated time-slot",);
+                      }
+                    },
+                    child: UpcomingClassCard( lectureModel:snapshot.data![index],));
               },
             );
           },

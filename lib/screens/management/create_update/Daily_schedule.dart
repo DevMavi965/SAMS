@@ -10,6 +10,7 @@ import 'package:smas3/maxins/rm_functions.dart';
 import 'package:smas3/models/attendance.dart';
 import 'package:smas3/models/course.dart';
 import 'package:smas3/models/department.dart';
+import 'package:smas3/models/holidayModel.dart';
 import 'package:smas3/models/ins_admin.dart';
 import 'package:smas3/models/institute.dart';
 import 'package:smas3/models/lecture.dart';
@@ -45,6 +46,7 @@ class _DailyScheduleState extends State<DailySchedule> {
   static const int _minDurationMinutes = 30;
   static const int _maxDurationMinutes = 120;
 
+  List<Holidaymodel> holidays=[];
   List<Course> courses = [];
   bool coursesLoading = true;
 
@@ -840,7 +842,24 @@ class _DailyScheduleState extends State<DailySchedule> {
     ];
     return days[date.weekday];
   }
-
+  getHolidys(String insAdminId, String instituteId)async{
+    try{
+     final holiDoc= await Provider.of<DbService>(context,listen: false).dbref.collection("ins_admins").doc(insAdminId)
+.collection("institutes").doc(instituteId).collection("holidays").get();
+     if(holiDoc.docs.isEmpty){
+       setState(() {
+         holidays=[];
+       });
+     }
+     for(var doc in holiDoc.docs){
+       holidays.add(
+         Holidaymodel(id: doc.id, title: doc["title"], dated: doc["date"].toDate())
+       );
+     }
+    }catch(e){
+      print(e.toString());
+    }
+  }
   String? getStatus(DateTime date, TimeOfDay timeOfDay, TimeOfDay timeOfDay2) {
     final now = DateTime.now();
     final startTime = DateTime(date.year, date.month, date.day, timeOfDay.hour, timeOfDay.minute);

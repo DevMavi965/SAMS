@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:smas3/models/student_model.dart';
 
 import '../../providers/theme_Provider.dart' show ThemeProvider;
+import '../../screens/student/std_biomet.dart';
 class StdSettings extends StatefulWidget {
   final Student student;
   const StdSettings({super.key, required this.student});
@@ -187,7 +188,7 @@ class _StdSettingsState extends State<StdSettings> {
                   padding: const EdgeInsets.all(12.0),
                   child: InkWell(
                     onTap: (){
-                      print("updated biometric: ${widget.student.name}");
+                      Navigator.push(context, MaterialPageRoute(builder: (_)=>StdBioMet(student: widget.student,)));
                     },
                     child: Row(
                       children: [
