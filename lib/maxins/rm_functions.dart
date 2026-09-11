@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lottie/lottie.dart';
 
 mixin RMFuncts{
   static String getFirstLetters(String input) {
@@ -105,5 +106,12 @@ mixin RMFuncts{
   static DateTime combineDateAndTime(DateTime date, TimeOfDay time) {
     return DateTime(date.year, date.month, date.day, time.hour, time.minute);
   }
-
+ static loadingAnimation (BuildContext context){
+   return Center(
+     child: SizedBox(
+          height: 60,
+          width: 60,
+          child: Lottie.asset("assets/anims/an1.json")),
+   );
+  }
 }

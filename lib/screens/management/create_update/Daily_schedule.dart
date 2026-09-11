@@ -72,7 +72,7 @@ class _DailyScheduleState extends State<DailySchedule> {
   final TextEditingController room = TextEditingController();
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
-  // ── helpers 888888888888888888888888888888888888888888888888888888888888888888888888888888──────
+  // ── helpers ──────────────────────────────────────────────────────────
 
   int _toMinutes(TimeOfDay t) => t.hour * 60 + t.minute;
 
@@ -137,7 +137,7 @@ class _DailyScheduleState extends State<DailySchedule> {
     return null; // all good
   }
 
-  // ── Firestore streams 88888888888888888888888888888888888888888888888888888888888888888─────
+  // ── Firestore streams ───────────────────────────────────────────────
 
   @override
   void initState() {
@@ -257,11 +257,26 @@ class _DailyScheduleState extends State<DailySchedule> {
     super.dispose();
   }
 
-  // ── UI 8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888──
+  // ── status color helper ─────────────────────────────────────────────
+
+  Color _statusColor(String? status) {
+    switch (status) {
+      case "Ongoing":
+        return const Color(0xFFFF9F43); // warm amber
+      case "Upcoming":
+        return const Color(0xFF4E7FFF); // blue
+      case "Completed":
+      default:
+        return const Color(0xFF34C77B); // green
+    }
+  }
+
+  // ── UI ──────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF5F6FA),
       appBar: AppBar(
         backgroundColor: Theme.of(context).primaryColor,
         iconTheme: const IconThemeData(color: Colors.white),
@@ -278,38 +293,27 @@ class _DailyScheduleState extends State<DailySchedule> {
         centerTitle: true,
       ),
       body: ListView(
-        padding: EdgeInsets.symmetric(
-            horizontal: 10
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
         children: [
-          const SizedBox(height: 0),
-
           if (coursesLoading)
             const Center(child: CircularProgressIndicator())
           else if (courses.isEmpty)
             const Center(child: Text("No courses found")),
 
-          const SizedBox(height: 20),
+          const SizedBox(height: 6),
 
           if (!coursesLoading && todayLectures.isEmpty)
-            const Center(child: Text("No lectures today, add first",style: TextStyle(color: Colors.black54),))
+            _EmptyState(primaryColor: Theme.of(context).primaryColor)
           else
             for (var lecture in todayLectures)
-            // ListTile(
-            //   onTap: () {
-            //
-            //   },
-            //   title: Text(lecture.course),
-            //   subtitle: Text(
-            //     "${lecture.start_time.format(context)} - ${lecture.end_time.format(context)}",
-            //   ),
-            //   trailing: Text(lecture.room),
-            //   leading: IconButton(onPressed: (){
-            //     Provider.of<DbService>(context,listen: false).removeLecture(context, lecture.id!);
-            //   }, icon: Icon(Icons.delete)),
-            // ),
-              InkWell(
-                onTap: (){
+              _LectureCard(
+                lecture: lecture,
+                lecturerName: courses
+                    .firstWhere((e) => e.name == lecture.course)
+                    .lecturer_name,
+                statusColor: _statusColor(lecture.status),
+                primaryColor: Theme.of(context).primaryColor,
+                onTap: () {
                   final course = _courseForLecture(lecture);
                   if (course == null) {
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -323,108 +327,10 @@ class _DailyScheduleState extends State<DailySchedule> {
                   _openLectureSheet(context,
                       lecture: lecture, courseId: course.id);
                 },
-                child: Container(
-                  margin: EdgeInsets.only(
-                      bottom: 5
-                  ),
-                  padding: EdgeInsets.symmetric(
-                      horizontal: 3,
-                      vertical: 12
-                  ),
-                  decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(10),
-                      color: Theme.of(context).primaryColor.withOpacity(0.1),
-                      border: Border.all(
-                          color: Theme.of(context).primaryColor,
-                          width: 2
-                      )
-                  ),
-                  child:
-                  Row(
-                    children: [
-                      Expanded(
-                          child:CircleAvatar(
-                              backgroundColor: Theme.of(context).primaryColor,
-                              radius: 27,
-                              child: Text(RMFuncts.getFirstLetters(lecture.course),style: TextStyle(color: Colors.white,fontSize: 16),)
-                          )
-                      ),
-                      SizedBox(width: 8,),
-                      Expanded(
-                        flex: 3,
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Flexible(
-                              child: Row(
-                                children: [
-
-                                  Text(lecture.course,style: TextStyle(
-                                      fontWeight: FontWeight.w500,fontSize: 16
-                                  ),),
-                                ],
-                              ),
-                            ),
-                            SizedBox(height: 5,),
-                            Flexible(
-                              child: Row(
-                                children: [
-                                  Icon(CupertinoIcons.person_crop_circle),
-                                  SizedBox(width: 10,),
-                                  Text(courses.firstWhere((e)=>e.name==lecture.course).lecturer_name!,),
-                                ],
-                              ),
-                            ),
-                            SizedBox(height: 5,),
-                            Flexible(
-                              child: Row(
-                                children: [
-                                  Icon(CupertinoIcons.clock),
-                                  SizedBox(width: 10,),
-                                  Text("${lecture.start_time.format(context)}  to  ${lecture.end_time.format(context)}",style: TextStyle(color: Colors.black87),),
-                                ],
-                              ),
-                            ),
-                            SizedBox(height: 5,),
-                            Flexible(
-                              child: Row(
-                                children: [
-                                  Icon(Icons.door_front_door_outlined),
-                                  SizedBox(width: 10,),
-                                  Text("Room no :${lecture.room}"),
-                                ],
-                              ),
-                            ),
-                            SizedBox(height: 5,),
-                            Flexible(
-                              child: Row(
-                                children: [
-                                  Icon(Icons.calendar_today_outlined),
-                                  SizedBox(width: 10,),
-                                  Text("Scheduled on:${DateFormat("dd MMM yyyy").format(lecture.dated)}"),
-                                ],
-                              ),
-                            ),
-
-                          ],
-                        ),
-                      ),
-                      Expanded(child: Column(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Badge(
-                            backgroundColor: Theme.of(context).primaryColor,
-                            label: Text(lecture.status==null?"Completed":lecture.status!,style: TextStyle(color: Colors.white),),
-                          ),
-                          SizedBox(height: 10,),
-                          IconButton(onPressed: (){
-                            Provider.of<DbService>(context,listen: false).removeLecture(context, lecture.id!);
-                          }, icon: Icon(CupertinoIcons.delete))
-                        ],
-                      ))
-                    ],
-                  ),
-                ),
+                onDelete: () {
+                  Provider.of<DbService>(context, listen: false)
+                      .removeLecture(context, lecture.id!);
+                },
               ),
 
           const SizedBox(height: 20),
@@ -440,14 +346,22 @@ class _DailyScheduleState extends State<DailySchedule> {
               ),
             )
           else if (!coursesLoading && courses.isNotEmpty)
-            ElevatedButton(
-              style: ButtonStyle(
-                backgroundColor: MaterialStateProperty.all(
-                    Theme.of(context).primaryColor),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).primaryColor,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 2,
+                ),
+                onPressed: () => _openLectureSheet(context),
+                icon: const Icon(Icons.add, color: Colors.white),
+                label: const Text("Add Lecture",
+                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
               ),
-              onPressed: () => _openLectureSheet(context),
-              child: const Text("Add Lecture",
-                  style: TextStyle(color: Colors.white)),
             ),
         ],
       ),
@@ -461,7 +375,7 @@ class _DailyScheduleState extends State<DailySchedule> {
     return null;
   }
 
-  // ── Bottom sheet 888888888888888888888888888888888888888888888888888888888888888888888888888888─
+  // ── Bottom sheet ────────────────────────────────────────────────────
 
   void _openLectureSheet(BuildContext context,
       {LectureModel? lecture, String? courseId}) {
@@ -518,7 +432,7 @@ class _DailyScheduleState extends State<DailySchedule> {
                 child: ListView(
                   shrinkWrap: true,
                   children: [
-                    // ── title 8888888888888888888888888888888888888888888888888888──────
+                    // ── title ──────────────────────────────────────
                     Center(
                       child: Text(
                         isEditing ? "Update Lecture" : "Add Lecture",
@@ -528,7 +442,7 @@ class _DailyScheduleState extends State<DailySchedule> {
                     ),
                     const SizedBox(height: 12),
 
-                    // ── course selector / label 66666666666666666666666
+                    // ── course selector / label ──────────────────
                     if (isEditing)
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 8),
@@ -567,7 +481,7 @@ class _DailyScheduleState extends State<DailySchedule> {
 
                     const SizedBox(height: 14),
 
-                    // ── time pickers 777777777888888888888888888888
+                    // ── time pickers ────────────────────────────
                     Row(
                       children: [
                         // start time
@@ -610,7 +524,7 @@ class _DailyScheduleState extends State<DailySchedule> {
                       ],
                     ),
 
-                    // ── duration badge 5555555555555555555555555555555
+                    // ── duration badge ───────────────────────────
                     if (startTime != null && endTime != null)
                       Padding(
                         padding: const EdgeInsets.only(top: 6),
@@ -653,7 +567,7 @@ class _DailyScheduleState extends State<DailySchedule> {
                         }(),
                       ),
 
-                    // ── inline time error 77777777777766666666666667777
+                    // ── inline time error ─────────────────────────
                     if (timeError != null)
                       Padding(
                         padding: const EdgeInsets.only(top: 6),
@@ -676,7 +590,7 @@ class _DailyScheduleState extends State<DailySchedule> {
 
                     const SizedBox(height: 12),
 
-                    // ── room field 7777777777777777777777777777777777777
+                    // ── room field ─────────────────────────────────
                     TextFormField(
                       controller: room,
                       decoration: const InputDecoration(
@@ -698,7 +612,7 @@ class _DailyScheduleState extends State<DailySchedule> {
 
                     const SizedBox(height: 16),
 
-                    // ── submit button hhhhhhhhhhhhhhhhhhhhhhhhh
+                    // ── submit button ───────────────────────────────
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Theme.of(context).primaryColor,
@@ -750,7 +664,7 @@ class _DailyScheduleState extends State<DailySchedule> {
                           return;
                         }
 
-                        // ── all valid — write to Firestore 8888888888888──
+                        // ── all valid — write to Firestore ────────
                         final db =
                         Provider.of<DbService>(context, listen: false);
 
@@ -799,6 +713,7 @@ class _DailyScheduleState extends State<DailySchedule> {
                             widget.semester.id!,
                             selectedCourse!,
                             newLecture,
+                            courseV.lecturer_id!,
                           );
                           await NotifHelper.show(
                             "lectures",
@@ -844,33 +759,263 @@ class _DailyScheduleState extends State<DailySchedule> {
   }
   getHolidys(String insAdminId, String instituteId)async{
     try{
-     final holiDoc= await Provider.of<DbService>(context,listen: false).dbref.collection("ins_admins").doc(insAdminId)
-.collection("institutes").doc(instituteId).collection("holidays").get();
-     if(holiDoc.docs.isEmpty){
-       setState(() {
-         holidays=[];
-       });
-     }
-     for(var doc in holiDoc.docs){
-       holidays.add(
-         Holidaymodel(id: doc.id, title: doc["title"], dated: doc["date"].toDate())
-       );
-     }
+      final holiDoc= await Provider.of<DbService>(context,listen: false).dbref.collection("ins_admins").doc(insAdminId)
+          .collection("institutes").doc(instituteId).collection("holidays").get();
+      if(holiDoc.docs.isEmpty){
+        setState(() {
+          holidays=[];
+        });
+      }
+      for(var doc in holiDoc.docs){
+        holidays.add(
+            Holidaymodel(id: doc.id, title: doc["title"], dated: doc["date"].toDate())
+        );
+      }
     }catch(e){
       print(e.toString());
     }
   }
-  String? getStatus(DateTime date, TimeOfDay timeOfDay, TimeOfDay timeOfDay2) {
+  String getStatus(DateTime date, TimeOfDay start, TimeOfDay end) {
     final now = DateTime.now();
-    final startTime = DateTime(date.year, date.month, date.day, timeOfDay.hour, timeOfDay.minute);
-    final endTime = DateTime(date.year, date.month, date.day, timeOfDay2.hour, timeOfDay2.minute);
-    if (startTime.isBefore(now) && endTime.isAfter(now)) {
-      return "Ongoing";
-    } else if (startTime.isAfter(now)) {
-      return "Upcoming";
-    } else {
-      return "Completed";
-    }
+    final startDt = DateTime(date.year, date.month, date.day, start.hour, start.minute);
+    final endDt   = DateTime(date.year, date.month, date.day, end.hour, end.minute);
+
+    if (now.isBefore(startDt)) return "Upcoming";
+    if (now.isAfter(endDt))    return "Completed";
+    return "Ongoing";
+  }}
+
+// ── Redesigned lecture card ──────────────────────────────────────────
+
+class _LectureCard extends StatelessWidget {
+  final LectureModel lecture;
+  final String? lecturerName;
+  final Color statusColor;
+  final Color primaryColor;
+  final VoidCallback onTap;
+  final VoidCallback onDelete;
+
+  const _LectureCard({
+    required this.lecture,
+    required this.lecturerName,
+    required this.statusColor,
+    required this.primaryColor,
+    required this.onTap,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 14,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // status accent stripe
+                Container(width: 6, color: statusColor),
+
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(14, 14, 10, 14),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // avatar
+                        Container(
+                          width: 52,
+                          height: 52,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                primaryColor,
+                                primaryColor.withOpacity(0.65),
+                              ],
+                            ),
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            RMFuncts.getFirstLetters(lecture.course),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+
+                        // details
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      lecture.course,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  // _StatusChip(
+                                  //   text: lecture.status ?? "Completed",
+                                  //   color: statusColor,
+                                  // ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              if (lecturerName != null)
+                                _InfoRow(
+                                  icon: CupertinoIcons.person_crop_circle,
+                                  text: lecturerName!,
+                                ),
+                              const SizedBox(height: 5),
+                              _InfoRow(
+                                icon: CupertinoIcons.clock,
+                                text:
+                                "${lecture.start_time.format(context)} – ${lecture.end_time.format(context)}",
+                              ),
+                              const SizedBox(height: 5),
+                              _InfoRow(
+                                icon: Icons.door_front_door_outlined,
+                                text: "Room ${lecture.room}",
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        // delete
+                        IconButton(
+                          onPressed: onDelete,
+                          icon: const Icon(CupertinoIcons.delete,
+                              size: 20, color: Colors.black38),
+                          splashRadius: 20,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _InfoRow extends StatelessWidget {
+  final IconData icon;
+  final String text;
+
+  const _InfoRow({required this.icon, required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, size: 15, color: Colors.black45),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            text,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 13, color: Colors.black87),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _StatusChip extends StatelessWidget {
+  final String text;
+  final Color color;
+
+  const _StatusChip({required this.text, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          color: color,
+        ),
+      ),
+    );
+  }
+}
+
+class _EmptyState extends StatelessWidget {
+  final Color primaryColor;
+  const _EmptyState({required this.primaryColor});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 28),
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: primaryColor.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: primaryColor.withOpacity(0.2),
+          style: BorderStyle.solid,
+        ),
+      ),
+      child: Column(
+        children: [
+          Icon(Icons.event_available_outlined,
+              size: 34, color: primaryColor.withOpacity(0.6)),
+          const SizedBox(height: 8),
+          const Text(
+            "No lectures today",
+            style: TextStyle(
+                color: Colors.black54, fontWeight: FontWeight.w500),
+          ),
+          const SizedBox(height: 2),
+          const Text(
+            "Tap \"Add Lecture\" below to schedule one",
+            style: TextStyle(color: Colors.black38, fontSize: 12),
+          ),
+        ],
+      ),
+    );
   }
 }
 

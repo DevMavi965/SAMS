@@ -283,25 +283,29 @@ class _FacHomeTabState extends State<FacHomeTab> {
                       DateTime lectureStart=RMFuncts.combineDateAndTime(snapshot.data![index].dated, snapshot.data![index].start_time);
                       DateTime lectureEnd=RMFuncts.combineDateAndTime(snapshot.data![index].dated, snapshot.data![index].end_time);
                       if(now.isAfter(lectureStart) && now.isBefore(lectureEnd)){
+                        Fluttertoast.showToast(msg: "validating your location");
                         final bool inside = await GeofenceService.validateGeofence(
                           context: context,
                           targetLatitude: widget.institute.location['lat'],
                           targetLongitude: widget.institute.location['long'],
                         );
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => AttendView(
-                              lecture: snapshot.data![index],
-                              insAdminId: widget.insAdmin.id!,
-                              instituteId: widget.institute.id!,
-                              departmentId: widget.department.id!,
-                              sessionId:sessionId,
-                              semesterId: semesterId,
-                              courseId: courseId ,
+                        if (!inside) return;
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => AttendView(
+                                lecture: snapshot.data![index],
+                                insAdminId: widget.insAdmin.id!,
+                                instituteId: widget.institute.id!,
+                                departmentId: widget.department.id!,
+                                sessionId:sessionId,
+                                semesterId: semesterId,
+                                courseId: courseId ,
+                              ),
                             ),
-                          ),
-                        );
+                          );
+
+
                       }else{
                         // ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("not available in other times")));
                         Fluttertoast.showToast(msg:"only accessible in allocated time-slot",);

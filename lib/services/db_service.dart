@@ -997,7 +997,7 @@ class DbService with ChangeNotifier{
 
     }
   }
-  addLecture(BuildContext context,String insAdminId,String instituteId,String departId,String sessionId,String semesterId,String courseId,LectureModel lectureModel)async{
+  addLecture(BuildContext context,String insAdminId,String instituteId,String departId,String sessionId,String semesterId,String courseId,LectureModel lectureModel,String lecturerId)async{
     try{
       DateTime start_time_date=DateTime(
         lectureModel.dated.year,
@@ -1033,6 +1033,7 @@ class DbService with ChangeNotifier{
         "room": lectureModel.room,
         "course_name": lectureModel.course,
         "status": "upcoming",
+        "lecturer_id":lecturerId,
       });
 
       batch.set(indexDoc.doc(lectureRef.id), {
@@ -1044,7 +1045,7 @@ class DbService with ChangeNotifier{
         "course_id": courseId,
         "type": "lecture",
         "status": "upcoming",
-        "dated": lectureModel.dated,
+        "dated": Timestamp.fromDate(lectureModel.dated),
       });
 
       await batch.commit(); // single round trip, both writes succeed or neither does
@@ -2105,8 +2106,8 @@ class DbService with ChangeNotifier{
       print(e.toString());
     }
   }
-
-  markAttendancePresentGroup(BuildContext context, LectureModel lectureModel, List<String> studentIds, String method) async {
+//faculty-only methods
+  checkInGroup(BuildContext context, LectureModel lectureModel, List<String> studentIds, String method) async {
     loading = true;
     notifyListeners();
     try {
@@ -2169,6 +2170,75 @@ class DbService with ChangeNotifier{
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("${newRecords.length} student(s) marked present")),
+        );
+      }
+    } catch (e) {
+      print(e.toString());
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      }
+    } finally {
+      loading = false;
+      notifyListeners();
+    }
+  }
+  checkOutGroup(BuildContext context, LectureModel lectureModel, List<String> studentIds, String method) async {
+    loading = true;
+    notifyListeners();
+    try {//all students
+      final currentAttendance = lectureModel.attendance ?? [];
+      final now = TimeOfDay.fromDateTime(DateTime.now());
+
+      // only check out students who: were requested, have checked in,
+      // have midpoint marked, and haven't already checked out
+      final eligibleIds = currentAttendance
+          .where((a) => studentIds.contains(a.sid))
+          .where((a) => a.checkin != null)
+          .where((a) => a.checkout == null)
+          .map((a) => a.sid)
+          .toSet();
+
+      if (eligibleIds.isEmpty) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("no eligible students to check out (must be checked in ")),
+          );
+        }
+        return;
+      }
+
+      final updatedAttendance = currentAttendance.map((a) {
+        if (!eligibleIds.contains(a.sid)) return a; // leave untouched
+        return Attendance(
+          sid: a.sid,
+          checkin: a.checkin,
+          checkout: now,
+          mid_point: true,
+          method: method,
+          status: a.status,
+        );
+      }).toList();
+
+      final attendanceMaps = updatedAttendance
+          .map((a) => a.toMap(onDate: lectureModel.dated))
+          .toList();
+
+      final dox = await indexDoc.doc(lectureModel.id).get();
+      await dbref
+          .collection("ins_admins").doc(dox.get("ins_admin_id"))
+          .collection("institutes").doc(dox.get("institute_id"))
+          .collection("departments").doc(dox.get("department_id"))
+          .collection("sessions").doc(dox.get("session_id"))
+          .collection("semesters").doc(dox.get("semester_id"))
+          .collection("courses").doc(dox.get("course_id"))
+          .collection("lectures").doc(lectureModel.id)
+          .update({"attendance": attendanceMaps});
+
+      lectureModel.attendance = updatedAttendance;
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("${eligibleIds.length} student(s) checked out successfully")),
         );
       }
     } catch (e) {
