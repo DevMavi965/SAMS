@@ -1,5 +1,8 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 mixin RMFuncts{
   static String getFirstLetters(String input) {
@@ -114,4 +117,72 @@ mixin RMFuncts{
           child: Lottie.asset("assets/anims/an1.json")),
    );
   }
+
+
+  static String generatePassword({int length = 8}) {
+    const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const lowercase = 'abcdefghijklmnopqrstuvwxyz';
+    const numbers = '0123456789';
+    const symbols = r'!@#$%^&*';
+
+    final random = Random.secure();
+
+    // Required characters
+    final password = <String>[
+      uppercase[random.nextInt(uppercase.length)],
+      lowercase[random.nextInt(lowercase.length)],
+      numbers[random.nextInt(numbers.length)],
+      symbols[random.nextInt(symbols.length)],
+    ];
+
+    // All allowed characters
+    final allCharacters = uppercase + lowercase + numbers + symbols;
+
+    // Fill remaining characters
+    while (password.length < length) {
+      password.add(
+        allCharacters[random.nextInt(allCharacters.length)],
+      );
+    }
+
+    // Shuffle so the required characters aren't always first
+    password.shuffle(random);
+
+    return password.join();
+  }
+  static Future<void> sendSamsCredentialsEmail(String userEmail, String name, String password) async {
+    final Uri emailUri = Uri(
+      scheme: 'mailto',
+      path: userEmail,
+      queryParameters: {
+        'subject': 'Your SAMS Account Credentials',
+        'body': '''
+Hello $name!,
+
+Your account has been successfully registered in the Smart Attendance Management System (SAMS).
+
+Your login credentials are:
+
+Email: $userEmail
+Password: $password
+
+Please keep these credentials secure and change your password after your first login.
+
+Regards,
+SAMS Administration
+''',
+      },
+    );
+
+    if (await canLaunchUrl(emailUri)) {
+      await launchUrl(
+        emailUri,
+        mode: LaunchMode.externalApplication,
+      );
+    } else {
+      throw Exception('No email application is available.');
+    }
+  }
+
 }
+

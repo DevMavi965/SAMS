@@ -1,11 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:smas3/models/admin_model.dart';
 import 'package:smas3/models/ins_admin.dart';
 import 'package:smas3/models/institute.dart';
 import 'package:smas3/services/db_service.dart';
+import 'package:url_launcher/url_launcher.dart';
 
+import '../../maxins/rm_functions.dart';
+class _Palette {
+  static const ink = Color(0xFF0E231F);
+  static const inkSoft = Color(0xFF16342E);
+  static const paper = Color(0xFFF7FAF9);
+  static const slate = Color(0xFF55645F);
+  static const hairline = Color(0xFFDEE6E3);
+  static const teal = Color(0xFF009878);
+}
 class AddAdminPage extends StatefulWidget {
   final InsAdmin insAdmin;
   final Institute institute;
@@ -45,6 +56,8 @@ class _AddAdminPageState extends State<AddAdminPage> {
 
   List<bool> checked = List.generate(8, (_) => false);
   List<String> assigned = [];
+
+  bool obscure = true;
 
   @override
   void dispose() {
@@ -95,7 +108,7 @@ class _AddAdminPageState extends State<AddAdminPage> {
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).primaryColor),
-            onPressed: () {
+            onPressed: () async{
               assigned.clear();
               for (int i = 0; i < checked.length; i++) {
                 if (checked[i]) assigned.add(duties[i]);
@@ -111,10 +124,41 @@ class _AddAdminPageState extends State<AddAdminPage> {
                 permissions: List<String>.from(assigned),
               );
               final password1 = password.text.trim();
-              Navigator.pop(context); // close confirm dialog
-              Provider.of<DbService>(context, listen: false).registerAdmin(
-                  widget.insAdmin.id!, widget.institute.id!, admin, password1, context);
-              Navigator.pop(context); // close page, back to ManageAdmins
+              try {
+                await Provider.of<DbService>(
+                  context,
+                  listen: false,
+                ).registerAdmin(
+                  widget.insAdmin.id!,
+                  widget.institute.id!,
+                  admin,
+                  password1,
+                  context,
+                );
+
+                Fluttertoast.showToast(
+                  msg: "Admin added successfully",
+                );
+
+                await RMFuncts.sendSamsCredentialsEmail(
+                  admin.email,
+                  admin.name,
+                  password1,
+                );
+
+                if (mounted) {
+                  Navigator.pop(context);
+                }
+              } catch (e) {
+                debugPrint("REGISTER ADMIN ERROR: $e");
+
+                // Fluttertoast.showToast(
+                //   msg: "Failed to add admin: $e",
+                // );
+                print(e.toString());
+              }
+              Navigator.pop(context);
+              Navigator.pop(context);
             },
             child: const Text("Yes"),
           ),
@@ -126,7 +170,16 @@ class _AddAdminPageState extends State<AddAdminPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Add Admin")),
+      appBar: AppBar(
+          title: Text("Add Admin",style: TextStyle(
+        color: Theme.of(context).primaryColor,
+        fontSize: 18,
+        fontWeight: FontWeight.w600
+      ),
+          ),
+        // centerTitle: true,
+        iconTheme: IconThemeData(color: Theme.of(context).primaryColor),
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
@@ -158,39 +211,75 @@ class _AddAdminPageState extends State<AddAdminPage> {
                 const SizedBox(height: 15),
                 TextFormField(
                   controller: email,
+                  keyboardType: TextInputType.emailAddress,
                   decoration: InputDecoration(
                     labelText: "Email",
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: const BorderSide(width: 0.5, color: Colors.grey),
-                    ),
+                    hintText: "you@example.com",
+                    prefixIcon: const Icon(Icons.mail_outline, color: _Palette.slate),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                   ),
                   validator: (v) {
-                    if (v == null || v.isEmpty) return "Please enter email";
-                    if (v.length < 3) return "Please enter valid email";
-                    if (!v.contains("@") || !v.contains(".") || !v.contains("com")) {
-                      return "Please enter valid email";
+                    if (v == null || v.trim().isEmpty) return "Enter your email";
+                    if (!v.contains("@") || !v.contains(".")) {
+                      return "Enter a valid email";
                     }
                     return null;
                   },
                 ),
-                const SizedBox(height: 15),
-                TextFormField(
-                  controller: password,
-                  obscureText: true,
-                  decoration: InputDecoration(
-                    labelText: "Password",
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: const BorderSide(width: 0.5, color: Colors.grey),
+                const SizedBox(height: 14),
+
+                // Password
+
+                Row(
+                  children: [
+                    Expanded(
+                      flex: 3,
+                      child: TextFormField(
+                        controller: password,
+                        obscureText: obscure,
+                        decoration: InputDecoration(
+                          labelText: "Password",
+                          prefixIcon: const Icon(Icons.lock_outline, color: _Palette.slate),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                              color: obscure ? _Palette.slate : _Palette.teal,
+                            ),
+                            onPressed: () => setState(() => obscure = !obscure),
+                          ),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                        validator: (v) {
+                          if (v == null || v.isEmpty) return "Enter your password";
+                          if (v.length < 8) return "Password must be at least 8 characters";
+                          return null;
+                        },
+                      ),
                     ),
-                  ),
-                  validator: (v) {
-                    if (v == null || v.isEmpty) return "Please enter password";
-                    if (v.length < 8) return "Password must be at least 8 characters";
-                    return null;
-                  },
+                    SizedBox(width: 2,),
+                    Flexible(
+                      child:
+                      ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            //border
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.all(Radius.circular(12))
+                            ),
+                            backgroundColor:  Theme.of(context).primaryColor,
+                          ),
+                          onPressed: (){
+                            Fluttertoast.showToast(msg: "generating password");
+                            setState(() {
+                              password.text = RMFuncts.generatePassword();
+                            });
+                          }, child: Text("generate",maxLines: 1,style: TextStyle(
+                          color:Colors.white,
+                          fontSize: 12
+                      ),)),
+                    )
+                  ],
                 ),
+
                 const SizedBox(height: 20),
                 Text("Duties & Permissions",
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
@@ -272,4 +361,7 @@ class _AddAdminPageState extends State<AddAdminPage> {
       ),
     );
   }
+
+
+
 }

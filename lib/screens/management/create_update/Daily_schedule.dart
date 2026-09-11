@@ -72,6 +72,12 @@ class _DailyScheduleState extends State<DailySchedule> {
   final TextEditingController room = TextEditingController();
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
+  // Tracks the in-flight cross-scope conflict check so the submit button
+  // can be disabled / show a spinner while it's running (see submit
+  // handler). Kept on the State, not local to the sheet, since it's
+  // awaited from inside the sheet's onPressed.
+  bool _checkingConflict = false;
+
   // ── helpers ──────────────────────────────────────────────────────────
 
   int _toMinutes(TimeOfDay t) => t.hour * 60 + t.minute;
@@ -95,6 +101,12 @@ class _DailyScheduleState extends State<DailySchedule> {
 
   /// Returns a non-null error string when the slot is invalid, null when ok.
   /// Pass [excludeId] when editing so the lecture doesn't conflict with itself.
+  ///
+  /// NOTE: this only checks [todayLectures], which is scoped to the courses
+  /// under this DailySchedule's department/session/semester. It does NOT
+  /// catch a lecturer being double-booked in a course belonging to a
+  /// different department/session/semester — see [_checkLecturerConflict]
+  /// for that, which is run separately in the submit handler.
   String? _validateSlot(
       TimeOfDay start,
       TimeOfDay end, {
@@ -119,7 +131,7 @@ class _DailyScheduleState extends State<DailySchedule> {
       return 'Lecture cannot be longer than ${_maxDurationMinutes ~/ 60} hours.';
     }
 
-    // 4. no overlap with any other lecture on the same day
+    // 4. no overlap with any other lecture on the same day (this scope only)
     for (final existing in todayLectures) {
       if (excludeId != null && existing.id == excludeId) continue;
 
@@ -135,6 +147,92 @@ class _DailyScheduleState extends State<DailySchedule> {
     }
 
     return null; // all good
+  }
+
+  /// Checks whether [lecturerId] already has a lecture overlapping
+  /// [start]–[end] on [date], across ALL their courses — not just the ones
+  /// in this DailySchedule's department/session/semester. Uses the flat
+  /// `index` collection to find the lecturer's courses without walking the
+  /// whole hierarchy, same pattern as FacHomeGrid._myCourseRefs.
+  ///
+  /// Returns a human-readable conflict message, or null if the slot is free.
+  Future<String?> _checkLecturerConflict(
+      String insAdminId,
+      String instituteId,
+      String lecturerId,
+      DateTime date,
+      TimeOfDay start,
+      TimeOfDay end, {
+        String? excludeLectureId,
+      }) async {
+    try {
+      final dbService = Provider.of<DbService>(context, listen: false);
+
+      final lecturerCourses = await dbService.indexDoc
+          .where("type", isEqualTo: "course")
+          .where("ins_admin_id", isEqualTo: insAdminId)
+          .where("institute_id", isEqualTo: instituteId)
+          .where("lecturer_id", isEqualTo: lecturerId)
+          .get();
+
+      if (lecturerCourses.docs.isEmpty) return null;
+
+      final startOfDay = DateTime(date.year, date.month, date.day);
+      final endOfDay = startOfDay.add(const Duration(days: 1));
+      final newStartMins = _toMinutes(start);
+      final newEndMins = _toMinutes(end);
+
+      for (var courseIndexDoc in lecturerCourses.docs) {
+        final data = courseIndexDoc.data() as Map<String, dynamic>;
+        final deptId = data['department_id'];
+        final sessId = data['session_id'];
+        final semId = data['semester_id'];
+        if (deptId == null || sessId == null || semId == null) continue;
+
+        final lecturesSnap = await dbService.dbref
+            .collection("ins_admins").doc(insAdminId)
+            .collection("institutes").doc(instituteId)
+            .collection("departments").doc(deptId)
+            .collection("sessions").doc(sessId)
+            .collection("semesters").doc(semId)
+            .collection("courses").doc(courseIndexDoc.id)
+            .collection("lectures")
+            .where("dated", isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
+            .where("dated", isLessThan: Timestamp.fromDate(endOfDay))
+            .get();
+
+        for (var lectureDoc in lecturesSnap.docs) {
+          if (excludeLectureId != null && lectureDoc.id == excludeLectureId) {
+            continue;
+          }
+
+          final lData = lectureDoc.data();
+          final existStartRaw = lData['start_time'];
+          final existEndRaw = lData['end_time'];
+          if (existStartRaw == null || existEndRaw == null) continue;
+
+          final existStartDt = (existStartRaw as Timestamp).toDate();
+          final existEndDt = (existEndRaw as Timestamp).toDate();
+          final existStartMins = existStartDt.hour * 60 + existStartDt.minute;
+          final existEndMins = existEndDt.hour * 60 + existEndDt.minute;
+
+          if (newStartMins < existEndMins && newEndMins > existStartMins) {
+            final existStartTod =
+            TimeOfDay(hour: existStartDt.hour, minute: existStartDt.minute);
+            final existEndTod =
+            TimeOfDay(hour: existEndDt.hour, minute: existEndDt.minute);
+            return '${lData['course_name'] ?? 'Another lecture'} is already '
+                'scheduled from ${_formatTime(existStartTod)} to '
+                '${_formatTime(existEndTod)} for this lecturer.';
+          }
+        }
+      }
+
+      return null;
+    } catch (e) {
+      print(e.toString());
+      return "Couldn't verify the lecturer's schedule — please try again.";
+    }
   }
 
   // ── Firestore streams ───────────────────────────────────────────────
@@ -621,7 +719,12 @@ class _DailyScheduleState extends State<DailySchedule> {
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      onPressed: () async {
+                      // Disabled while the cross-scope lecturer-conflict
+                      // check is in flight, so a slow connection can't let
+                      // the user double-tap past it.
+                      onPressed: _checkingConflict
+                          ? null
+                          : () async {
                         // 1. course
                         final courseChosen =
                             isEditing || selectedCourse != null;
@@ -646,7 +749,8 @@ class _DailyScheduleState extends State<DailySchedule> {
                         // 3. room field
                         if (!formKey.currentState!.validate()) return;
 
-                        // 4. full time validation (end > start, duration, overlaps)
+                        // 4. full time validation (end > start, duration,
+                        // overlaps within THIS department/session/semester)
                         final error = _validateSlot(
                           startTime!,
                           endTime!,
@@ -662,6 +766,45 @@ class _DailyScheduleState extends State<DailySchedule> {
                             ),
                           );
                           return;
+                        }
+
+                        // 5. cross-scope conflict check — catches this
+                        // lecturer being double-booked in a course that
+                        // belongs to a different department/session/semester,
+                        // which _validateSlot above cannot see.
+                        final lecturerId = isEditing
+                            ? courses
+                            .firstWhere((c) => c.name == lecture.course)
+                            .lecturer_id
+                            : courses
+                            .firstWhere((c) => c.id == selectedCourse)
+                            .lecturer_id;
+
+                        if (lecturerId != null) {
+                          set(() => _checkingConflict = true);
+                          final conflictError = await _checkLecturerConflict(
+                            widget.insAdmin.id!,
+                            widget.institute.id!,
+                            lecturerId,
+                            isEditing ? lecture.dated : widget.date,
+                            startTime!,
+                            endTime!,
+                            excludeLectureId: isEditing ? lecture.id : null,
+                          );
+                          if (!sheetContext.mounted) return;
+                          set(() => _checkingConflict = false);
+
+                          if (conflictError != null) {
+                            set(() => timeError = conflictError);
+                            ScaffoldMessenger.of(sheetContext).showSnackBar(
+                              SnackBar(
+                                content: Text(conflictError),
+                                backgroundColor: Colors.red.shade700,
+                                duration: const Duration(seconds: 4),
+                              ),
+                            );
+                            return;
+                          }
                         }
 
                         // ── all valid — write to Firestore ────────
@@ -731,7 +874,17 @@ class _DailyScheduleState extends State<DailySchedule> {
                         });
                         Navigator.pop(sheetContext);
                       },
-                      child: Text(
+                      child: _checkingConflict
+                          ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.4,
+                          valueColor:
+                          AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      )
+                          : Text(
                         isEditing ? "Update Lecture" : "Add Lecture",
                         style: const TextStyle(color: Colors.white),
                       ),

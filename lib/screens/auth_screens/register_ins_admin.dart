@@ -27,6 +27,13 @@ class _RegisterInsAdminState extends State<RegisterInsAdmin> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        iconTheme: IconThemeData(color: Theme.of(context).primaryColor),
+        title:Text("Register Institute Admin",textAlign: TextAlign.center,style: TextStyle(fontSize: 20,color: Theme.of(context).primaryColor,fontWeight: FontWeight.w600)),
+        centerTitle: true,
+        backgroundColor: Colors.white,
+        elevation: 0,
+      ),
       body:loading?Center(child:
       SizedBox(
           width:150,height: 150,
@@ -37,8 +44,7 @@ class _RegisterInsAdminState extends State<RegisterInsAdmin> {
           key: formKey,
           child: ListView(
             children: [
-              SizedBox(height: 25,),
-              Text("Register Institute Admin",textAlign: TextAlign.center,style: TextStyle(fontSize: 20,color: Theme.of(context).primaryColor,fontWeight: FontWeight.w600)),
+
               SizedBox(height: 20,),
               TextFormField(
                 controller: name,

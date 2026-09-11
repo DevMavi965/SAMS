@@ -1,12 +1,25 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:provider/provider.dart';
 import 'package:smas3/models/department.dart';
 import 'package:smas3/models/fac_model.dart';
 import 'package:smas3/models/ins_admin.dart';
 import 'package:smas3/models/institute.dart';
 
+import '../../../maxins/rm_functions.dart';
 import '../../../services/db_service.dart';
+
+
+class _Palette {
+  static const ink = Color(0xFF0E231F);
+  static const inkSoft = Color(0xFF16342E);
+  static const paper = Color(0xFFF7FAF9);
+  static const slate = Color(0xFF55645F);
+  static const hairline = Color(0xFFDEE6E3);
+  static const teal = Color(0xFF009878);
+}
+
 
 class AddFacultyScreen extends StatefulWidget {
   final InsAdmin insAdmin;
@@ -41,6 +54,7 @@ class _AddFacultyScreenState extends State<AddFacultyScreen> {
   TextEditingController designation=TextEditingController();
   String? selectedDepartment;
   final fkey=GlobalKey<FormState>();
+  bool obscure=true;
 
   @override
   void dispose() {
@@ -94,63 +108,6 @@ class _AddFacultyScreenState extends State<AddFacultyScreen> {
               ),
               SizedBox(height: 20,),
               TextFormField(
-                controller: email,
-                decoration: InputDecoration(
-                  labelText: "Email",
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(
-                          width: 0.5,
-                          color: Colors.grey
-                      )
-                  ),
-                ),
-                validator: (v){
-                  if(v!.isEmpty){
-                    return "Please enter email";
-                  }else if(v.length<3){
-                    return "Please enter valid email";
-                  }else if(!v.contains("@")){
-                    return "Please enter valid email";
-                  }else if(!v.contains(".")){
-                    return "Please enter valid email";
-                  }else if(!v.contains("com")){
-                    return "Please enter valid email";
-                  }else
-                    // method II
-                    // final emailRegex =
-                    // RegExp(r'^[\w\-\.]+@([\w\-]+\.)+[\w\-]{2,4}$');
-                    // if (!emailRegex.hasMatch(v.trim())) {
-                    //   return "Please enter valid email";
-                    // }
-                    return null;
-                },
-              ),//email
-              SizedBox(height: 15,),
-              TextFormField(
-                controller: password,
-                validator: (v){
-                  if(v!.isEmpty){
-                    return "Please enter password";
-                  }else if(v.length<4){
-                    return "password must be at least 8 characters";
-                  }
-                  return null;
-                },
-                decoration: InputDecoration(
-                  labelText: "password",
-                  suffixIcon: Icon(Icons.lock),
-                  border: OutlineInputBorder(),
-                  focusedBorder: OutlineInputBorder(
-                      borderSide: BorderSide(
-                          color: Theme.of(context).primaryColor,
-                          width: 1
-                      )
-                  ),
-                ),
-              ),
-              SizedBox(height: 20,),
-              TextFormField(
                 controller: phone,
                 validator: (v){
                   if(v!.isEmpty){
@@ -197,26 +154,112 @@ class _AddFacultyScreenState extends State<AddFacultyScreen> {
                 ),
               ),
               SizedBox(height: 20,),
-              ElevatedButton.icon(onPressed: (){
-                if(fkey.currentState!.validate()){
-                    Provider.of<DbService>(context,listen: false).registerFac(
-                        widget.insAdmin.id!, widget.institute.id!,widget.department.id!,
-                        Lecturer(
-                            name: name.text.trim(),
-                            deprt: widget.department.name,
-                            role: "faculty",
-                            insAdminId: widget.insAdmin.id!,
-                            instituteId: widget.institute.id!,
-                            departmentId: widget.department.id!,
-                            designation: designation.text.trim(),
-                            status: "active",
-                            email: email.text.trim(),
-                            phone: phone.text.trim(),
-                            semesters: [],
-                            courses: [],
-                            created_at: DateTime.now()
+              TextFormField(
+                controller: email,
+                keyboardType: TextInputType.emailAddress,
+                decoration: InputDecoration(
+                  labelText: "Email",
+                  hintText: "you@example.com",
+                  prefixIcon: const Icon(Icons.mail_outline, color: _Palette.slate),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) return "Enter your email";
+                  if (!v.contains("@") || !v.contains(".")) {
+                    return "Enter a valid email";
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 14),
+              // Password
+              Row(
+                children: [
+                  Expanded(
+                    flex: 3,
+                    child: TextFormField(
+                      controller: password,
+                      obscureText: obscure,
+                      decoration: InputDecoration(
+                        labelText: "Password",
+                        prefixIcon: const Icon(Icons.lock_outline, color: _Palette.slate),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                            color: obscure ? _Palette.slate : _Palette.teal,
+                          ),
+                          onPressed: () => setState(() => obscure = !obscure),
                         ),
-                        password.text.trim(), context);
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      validator: (v) {
+                        if (v == null || v.isEmpty) return "Enter your password";
+                        if (v.length < 8) return "Password must be at least 8 characters";
+                        return null;
+                      },
+                    ),
+                  ),
+                  SizedBox(width: 2,),
+                  Flexible(
+                    child:
+                    ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          //border
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.all(Radius.circular(12))
+                          ),
+                          backgroundColor:  Theme.of(context).primaryColor,
+                        ),
+                        onPressed: (){
+                          Fluttertoast.showToast(msg: "generating password");
+                          setState(() {
+                            password.text = RMFuncts.generatePassword();
+                          });
+                        }, child: Text("generate",maxLines: 1,style: TextStyle(
+                        color:Colors.white,
+                        fontSize: 12
+                    ),)),
+                  )
+                ],
+              ),
+              SizedBox(height: 20,),
+              ElevatedButton.icon(onPressed: ()async{
+                if(fkey.currentState!.validate()){
+                    try{
+                     await Provider.of<DbService>(context,listen: false).registerFac(
+                          widget.insAdmin.id!, widget.institute.id!,widget.department.id!,
+                          Lecturer(
+                              name: name.text.trim(),
+                              deprt: widget.department.name,
+                              role: "faculty",
+                              insAdminId: widget.insAdmin.id!,
+                              instituteId: widget.institute.id!,
+                              departmentId: widget.department.id!,
+                              designation: designation.text.trim(),
+                              status: "active",
+                              email: email.text.trim(),
+                              phone: phone.text.trim(),
+                              semesters: [],
+                              courses: [],
+                              created_at: DateTime.now()
+                          ),
+                          password.text.trim(), context);
+                      Fluttertoast.showToast(msg: "Faculty added successfully ");
+                      await RMFuncts.sendSamsCredentialsEmail(
+                        email.text.trim(),
+                        name.text.trim(),
+                        password.text.trim(),
+                      );
+                      Fluttertoast.showToast(msg: "credential-Email sent successfully");
+                      if(mounted){
+                        Navigator.pop(context);
+                      }
+
+
+                      Navigator.pop(context);
+                    }catch(e){
+                      print(e.toString());
+                    }
                     // ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Faculty added successfully"),));
                    Navigator.pop(context);
                 }else{
