@@ -17,6 +17,7 @@ import 'package:smas3/services/geo_location_service.dart';
 
 import '../../models/attendance.dart';
 import '../../models/lecture.dart';
+import '../../services/biometric_dervice.dart';
 import '../../services/db_service.dart';
 import '../../services/face_net_service/std_fac_check_out.dart';
 import '../../services/notification_helper.dart';
@@ -301,6 +302,59 @@ class _LectureAttendanceSectionState extends State<LectureAttendanceSection> {
     }
     _midpointDeadlineTimer = Timer(remaining, _fireAutoAbsentIfNeeded);
   }
+  //fingerprint-based attendance
+  bool loading=false;
+  bool authenticated=false;
+  bool isAuthenticating=false;
+  final biometricService=BiometricService();
+  handleBiometricAuthCheckIn()async{
+    setState(() {
+      isAuthenticating=true;
+    });
+    var result=await biometricService.authenticateUser();
+    setState(() {
+      isAuthenticating=false;
+      authenticated=result.$1;
+    });
+    if(authenticated){
+      await _db.studentCheckIn(
+          context, _lecture, widget.student.id!, "fingerprint");
+      if(mounted){
+        Fluttertoast.showToast(msg: " successfully marked attendance with fingerprint");
+      }
+    }
+    else{
+      if(mounted){
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(result.$2))
+        );
+      }
+    }
+  }
+  handleBiometricAuthCheckOut()async{
+    setState(() {
+      isAuthenticating=true;
+    });
+    var result=await biometricService.authenticateUser();
+    setState(() {
+      isAuthenticating=false;
+      authenticated=result.$1;
+    });
+    if(authenticated){
+     await _db.studentCheckOut(
+          context, _lecture, widget.student.id!, "fingerprint");
+      if(mounted){
+        Fluttertoast.showToast(msg: " successfully marked attendance with fingerprint");
+      }
+    }
+    else{
+      if(mounted){
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(result.$2))
+        );
+      }
+    }
+  }
 
   Future<void> _fireAutoAbsentIfNeeded() async {
     if (_autoAbsentFired || !mounted) return;
@@ -373,8 +427,7 @@ class _LectureAttendanceSectionState extends State<LectureAttendanceSection> {
                       targetLongitude: widget.institute.location['long']
                   );
                   if(isInside){
-                    _run(() => _db.studentCheckIn(
-                        context, _lecture, widget.student.id!, "facial")
+                    _run(() =>handleBiometricAuthCheckIn()
                     );
                   }
                 }//33.587951929093414, 72.97910990043208
@@ -603,8 +656,16 @@ class _LectureAttendanceSectionState extends State<LectureAttendanceSection> {
                   icon: CupertinoIcons.hand_raised_fill,
                   label: "Fingerprint",
                   busy: _busy,
-                  onTap: () => _run(() => _db.studentCheckOut(
-                      context, _lecture, widget.student.id!, "fingerprint")),
+                  onTap: () async{
+                    bool isInside =await GeofenceService.validateGeofence(
+                        context: context,
+                        targetLatitude: widget.institute.location['lat'],
+                        targetLongitude: widget.institute.location['long']
+                    );
+                    if(isInside){
+                    _run(() => handleBiometricAuthCheckOut());
+                    }
+                  },
                 ),
               ),
               const SizedBox(width: 10),
@@ -615,14 +676,24 @@ class _LectureAttendanceSectionState extends State<LectureAttendanceSection> {
                   busy: _busy,
                   //_db.studentCheckOut(
                   //                       context, _lecture, widget.student.id!, "facial")
-                  onTap: () => _run(() => Navigator.push(
-                      context, MaterialPageRoute(
-                      builder: (_)=>FaceAttendanceScreenCheckOut(
-                          student: widget.student,
-                          lecture: _lecture)
-                  )
-                  )
-                  ),
+                  onTap: ()async{
+                    bool isInside =await GeofenceService.validateGeofence(
+                        context: context,
+                        targetLatitude: widget.institute.location['lat'],
+                        targetLongitude: widget.institute.location['long']
+                    );
+                    if(isInside){
+                    _run(() => Navigator.push(
+                        context, MaterialPageRoute(
+                        builder: (_)=>FaceAttendanceScreenCheckOut(
+                            student: widget.student,
+                            lecture: _lecture)
+                      )
+                     )
+                     );
+                    }
+                  }
+
                 ),
               ),
             ],

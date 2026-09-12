@@ -93,7 +93,7 @@ class DbService with ChangeNotifier{
       }
     }catch(e){
       if(context.mounted){
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString()),));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("unstable network connection or invalid role selected"),));
       }
     }finally{
 

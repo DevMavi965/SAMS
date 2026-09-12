@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:provider/provider.dart';
+import 'package:smas3/maxins/rm_functions.dart';
 import 'package:smas3/models/student_model.dart';
 import 'package:smas3/screens/student/std_facial_setting.dart';
+
+import '../../services/biometric_dervice.dart';
+import '../../services/db_service.dart';
 
 class StdBioMet extends StatefulWidget {
   final Student student;
@@ -12,6 +17,34 @@ class StdBioMet extends StatefulWidget {
 }
 
 class _StdBioMetState extends State<StdBioMet> {
+  bool loading=false;
+  bool authenticated=false;
+  bool isAuthenticating=false;
+  final biometricService=BiometricService();
+
+  handleBiometricAuthentication()async{
+    setState(() {
+      isAuthenticating=true;
+    });
+    var result=await biometricService.authenticateUser();
+    setState(() {
+      isAuthenticating=false;
+      authenticated=result.$1;
+    });
+    if(authenticated){
+      if(mounted){
+       Fluttertoast.showToast(msg: "Authentication successful,you can now mark attendance with fingerprint");
+      }
+    }
+    else{
+      if(mounted){
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(result.$2))
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -35,15 +68,13 @@ class _StdBioMetState extends State<StdBioMet> {
             ),
           ),
           InkWell(//fingerPrint here.o.o.o
-            onTap: (){
-              Fluttertoast.showToast(msg: "coming soon..",textColor: Colors.white);
-            },
+            onTap:isAuthenticating?null:handleBiometricAuthentication,
             child: Card(
               color: Colors.white,
               child:ListTile(
                 title: Text("Finger-print setting"),
                 leading: Icon(Icons.fingerprint,color: Theme.of(context).primaryColor,),
-                subtitle: Text("configure finger-print",style: TextStyle(color: Colors.grey),),
+                subtitle: Text("configure finger-print to enable attendance through fingerprint",style: TextStyle(color: Colors.grey),),
               ),
             ),
           )
@@ -51,4 +82,39 @@ class _StdBioMetState extends State<StdBioMet> {
       ),
     );
   }
+  enableFingerPrint()async{
+    try{
+      setState(() {
+        loading=true;
+      });
+      await Provider.of<DbService>(context,listen: false).indexDoc.doc(widget.student.id).set({
+        "fingerprint":true
+      });
+      print("fingerprint enabled");
+    }catch(e){
+      print(e.toString());
+    }finally{
+      setState(() {
+        loading=false;
+      });
+    }
+  }
+  disabledFingerPrint()async{
+    try{
+      setState(() {
+        loading=true;
+      });
+      await Provider.of<DbService>(context,listen: false).indexDoc.doc(widget.student.id).set({
+        "fingerprint":false
+      });
+      print("fingerprint enabled");
+    }catch(e){
+      print(e.toString());
+    }finally{
+      setState(() {
+        loading=false;
+      });
+    }
+  }
+
 }

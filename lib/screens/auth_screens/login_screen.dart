@@ -266,14 +266,14 @@ class _LoginScreenState extends State<LoginScreen> {
       )
           : Consumer<DbService>(
         builder: (context, provider, child) {
-          if (provider.loading) {
-            return Center(
-              child: SizedBox(
-                  width: 150,
-                  height: 150,
-                  child: Lottie.asset("assets/anims/m2.json")),
-            );
-          }
+          // if (provider.loading) {
+          //   return Center(
+          //     child: SizedBox(
+          //         width: 150,
+          //         height: 150,
+          //         child: Lottie.asset("assets/anims/m2.json")),
+          //   );
+          // }
           return SingleChildScrollView(
             child: Column(
               children: [
@@ -322,23 +322,25 @@ class _LoginScreenState extends State<LoginScreen> {
       child: Column(
         children: [
           Container(
-            width: 56,
-            height: 56,
+            width: 60,
+            height: 60,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.08),
+              color: Colors.white.withOpacity(0.58),
               shape: BoxShape.circle,
               border: Border.all(color: Colors.white.withOpacity(0.25)),
             ),
             alignment: Alignment.center,
-            child: const Text(
-              "S",
-              style: TextStyle(
-                fontFamily: 'serif',
-                fontSize: 26,
-                fontWeight: FontWeight.w600,
-                color: Colors.white,
-              ),
-            ),
+            child:
+            Image.asset("assets/icons/samshyperlogo.png", ),
+            // child: const Text(
+            //   "S",
+            //   style: TextStyle(
+            //     fontFamily: 'serif',
+            //     fontSize: 26,
+            //     fontWeight: FontWeight.w600,
+            //     color: Colors.white,
+            //   ),
+            // ),
           ),
           const SizedBox(height: 16),
           const Text(
@@ -366,7 +368,7 @@ class _LoginScreenState extends State<LoginScreen> {
       margin: const EdgeInsets.symmetric(horizontal: 20),
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color:Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: _Palette.hairline),
         boxShadow: [
@@ -488,11 +490,12 @@ class _LoginScreenState extends State<LoginScreen> {
                   }
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).primaryColor,
+                  backgroundColor:Provider.of<DbService>(context,listen: false).loading? Theme.of(context).primaryColor.withOpacity(0.76):Theme.of(context).primaryColor,
                   padding: const EdgeInsets.symmetric(vertical: 15),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 ),
-                child: const Text(
+                child:  Text(
+                  Provider.of<DbService>(context,listen: false).loading?"signing in...":
                   "Sign in",
                   style: TextStyle(
                       fontSize: 15.5, color: Colors.white, fontWeight: FontWeight.w600),
