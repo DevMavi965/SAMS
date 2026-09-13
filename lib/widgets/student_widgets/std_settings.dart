@@ -6,6 +6,7 @@ import 'package:smas3/models/student_model.dart';
 
 import '../../providers/theme_Provider.dart' show ThemeProvider;
 import '../../screens/student/std_biomet.dart';
+import '../../services/notification_helper.dart';
 class StdSettings extends StatefulWidget {
   final Student student;
   const StdSettings({super.key, required this.student});
@@ -15,7 +16,18 @@ class StdSettings extends StatefulWidget {
 }
 
 class _StdSettingsState extends State<StdSettings> {
-  bool notif_on = false,_theme = false;
+  bool notif_on = true, _theme = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadNotifPref();
+  }
+
+  Future<void> _loadNotifPref() async {
+    final enabled = await NotifHelper.isEnabled();
+    if (mounted) setState(() => notif_on = enabled);
+  }
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -38,6 +50,42 @@ class _StdSettingsState extends State<StdSettings> {
           width: 0.2,
         ),
         children: [
+          //bio metric setting
+          TableRow(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: InkWell(
+                    onTap: (){
+                      Navigator.push(context, MaterialPageRoute(builder: (_)=>StdBioMet(student: widget.student,)));
+                    },
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 45,
+                          height: 45,
+                          decoration: BoxDecoration(
+                            color: Colors.green.shade50,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(PhosphorIconsBold.shieldCheck,size: 25,color: Theme.of(context).primaryColor,),
+                        ),
+                        SizedBox(width: 10,),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text("Biometric Settings",),
+                            Text("configure fingerprint & face id",style: TextStyle(color: Colors.grey),),
+                          ],
+                        ),
+                        Spacer(),
+                        Icon(Icons.navigate_next,size: 20,color: Colors.grey,)
+                      ],
+                    ),
+                  ),
+                )
+              ]
+          ),
           //profile
           TableRow(
               children: [
@@ -97,7 +145,7 @@ class _StdSettingsState extends State<StdSettings> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text("Push Notifications",),
-                          Text("03351094534",style: TextStyle(color: Colors.grey),),
+                          Text("receive notifications from us",style: TextStyle(color: Colors.grey),),
                         ],
                       ),
                       Spacer(),
@@ -118,10 +166,10 @@ class _StdSettingsState extends State<StdSettings> {
                               return const Icon(Icons.close, color: Colors.white);
                             },
                           ),
-                          value: notif_on, onChanged: (value){
-                        setState(() {
-                          notif_on =!notif_on;
-                        });
+                          value: notif_on,
+                          onChanged: (value)async{
+                            setState(() => notif_on = value);
+                            await NotifHelper.setEnabled(value);
 
                       }),
                       )
@@ -130,7 +178,7 @@ class _StdSettingsState extends State<StdSettings> {
                 )
               ]
           ),
-          //Darkmode
+          //Dark mode
           TableRow(
               children: [
                 Padding(
@@ -181,42 +229,7 @@ class _StdSettingsState extends State<StdSettings> {
                 )
               ]
           ),
-          //bio metric setting
-          TableRow(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: InkWell(
-                    onTap: (){
-                      Navigator.push(context, MaterialPageRoute(builder: (_)=>StdBioMet(student: widget.student,)));
-                    },
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 45,
-                          height: 45,
-                          decoration: BoxDecoration(
-                            color: Colors.green.shade50,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(PhosphorIconsBold.shieldCheck,size: 25,color: Theme.of(context).primaryColor,),
-                        ),
-                        SizedBox(width: 10,),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text("Biometric Settings",),
-                            Text("configure fingerprint & face id",style: TextStyle(color: Colors.grey),),
-                          ],
-                        ),
-                        Spacer(),
-                        Icon(Icons.navigate_next,size: 20,color: Colors.grey,)
-                      ],
-                    ),
-                  ),
-                )
-              ]
-          )
+
         ],
       ),
     );

@@ -8,6 +8,7 @@ import 'package:smas3/models/fac_model.dart';
 import 'package:smas3/models/student_model.dart';
 
 import '../../providers/theme_Provider.dart' show ThemeProvider;
+import '../../services/notification_helper.dart';
 class AdminSettingCard extends StatefulWidget {
   final Admin admin;
   const AdminSettingCard({super.key, required this.admin});
@@ -17,7 +18,18 @@ class AdminSettingCard extends StatefulWidget {
 }
 
 class _AdminSettingCardState extends State<AdminSettingCard> {
-  bool notif_on = false,_theme = false;
+  bool notif_on = true, _theme = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadNotifPref();
+  }
+
+  Future<void> _loadNotifPref() async {
+    final enabled = await NotifHelper.isEnabled();
+    if (mounted) setState(() => notif_on = enabled);
+  }
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -61,7 +73,7 @@ class _AdminSettingCardState extends State<AdminSettingCard> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text("Push Notifications",),
-                          Text("manage notifications",style: TextStyle(color: Colors.grey),),
+                          Text("receive notifications from us",style: TextStyle(color: Colors.grey),),
                         ],
                       ),
                       Spacer(),
@@ -82,10 +94,9 @@ class _AdminSettingCardState extends State<AdminSettingCard> {
                                 return const Icon(Icons.close, color: Colors.white);
                               },
                             ),
-                            value: notif_on, onChanged: (value){
-                          setState(() {
-                            notif_on =!notif_on;
-                          });
+                            value: notif_on, onChanged: (value)async{
+                          setState(() => notif_on = value);
+                          await NotifHelper.setEnabled(value);
 
                         }),
                       )

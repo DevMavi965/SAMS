@@ -47,7 +47,6 @@ class MyApp extends StatelessWidget {
 
           themeMode: provider.themeMode,
 
-
           theme: ThemeData(
 
             scaffoldBackgroundColor: Color(0xfffaf8fc),

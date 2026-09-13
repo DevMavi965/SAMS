@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/cupertino.dart';
@@ -13,7 +15,6 @@ import 'package:smas3/models/lecture.dart';
 import 'package:smas3/models/course.dart';
 import 'package:smas3/screens/student/std_lecAtd.dart';
 import 'package:smas3/services/geo_location_service.dart';
-
 
 import '../../models/attendance.dart';
 import '../../models/student_model.dart';
@@ -31,7 +32,6 @@ const List<String> _monthAbbrev = [
   "Jan", "Feb", "Mar", "Apr", "May", "Jun",
   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 ];
-
 
 DateTime _combineDateAndTime(DateTime date, TimeOfDay time) {
   return DateTime(date.year, date.month, date.day, time.hour, time.minute);
@@ -52,18 +52,17 @@ class _ResolvedLecture {
 }
 
 class _MonthCount {
-  final int attended; // present + late
-  final int total; // all conducted lectures in the range
+  final int attended;
+  final int total;
   const _MonthCount(this.attended, this.total);
 
   double get percentage => total > 0 ? (attended / total) * 100 : 0.0;
 }
 
-
 class _StudentStats {
   final List<LectureModel> todaysLectures;
-  final int streakLectures; // consecutive present/late, most recent first
-  final int presentDays; // semester-to-date
+  final int streakLectures;
+  final int presentDays;
   final int lateDays;
   final int absentDays;
   final _MonthCount thisMonth;
@@ -97,7 +96,7 @@ class _StudentStats {
 }
 
 class StdHome extends StatefulWidget {
-  const StdHome({super.key,required this.student, required this.insAdmin, required this.institute});
+  const StdHome({super.key, required this.student, required this.insAdmin, required this.institute});
 
   final Student student;
   final InsAdmin insAdmin;
@@ -108,15 +107,30 @@ class StdHome extends StatefulWidget {
 }
 
 class _StdHomeState extends State<StdHome> {
-  late Future<_StudentStats> _statsFuture;
+  // Live stats stream, fed by one Firestore listener per enrolled course.
+  // Replaces the old one-shot _statsFuture so a successful check-in /
+  // midpoint / checkout write shows up automatically, with no manual
+  // "please refetch" plumbing needed from child widgets.
+  StreamController<_StudentStats>? _statsController;
+  final List<StreamSubscription<QuerySnapshot<Map<String, dynamic>>>> _lectureSubs = [];
+  final Map<String, List<LectureModel>> _lecturesByCourse = {};
+  final Set<String> _scheduledNotifKeys = {};
 
   @override
   void initState() {
     super.initState();
-    _statsFuture = _fetchStudentStats();
+    _statsController = StreamController<_StudentStats>.broadcast();
+    _initStatsStream();
   }
 
-
+  @override
+  void dispose() {
+    for (final sub in _lectureSubs) {
+      sub.cancel();
+    }
+    _statsController?.close();
+    super.dispose();
+  }
 
   static TimeOfDay? _toTimeOfDay(dynamic v) {
     if (v == null) return null;
@@ -137,8 +151,7 @@ class _StdHomeState extends State<StdHome> {
       sid: raw['sid']?.toString() ?? '',
       checkin: _toTimeOfDay(raw['checkin']),
       checkout: _toTimeOfDay(raw['checkout']),
-      mid_point:
-      raw['mid_point'] is bool ? raw['mid_point'] as bool : null,
+      mid_point: raw['mid_point'] is bool ? raw['mid_point'] as bool : null,
       method: raw['method']?.toString(),
       status: raw['status']?.toString() ?? 'absent',
     ))
@@ -161,100 +174,12 @@ class _StdHomeState extends State<StdHome> {
       course: data['course_name'] ?? '',
     );
   }
-  Future<void> scheduleLectureNotificationBeforeStart(LectureModel lecture) async {
-    // 10 min before the lecture
-    final lectureStart = _combineDateAndTime(
-      lecture.dated,
-      lecture.start_time,
-    );
 
-    // Don't schedule lectures that have already started
-    if (lectureStart.isBefore(DateTime.now())) {
-      return;
-    }
-
-   final notifDate=lectureStart.subtract(const Duration(minutes: 10));
-    await NotifHelper.scheduledNotification(
-        "lecture",
-        "chek-in reminder :",
-        " ${lecture.course} lecture starting [Room # ${lecture.room}] in 10 minutes , make sure to not be mark late",
-        notifDate,
-        _notifId("before-start", lecture));
-  }
-  Future<void> scheduleLectureNotificationStart(LectureModel lecture) async {
-    // 10 min before the lecture
-    final lectureStart = _combineDateAndTime(
-      lecture.dated,
-      lecture.start_time,
-    );
-
-    // Don't schedule lectures that have already started
-    if (lectureStart.isBefore(DateTime.now())) {
-      return;
-    }
-    await NotifHelper.scheduledNotification(
-        "lecture",
-        "chek-in reminder :",
-        " ${lecture.course} lecture started in [Room # ${lecture.room}], make sure to not be mark late",
-        lectureStart,_notifId("sart", lecture));
-  }
-  Future<void> scheduleLectureNotificationEnd(LectureModel lecture) async {
-    // 10 min before the lecture
-    final lectureEnd = _combineDateAndTime(
-      lecture.dated,
-      lecture.end_time,
-    );
-
-    // Don't schedule lectures that have already started
-    if (lectureEnd.isBefore(DateTime.now())) {
-      return;
-    }
-    await NotifHelper.scheduledNotification(
-        "lecture", "chek-out remainder :",
-        " ${lecture.course} lecture ended , make sure to check-out",
-        lectureEnd,_notifId("end", lecture));
-  }
-  Future<void> scheduleLectureNotificationBeforeEnd(LectureModel lecture) async {
-    // 10 min before the lecture
-    final lectureEnd = _combineDateAndTime(
-      lecture.dated,
-      lecture.end_time,
-    );
-
-    // Don't schedule lectures that have already started
-    if (lectureEnd.isBefore(DateTime.now())) {
-      return;
-    }
-
-   final notifDate=lectureEnd.subtract(const Duration(minutes: 5));
-    await NotifHelper.scheduledNotification(
-        "lecture", "chek-in remainder :",
-        " ${lecture.course} lecture ending soon in few minutes , make sure to check-out",
-        notifDate,_notifId("bofore-end", lecture));
-  }
-
-
-  static String? _statusFor(LectureModel lecture, String studentId) {
-    final record =
-    (lecture.attendance ?? []).firstWhereOrNull((a) => a.sid == studentId);
-    return record?.status;
-  }
-
-
-  static String _resolvedStatus(LectureModel lecture, String studentId) {
-    return _statusFor(lecture, studentId) ?? 'absent';
-  }
-
-  static bool _isAttended(String status) => status == 'present' || status == 'late';
-
-  // vvvv=== fetchhing std ststz
-  Future<_StudentStats> _fetchStudentStats() async {
+  Future<void> _initStatsStream() async {
     try {
       final dbService = Provider.of<DbService>(context, listen: false);
       final student = widget.student;
-      final studentId = student.id ?? '';
 
-      // Every course this student is enrolled in.
       final myCourses = await dbService.indexDoc
           .where("type", isEqualTo: "course")
           .where("ins_admin_id", isEqualTo: student.insAdminId)
@@ -263,10 +188,16 @@ class _StdHomeState extends State<StdHome> {
           .where("session_id", isEqualTo: student.sessionId)
           .where("semester_id", isEqualTo: student.semesterId)
           .get();
+
       debugPrint('courses: ${myCourses.docs.length}');
-      if (myCourses.docs.isEmpty) return _StudentStats.empty;
-      final lectureSnapshots = await Future.wait(myCourses.docs.map((courseDoc) {
-        return dbService.dbref
+
+      if (myCourses.docs.isEmpty) {
+        _statsController?.add(_StudentStats.empty);
+        return;
+      }
+
+      for (final courseDoc in myCourses.docs) {
+        final ref = dbService.dbref
             .collection("ins_admins")
             .doc(student.insAdminId)
             .collection("institutes")
@@ -279,55 +210,122 @@ class _StdHomeState extends State<StdHome> {
             .doc(student.semesterId)
             .collection("courses")
             .doc(courseDoc.id)
-            .collection("lectures")
-            .get();
-      }));
+            .collection("lectures");
 
-      final allLectures = <LectureModel>[
-        for (final snap in lectureSnapshots)
-          for (final doc in snap.docs) _lectureFromDoc(doc.id, doc.data()),
-      ];
+        final sub = ref.snapshots().listen(
+              (snap) {
+            _lecturesByCourse[courseDoc.id] = snap.docs
+                .map((d) => _lectureFromDoc(d.id, d.data()))
+                .toList();
+            _emitStats(student.id ?? '');
+          },
+          onError: (e, st) => debugPrint("StdHome lecture stream error: $e"),
+        );
 
-      for (final lecture in allLectures) {
-        try {
-          await scheduleLectureNotificationBeforeStart(lecture);
-          await scheduleLectureNotificationStart(lecture);
-          await scheduleLectureNotificationBeforeEnd(lecture);
-          await scheduleLectureNotificationEnd(lecture);
-        }catch(e){
-          print("error-x $e");
-        }
+        _lectureSubs.add(sub);
       }
-      return _buildStats(allLectures, studentId);
-
     } catch (e) {
-      debugPrint("StdHome._fetchStudentStats error: $e");
-      return _StudentStats.empty;
+      debugPrint("StdHome._initStatsStream error: $e");
+      _statsController?.add(_StudentStats.empty);
     }
   }
+
+  void _emitStats(String studentId) {
+    final allLectures = _lecturesByCourse.values.expand((l) => l).toList();
+    _scheduleNotificationsFor(allLectures);
+    final stats = _buildStats(allLectures, studentId);
+    if (_statsController != null && !_statsController!.isClosed) {
+      _statsController!.add(stats);
+    }
+  }
+
+  // Notifications only need to be scheduled once per lecture, not on every snapshot event — guarded by `_scheduledNotifKeys` so a livestream doesn't re-fire these on every attendance write.
+  Future<void> _scheduleNotificationsFor(List<LectureModel> lectures) async {
+    for (final lecture in lectures) {
+      if (_scheduledNotifKeys.contains(lecture.id)) continue;
+      _scheduledNotifKeys.add(lecture.id!);
+      try {
+        await scheduleLectureNotificationBeforeStart(lecture);
+        await scheduleLectureNotificationStart(lecture);
+        await scheduleLectureNotificationBeforeEnd(lecture);
+        await scheduleLectureNotificationEnd(lecture);
+      } catch (e) {
+        print("error-x $e");
+      }
+    }
+  }
+
+  Future<void> scheduleLectureNotificationBeforeStart(LectureModel lecture) async {
+    final lectureStart = _combineDateAndTime(lecture.dated, lecture.start_time);
+    if (lectureStart.isBefore(DateTime.now())) return;
+    final notifDate = lectureStart.subtract(const Duration(minutes: 10));
+    await NotifHelper.scheduledNotification(
+        "lecture",
+        "chek-in reminder :",
+        " ${lecture.course} lecture starting [Room # ${lecture.room}] in 10 minutes , make sure to not be mark late",
+        notifDate,
+        _notifId("before-start", lecture));
+  }
+
+  Future<void> scheduleLectureNotificationStart(LectureModel lecture) async {
+    final lectureStart = _combineDateAndTime(lecture.dated, lecture.start_time);
+    if (lectureStart.isBefore(DateTime.now())) return;
+    await NotifHelper.scheduledNotification(
+        "lecture",
+        "chek-in reminder :",
+        " ${lecture.course} lecture started in [Room # ${lecture.room}], make sure to not be mark late",
+        lectureStart,
+        _notifId("sart", lecture));
+  }
+
+  Future<void> scheduleLectureNotificationEnd(LectureModel lecture) async {
+    final lectureEnd = _combineDateAndTime(lecture.dated, lecture.end_time);
+    if (lectureEnd.isBefore(DateTime.now())) return;
+    await NotifHelper.scheduledNotification(
+        "lecture", "chek-out remainder :",
+        " ${lecture.course} lecture ended , make sure to check-out",
+        lectureEnd, _notifId("end", lecture));
+  }
+
+  Future<void> scheduleLectureNotificationBeforeEnd(LectureModel lecture) async {
+    final lectureEnd = _combineDateAndTime(lecture.dated, lecture.end_time);
+    if (lectureEnd.isBefore(DateTime.now())) return;
+    final notifDate = lectureEnd.subtract(const Duration(minutes: 5));
+    await NotifHelper.scheduledNotification(
+        "lecture", "chek-in remainder :",
+        " ${lecture.course} lecture ending soon in few minutes , make sure to check-out",
+        notifDate, _notifId("bofore-end", lecture));
+  }
+
+  static String? _statusFor(LectureModel lecture, String studentId) {
+    final record = (lecture.attendance ?? []).firstWhereOrNull((a) => a.sid == studentId);
+    return record?.status;
+  }
+
+  static String _resolvedStatus(LectureModel lecture, String studentId) {
+    return _statusFor(lecture, studentId) ?? 'absent';
+  }
+
+  static bool _isAttended(String status) => status == 'present' || status == 'late';
+
   int _notifId(String type, LectureModel lecture) {
-    // Stable per lecture+type, small enough for plugin's int id.
     return (lecture.id.hashCode ^ type.hashCode) & 0x7FFFFFFF % 100000;
   }
+
   _StudentStats _buildStats(List<LectureModel> allLectures, String studentId) {
     final now = DateTime.now();
 
-    final todaysLectures =
-    allLectures.where((l) => DateUtils.isSameDay(l.dated, now)).toList();
+    final todaysLectures = allLectures.where((l) => DateUtils.isSameDay(l.dated, now)).toList();
 
     final resolved = allLectures.map((l) {
       final start = _combineDateAndTime(l.dated, l.start_time);
       final end = _combineDateAndTime(l.dated, l.end_time);
-      return _ResolvedLecture(
-        lecture: l,
-        start: start,
-        end: end,
-        conducted: now.isAfter(end),
-      );
+      return _ResolvedLecture(lecture: l, start: start, end: end, conducted: now.isAfter(end));
     }).toList();
 
     final conducted = resolved.where((r) => r.conducted).toList()
       ..sort((a, b) => b.start.compareTo(a.start));
+
     var streak = 0;
     for (final r in conducted) {
       if (_isAttended(_resolvedStatus(r.lecture, studentId))) {
@@ -369,7 +367,6 @@ class _StdHomeState extends State<StdHome> {
     final lastMonthEnd = thisMonthStart;
     final lastMonth = countsForRange(lastMonthStart, lastMonthEnd);
 
-
     final trendMonths = <String>[];
     final trendPercentages = <double>[];
     for (var i = 5; i >= 0; i--) {
@@ -403,121 +400,89 @@ class _StdHomeState extends State<StdHome> {
       duration: const Duration(milliseconds: 1500),
       curve: Curves.easeInOut,
       margin: const EdgeInsets.all(12),
-      child: ListView(
-        children: [
-          _WelcomeHeader(studentName: widget.student.name),
-          const SizedBox(height: 25),
+      child: StreamBuilder<_StudentStats>(
+        stream: _statsController?.stream,
+        builder: (context, snapshot) {
+          final stats = snapshot.data ?? _StudentStats.empty;
+          final isWaiting = !snapshot.hasData;
 
-          FutureBuilder<_StudentStats>(
-            future: _statsFuture,
-            builder: (context, snapshot) {
-              final stats = snapshot.data ?? _StudentStats.empty;
-              return _TodayAttendanceCard(
-                connectionState: snapshot.connectionState,
+          final todaysLectures = List<LectureModel>.from(stats.todaysLectures)
+            ..sort((a, b) => _combineDateAndTime(a.dated, a.start_time)
+                .compareTo(_combineDateAndTime(b.dated, b.start_time)));
+
+          return ListView(
+            children: [
+              _WelcomeHeader(studentName: widget.student.name),
+              const SizedBox(height: 25),
+
+              _TodayAttendanceCard(
+                connectionState: isWaiting ? ConnectionState.waiting : ConnectionState.active,
                 error: snapshot.error,
                 todaysLectures: stats.todaysLectures,
                 studentId: studentId,
                 streakLectures: stats.streakLectures,
                 thisMonthPercent: stats.thisMonth.percentage.round(),
-              );
-            },
-          ),
-          const SizedBox(height: 15),
+              ),
+              const SizedBox(height: 15),
 
-          FutureBuilder<_StudentStats>(
-            future: _statsFuture,
-            builder: (context, snapshot) {
-              final stats = snapshot.data ?? _StudentStats.empty;
-              return AttRecCard(
+              AttRecCard(
                 present_days: stats.presentDays,
                 late_days: stats.lateDays,
                 absent_days: stats.absentDays,
-              );
-            },
-          ),
-          const SizedBox(height: 25),
+              ),
+              const SizedBox(height: 25),
 
-          FutureBuilder<_StudentStats>(
-            future: _statsFuture,
-            builder: (context, snapshot) {
-              final stats = snapshot.data ?? _StudentStats.empty;
-              final totalDays = stats.thisMonth.total > 0 ? stats.thisMonth.total.toDouble() : 1.0;
-              final thisMonthAttended = stats.thisMonth.total > 0 ? stats.thisMonth.attended.toDouble() : 0.0;
-              return OverAllAttCard(
-                thisMonth: thisMonthAttended,
+              OverAllAttCard(
+                thisMonth: stats.thisMonth.total > 0 ? stats.thisMonth.attended.toDouble() : 0.0,
                 lastMonth: stats.lastMonthPercentage,
-                totalDays: totalDays,
-              );
-            },
-          ),
-          const SizedBox(height: 20),
+                totalDays: stats.thisMonth.total > 0 ? stats.thisMonth.total.toDouble() : 1.0,
+              ),
+              const SizedBox(height: 20),
 
-          FutureBuilder<_StudentStats>(
-            future: _statsFuture,
-            builder: (context, snapshot) {
-              final stats = snapshot.data ?? _StudentStats.empty;
-              if (stats.trendMonths.isEmpty) return const SizedBox.shrink();
-              return CustomeLineChart(
-                Months: stats.trendMonths,
-                StudentPersetage: stats.trendPercentages,
-              );
-            },
-          ),
-          const SizedBox(height: 20),
+              if (stats.trendMonths.isNotEmpty)
+                CustomeLineChart(
+                  Months: stats.trendMonths,
+                  StudentPersetage: stats.trendPercentages,
+                ),
+              const SizedBox(height: 20),
 
-          const _SectionHeader(title: "Today's lectures"),
-          const SizedBox(height: 7),
-          FutureBuilder<_StudentStats>(
-            future: _statsFuture,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Padding(
+              const _SectionHeader(title: "Today's lectures"),
+              const SizedBox(height: 7),
+
+              if (isWaiting)
+                const Padding(
                   padding: EdgeInsets.symmetric(vertical: 20),
                   child: Center(child: CircularProgressIndicator()),
-                );
-              }
-              if (snapshot.hasError) {
-                return Text("Error: ${snapshot.error}");
-              }
-
-              final todaysLectures = List<LectureModel>.from(
-                  (snapshot.data ?? _StudentStats.empty).todaysLectures)
-                ..sort((a, b) => _combineDateAndTime(a.dated, a.start_time)
-                    .compareTo(_combineDateAndTime(b.dated, b.start_time)));
-
-              if (todaysLectures.isEmpty) {
-                return const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 12),
-                  child: Text(
-                    "No lectures today",
-                    style: TextStyle(color: Colors.grey),
-                  ),
-                );
-              }
-
-              return Column(
-                children: [
-                  for (final lecture in todaysLectures)
-                    Column(
-                      children: [
-                        InkWell(
-                          child: UpcomingClassCard(
+                )
+              else if (snapshot.hasError)
+                Text("Error: ${snapshot.error}")
+              else if (todaysLectures.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 12),
+                    child: Text("No lectures today", style: TextStyle(color: Colors.grey)),
+                  )
+                else
+                  Column(
+                    children: [
+                      for (final lecture in todaysLectures)
+                        Column(
+                          children: [
+                            InkWell(
+                              child: UpcomingClassCard(lectureModel: lecture, studentId: studentId),
+                            ),
+                            LectureAttendanceSection(
+                              insAdmin: widget.insAdmin,
+                              institute: widget.institute,
                               lectureModel: lecture,
-                              studentId: studentId
-                          ),
+                              student: widget.student,
+                            ),
+                          ],
                         ),
-                        LectureAttendanceSection(//not conducted
-                            insAdmin: widget.insAdmin,
-                            institute: widget.institute,
-                            lectureModel: lecture,
-                            student: widget.student,),
-                      ],
-                    ),
-                ],
-              );
-            },
-          ),
-        ],
+                    ],
+                  ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -537,32 +502,22 @@ class _WelcomeHeader extends StatelessWidget {
           const SizedBox(width: 5),
           const CircleAvatar(
             radius: 30,
-            backgroundImage: AssetImage("assets/icons/user.png",),
+            backgroundImage: AssetImage("assets/icons/user.png"),
           ),
           const SizedBox(width: 20),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                "Welcome back!",
-                style: TextStyle(fontSize: 13, color: Colors.black54),
-              ),
+              const Text("Welcome back!", style: TextStyle(fontSize: 13, color: Colors.black54)),
               Row(
                 children: [
                   Text(
                     RMFuncts.getSentenceCase(studentName),
-                    style: const TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w500,
-                    ),
-                    
+                    style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w500),
                   ),
                 ],
               ),
-              const Text(
-                "Have a productive day!",
-                style: TextStyle(fontSize: 13, color: Colors.black54),
-              ),
+              const Text("Have a productive day!", style: TextStyle(fontSize: 13, color: Colors.black54)),
             ],
           ),
         ],
@@ -603,19 +558,11 @@ class _TodayAttendanceCard extends StatelessWidget {
             children: [
               const Text(
                 "Today's Attendance",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 13,
-                ),
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13),
               ),
               Text(
                 DateFormat.yMMMMd().format(DateTime.now()),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w400,
-                  fontSize: 13,
-                ),
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w400, fontSize: 13),
               ),
             ],
           ),
@@ -631,9 +578,7 @@ class _TodayAttendanceCard extends StatelessWidget {
                   icon: Icons.local_fire_department_outlined,
                   iconColor: Colors.orange.shade400,
                   label: "Streak",
-                  value: streakLectures == 1
-                      ? "1 lecture"
-                      : "$streakLectures lectures",
+                  value: streakLectures == 1 ? "1 lecture" : "$streakLectures lectures",
                 ),
               ),
               Container(
@@ -685,16 +630,9 @@ class _TodayAttendanceCard extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.start,
       children: [
         Expanded(
-          child: Row(
-            children: [
-              for (final lecture in todaysLectures) _statusIcon(lecture),
-            ],
-          ),
+          child: Row(children: [for (final lecture in todaysLectures) _statusIcon(lecture)]),
         ),
-        Text(
-          "($presentCount/${todaysLectures.length})",
-          style: const TextStyle(color: Colors.white),
-        ),
+        Text("($presentCount/${todaysLectures.length})", style: const TextStyle(color: Colors.white)),
       ],
     );
   }
@@ -703,19 +641,16 @@ class _TodayAttendanceCard extends StatelessWidget {
     final rawStatus = _StdHomeState._statusFor(lecture, studentId);
     final IconData icon;
     if (rawStatus == null) {
-      icon = Icons.circle_outlined; // not marked yet (upcoming/ongoing)
+      icon = Icons.circle_outlined;
     } else if (rawStatus == 'present' || rawStatus == 'late') {
       icon = Icons.check_circle_outline;
     } else {
       icon = Icons.cancel_outlined;
     }
-    return Padding(
-      padding: const EdgeInsets.only(right: 2),
-      child: Icon(icon, color: Colors.white),
-    );
+    return Padding(padding: const EdgeInsets.only(right: 2), child: Icon(icon, color: Colors.white));
   }
 }
-// x=
+
 class _StatItem extends StatelessWidget {
   const _StatItem({
     required this.icon,
@@ -741,11 +676,7 @@ class _StatItem extends StatelessWidget {
             const SizedBox(height: 7),
             Text(
               value,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w500,
-                fontSize: 15,
-              ),
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500, fontSize: 15),
             ),
           ],
         ),
@@ -768,13 +699,9 @@ class _SectionHeader extends StatelessWidget {
         Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
         GestureDetector(
           onTap: onViewAll,
-          child: const Text(
-            "view all",
-            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w400),
-          ),
+          child: const Text("view all", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w400)),
         ),
       ],
     );
   }
-
 }

@@ -20,7 +20,7 @@ class AdminReports extends StatefulWidget {
   @override
   State<AdminReports> createState() => _AdminReportsState();
 }
-
+// overall
 class _AdminReportsState extends State<AdminReports> {
   late final CollectionReference departmentsRef;
   late final CollectionReference indexDocRef;
@@ -250,7 +250,7 @@ class _AdminReportsState extends State<AdminReports> {
       _StatCard(icon: Icons.event_available_rounded, label: "Lectures Held", value: "$conductedCount"),
       _StatCard(
         icon: Icons.trending_up_rounded,
-        label: "Overall Attendance",
+        label: "weekly Overall Attendance",
         value: "${overallPercent.round()}%",
         highlight: true,
       ),

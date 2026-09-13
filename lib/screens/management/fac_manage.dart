@@ -221,29 +221,29 @@ class _FacManageState extends State<FacManage> {
                                   child: Column(children: [
                                     Text("Update Faculty",style: TextStyle(fontSize: 20,fontWeight: FontWeight.w600),),
                                     SizedBox(height: 15,),
-                                    TextFormField(
-                                      controller: namex,
-                                      decoration: InputDecoration(
-                                        labelText: "name",
-                                        prefixIcon: Icon(Icons.person),
-
-                                        border: OutlineInputBorder(),
-                                        focusedBorder: OutlineInputBorder(
-                                            borderSide: BorderSide(
-                                                color: Theme.of(context).primaryColor,
-                                                width: 1
-                                            )
-                                        ),
-                                      ),
-                                      validator: (v){
-                                        if(v!.isEmpty){
-                                          return "Please enter name";
-                                        }else if(v.length<4){
-                                          return "name must be at least 4 characters";
-                                        }
-                                        return null;
-                                      },
-                                    ),
+                                    // TextFormField(
+                                    //   controller: namex,
+                                    //   decoration: InputDecoration(
+                                    //     labelText: "name",
+                                    //     prefixIcon: Icon(Icons.person),
+                                    //
+                                    //     border: OutlineInputBorder(),
+                                    //     focusedBorder: OutlineInputBorder(
+                                    //         borderSide: BorderSide(
+                                    //             color: Theme.of(context).primaryColor,
+                                    //             width: 1
+                                    //         )
+                                    //     ),
+                                    //   ),
+                                    //   validator: (v){
+                                    //     if(v!.isEmpty){
+                                    //       return "Please enter name";
+                                    //     }else if(v.length<4){
+                                    //       return "name must be at least 4 characters";
+                                    //     }
+                                    //     return null;
+                                    //   },
+                                    // ),
                                     SizedBox(height: 20,),
                                     TextFormField(
                                       controller: phonex,
@@ -273,7 +273,7 @@ class _FacManageState extends State<FacManage> {
                                       if(fkey.currentState!.validate()){
                                         Lecturer lec=Lecturer(
                                           id: lecturers[index].id,
-                                            name: namex.text.trim(),
+                                            name: lecturers[index].name,
                                             deprt: lecturers[index].deprt,
                                             role: lecturers[index].role,
                                             insAdminId:lecturers[index].insAdminId,
