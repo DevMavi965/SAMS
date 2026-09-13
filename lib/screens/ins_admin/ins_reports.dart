@@ -6,6 +6,7 @@ import 'package:smas3/models/ins_admin.dart';
 import 'package:smas3/models/institute.dart';
 import 'package:smas3/services/db_service.dart';
 
+import '../../maxins/rm_functions.dart';
 import '../../models/course.dart';
 class InsReports extends StatefulWidget {
   final InsAdmin insAdmin;
@@ -271,9 +272,6 @@ class _InsReportsState extends State<InsReports> {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Shared helpers
-// ---------------------------------------------------------------------------
 
 BoxDecoration _cardDecoration() => BoxDecoration(
   color: Colors.white,
@@ -290,16 +288,7 @@ class _CardLoading extends StatelessWidget {
   const _CardLoading();
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 130,
-      alignment: Alignment.center,
-      decoration: _cardDecoration(),
-      child: const SizedBox(
-        width: 22,
-        height: 22,
-        child: CircularProgressIndicator(strokeWidth: 2),
-      ),
-    );
+    return RMFuncts.loadingAnimation(context);
   }
 }
 
@@ -317,10 +306,7 @@ class _CardEmpty extends StatelessWidget {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Stat card
-// ---------------------------------------------------------------------------
-
+///statSCrd
 class _StatCard extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -369,13 +355,7 @@ class _StatCard extends StatelessWidget {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Department-wise distribution pie (used for students & faculty)
-// Sourced from indexDoc: entries carry `department_id` for both students
-// and faculty, so no join back to the students/faculty subcollections is
-// needed.
-// ---------------------------------------------------------------------------
-
+//dep-wize stats
 class _DistributionPie extends StatelessWidget {
   final CollectionReference departmentsRef;
   final Stream<QuerySnapshot> itemsStream;
@@ -849,7 +829,7 @@ class _LeaveStatusBarChart extends StatelessWidget {
 // students registered before that patch won't have it and simply won't
 // contribute to this chart until they're re-saved.
 // ---------------------------------------------------------------------------
-
+//loading
 class _EnrollmentTrendChart extends StatefulWidget {
   final InsAdmin insAdmin;
   final Institute institute;
@@ -880,7 +860,7 @@ class _EnrollmentTrendChartState extends State<_EnrollmentTrendChart> {
     _trendFuture = _getMonthlyEnrollment();
   }
 
-  // step 1: pull id/department_id/session_id/semester_id for every student
+  // step 1: pull id/department_id/session_id/semester_id For every std
   // via indexDoc (cheap, single collection query).
   // step 2: for each one, fetch the real student doc down the nested path
   // to read its created_at, since indexDoc itself doesn't carry it.
