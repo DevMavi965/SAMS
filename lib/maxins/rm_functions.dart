@@ -150,13 +150,14 @@ mixin RMFuncts{
 
     return password.join();
   }
-  static Future<void> sendSamsCredentialsEmail(String userEmail, String name, String password) async {
-    final Uri emailUri = Uri(
-      scheme: 'mailto',
-      path: userEmail,
-      queryParameters: {
-        'subject': 'Your SAMS Account Credentials',
-        'body': '''
+  static Future<void> sendSamsCredentialsEmail(
+      String userEmail,
+      String name,
+      String password,
+      ) async {
+    const subject = 'Your SAMS Account Credentials';
+
+    final body = '''
 Hello $name!,
 
 Your account has been successfully registered in the Smart Attendance Management System (SAMS).
@@ -170,8 +171,12 @@ Please keep these credentials secure and change your password after your first l
 
 Regards,
 SAMS Administration
-''',
-      },
+''';
+
+    final Uri emailUri = Uri.parse(
+      'mailto:$userEmail'
+          '?subject=${Uri.encodeComponent(subject)}'
+          '&body=${Uri.encodeComponent(body)}',
     );
 
     if (await canLaunchUrl(emailUri)) {
@@ -180,9 +185,18 @@ SAMS Administration
         mode: LaunchMode.externalApplication,
       );
     } else {
-      throw Exception('No email application is available.');
+      throw Exception('No email application/software is available.');
     }
   }
+  static bool isValidPassword(String password) {
+    if (password.length < 8) return false;
 
+    final hasUpper = RegExp(r'[A-Z]').hasMatch(password);
+    final hasLower = RegExp(r'[a-z]').hasMatch(password);
+    final hasDigit = RegExp(r'[0-9]').hasMatch(password);
+    final hasSymbol = RegExp(r'[!@#$%^&*(),.?":{}|<>_\-\[\]\\/;+=~`]').hasMatch(password);
+
+    return hasUpper && hasLower && hasDigit && hasSymbol;
+  }
 }
 

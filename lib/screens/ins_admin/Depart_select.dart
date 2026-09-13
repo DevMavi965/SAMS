@@ -59,7 +59,7 @@ class _DepartSelectState extends State<DepartSelect> {
                       onTap: (){
                         Navigator.push(context, MaterialPageRoute(builder: (_)=>FacManage(insAdmin: widget.insAdmin, institute: widget.institute, department: departments[count])));
                       },
-                      child: DepartmentCard(department: departments[count],));
+                      child: DepartmentCard(department: departments[count], context: context,));
                 });
           }),
     );

@@ -4,7 +4,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:smas3/models/student_model.dart';
 
-import '../../providers/theme_Provider.dart' show ThemeProvider;
+import '../../providers/provider1.dart' show ThemeProvider;
 import '../../screens/student/std_biomet.dart';
 import '../../services/notification_helper.dart';
 class StdSettings extends StatefulWidget {
@@ -141,12 +141,14 @@ class _StdSettingsState extends State<StdSettings> {
                         child: Icon(CupertinoIcons.bell,size: 25,color: Theme.of(context).primaryColor,),
                       ),
                       SizedBox(width: 10,),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text("Push Notifications",),
-                          Text("receive notifications from us",style: TextStyle(color: Colors.grey),),
-                        ],
+                      Flexible(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text("Push Notifications",),
+                            Text("receive notifications from us",style: TextStyle(color: Colors.grey),),
+                          ],
+                        ),
                       ),
                       Spacer(),
                       Transform.scale(
@@ -179,56 +181,56 @@ class _StdSettingsState extends State<StdSettings> {
               ]
           ),
           //Dark mode
-          TableRow(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 45,
-                        height: 45,
-                        decoration: BoxDecoration(
-                          color: Colors.green.shade50,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(Provider.of<ThemeProvider>(context,listen: false).isDarkMode?CupertinoIcons.moon :CupertinoIcons.sun_max_fill,size: 25,color: Theme.of(context).primaryColor,),
-                      ),
-                      SizedBox(width: 10,),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text("Theme Mode",),
-                          Text("toggle app theme",style: TextStyle(color: Colors.grey)),
-                        ],
-                      ),
-                      Spacer(),
-                      Transform.scale(
-                        scale: 0.8,
-                       child: Switch(
-
-                           activeThumbColor: Theme.of(context).primaryColorLight,
-                           inactiveTrackColor: Colors.white,
-                           thumbIcon: MaterialStateProperty.resolveWith<Icon?>(
-                                 (Set<MaterialState> states) {
-                               if (states.contains(MaterialState.selected)) {
-                                 //on here
-                                 return const Icon(Icons.wb_sunny, color: Colors.orangeAccent);
-                               }
-                               // off state
-                               return const Icon(Icons.nightlight_round, color: Colors.white);
-                             },
-                           ),
-                         value: Provider.of<ThemeProvider>(context).isDarkMode,
-                         onChanged: (value) {
-                           Provider.of<ThemeProvider>(context, listen: false).toggleTheme(value);
-                         },),
-                      )
-                    ],
-                  ),
-                )
-              ]
-          ),
+          // TableRow(
+          //     children: [
+          //       Padding(
+          //         padding: const EdgeInsets.all(12.0),
+          //         child: Row(
+          //           children: [
+          //             Container(
+          //               width: 45,
+          //               height: 45,
+          //               decoration: BoxDecoration(
+          //                 color: Colors.green.shade50,
+          //                 shape: BoxShape.circle,
+          //               ),
+          //               child: Icon(Provider.of<ThemeProvider>(context,listen: false).isDarkMode?CupertinoIcons.moon :CupertinoIcons.sun_max_fill,size: 25,color: Theme.of(context).primaryColor,),
+          //             ),
+          //             SizedBox(width: 10,),
+          //             Column(
+          //               crossAxisAlignment: CrossAxisAlignment.start,
+          //               children: [
+          //                 Text("Theme Mode",),
+          //                 Text("toggle app theme",style: TextStyle(color: Colors.grey)),
+          //               ],
+          //             ),
+          //             Spacer(),
+          //             Transform.scale(
+          //               scale: 0.8,
+          //              child: Switch(
+          //
+          //                  activeThumbColor: Theme.of(context).primaryColorLight,
+          //                  inactiveTrackColor: Colors.white,
+          //                  thumbIcon: MaterialStateProperty.resolveWith<Icon?>(
+          //                        (Set<MaterialState> states) {
+          //                      if (states.contains(MaterialState.selected)) {
+          //                        //on here
+          //                        return const Icon(Icons.wb_sunny, color: Colors.orangeAccent);
+          //                      }
+          //                      // off state
+          //                      return const Icon(Icons.nightlight_round, color: Colors.white);
+          //                    },
+          //                  ),
+          //                value: Provider.of<ThemeProvider>(context).isDarkMode,
+          //                onChanged: (value) {
+          //                  Provider.of<ThemeProvider>(context, listen: false).toggleTheme(value);
+          //                },),
+          //             )
+          //           ],
+          //         ),
+          //       )
+          //     ]
+          // ),
 
         ],
       ),

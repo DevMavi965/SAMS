@@ -7,6 +7,14 @@ import '../../models/ins_admin.dart';
 import '../../services/db_service.dart';
 import '../ins_admin/ins_admin_dashboard.dart';
 
+class _Palette {
+  static const ink = Color(0xFF0E231F);
+  static const inkSoft = Color(0xFF16342E);
+  static const paper = Color(0xFFF7FAF9);
+  static const slate = Color(0xFF55645F);
+  static const hairline = Color(0xFFDEE6E3);
+  static const teal = Color(0xFF009878);
+}
 class RegisterInsAdmin extends StatefulWidget {
   const RegisterInsAdmin({super.key});
 
@@ -23,6 +31,8 @@ class _RegisterInsAdminState extends State<RegisterInsAdmin> {
   TextEditingController confirm_password=TextEditingController();
   final auth=FirebaseAuth.instance;
   bool loading=false;
+  bool obscure1=true;
+  bool obscure=true;
   final formKey=GlobalKey<FormState>();
   @override
   Widget build(BuildContext context) {
@@ -50,6 +60,7 @@ class _RegisterInsAdminState extends State<RegisterInsAdmin> {
                 controller: name,
                 decoration: InputDecoration(
                   labelText: "Name",
+                  prefixIcon: const Icon(Icons.person, color: _Palette.slate),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
                     borderSide: BorderSide(
@@ -70,88 +81,97 @@ class _RegisterInsAdminState extends State<RegisterInsAdmin> {
               SizedBox(height: 15,),
               TextFormField(
                 controller: email,
+                keyboardType: TextInputType.emailAddress,
                 decoration: InputDecoration(
                   labelText: "Email",
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: BorderSide(
-                      width: 0.5,
-                      color: Colors.grey
-                    )
-                  ),
+                  hintText: "Enter your email here..",
+                  prefixIcon: const Icon(Icons.mail_outline, color: _Palette.slate),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                 ),
-                validator: (v){
-                  if(v!.isEmpty){
-                    return "Please enter email";
-                  }else if(v.length<3){
-                    return "Please enter valid email";
-                  }else if(!v.contains("@")){
-                    return "Please enter valid email";
-                  }else if(!v.contains(".")){
-                    return "Please enter valid email";
-                  }else if(!v.contains("com")){
-                    return "Please enter valid email";
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) return "Enter your email";
+                  if (!v.contains("@") || !v.contains(".")) {
+                    return "Enter a valid email";
                   }
-                  // else if(!v.contains("gmail" )&&!v.contains("yahoo")&&!v.contains("outlook")){
-                  //   return "Please enter valid email";
-                  // }
-                  // method II
-                  // final emailRegex =
-                  // RegExp(r'^[\w\-\.]+@([\w\-]+\.)+[\w\-]{2,4}$');
-                  // if (!emailRegex.hasMatch(v.trim())) {
-                  //   return "Please enter valid email";
-                  // }
                   return null;
                 },
               ),//email
               SizedBox(height: 15,),
               TextFormField(
                 controller: password,
+                obscureText: obscure,
                 decoration: InputDecoration(
-                  labelText: "password",
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(
-                          width: 0.5,
-                          color: Colors.grey
-                      )
+                  labelText: "Password",
+                  prefixIcon: const Icon(Icons.lock_outline, color: _Palette.slate),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                      color: obscure ? _Palette.slate : _Palette.teal,
+                    ),
+                    onPressed: () => setState(() => obscure = !obscure),
                   ),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                 ),
-                validator: (v){
-                  if(v!.isEmpty){
-                    return "Please enter password";
-                  }else if(v.length<6){
-                    return "Password must be at least 6 characters";
+                validator: (v) {
+                  if (v == null || v.isEmpty) return "Enter your password";
+                  if (v.length < 8) return "Password must be at least 8 characters";
+
+                  if (!RegExp(r'[A-Z]').hasMatch(v)) {
+                    return "Password must contain at least one uppercase letter";
+                  }
+                  if (!RegExp(r'[a-z]').hasMatch(v)) {
+                    return "Password must contain at least one lowercase letter";
+                  }
+                  if (!RegExp(r'[0-9]').hasMatch(v)) {
+                    return "Password must contain at least one number";
+                  }
+                  if (!RegExp(r'[!@#$%^&*(),.?":{}|<>_\-\[\]\\/;+=~`]').hasMatch(v)) {
+                    return "Password must contain at least one special character";
                   }
                   return null;
                 },
               ),//password
               SizedBox(height: 15,),
-              TextFormField(
-                controller: confirm_password,
-                decoration: InputDecoration(
-                  labelText: "confirm-password",
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(
-                          width: 0.5,
-                          color: Colors.grey
-                      )
-                  ),
+             TextFormField(
+            controller: confirm_password,
+            obscureText: obscure1,
+            decoration: InputDecoration(
+              labelText: "confirm Password",
+              prefixIcon: const Icon(Icons.lock_outline, color: _Palette.slate),
+              suffixIcon: IconButton(
+                icon: Icon(
+                  obscure1 ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                  color: obscure1 ? _Palette.slate : _Palette.teal,
                 ),
-                validator: (v){
-                  if(v!.isEmpty){
-                    return "Please enter password";
-                  }else if(v.length<6){
-                    return "Password must be at least 6 characters";
-                  }else if(v!=password.text){
-                    return con;
-                  }
-                  return null;
-                },
-              ),//Confirm password
+                onPressed: () => setState(() => obscure1 = !obscure1),
+              ),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            validator: (v) {
+              if (v == null || v.isEmpty) return "Enter your password";
+              if (v.length < 8) return "Password must be at least 8 characters";
+
+              if (!RegExp(r'[A-Z]').hasMatch(v)) {
+                return "Password must contain at least one uppercase letter";
+              }
+              if (!RegExp(r'[a-z]').hasMatch(v)) {
+                return "Password must contain at least one lowercase letter";
+              }
+              if (!RegExp(r'[0-9]').hasMatch(v)) {
+                return "Password must contain at least one number";
+              }
+              if (!RegExp(r'[!@#$%^&*(),.?":{}|<>_\-\[\]\\/;+=~`]').hasMatch(v)) {
+                return "Password must contain at least one special character";
+              }
+              return null;
+            },
+          ),//Confirm password
               SizedBox(height: 15,),
-              ElevatedButton(onPressed: (){
+              ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).primaryColor,
+                  ),
+                  onPressed: (){
                 if(formKey.currentState!.validate()){
                   if(password.text!=confirm_password.text){
                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("password not matched"),backgroundColor: Colors.red,));
@@ -169,7 +189,10 @@ class _RegisterInsAdminState extends State<RegisterInsAdmin> {
                 }else{
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("please fill all fields"),backgroundColor: Colors.red,));
                 }
-              }, child: Text("register")),
+              }, child: Text("register",style: TextStyle(
+                color:Colors.white,
+                fontWeight: FontWeight.w600
+              ),)),
             ],
           ),
         ),

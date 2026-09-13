@@ -230,9 +230,9 @@ class _AddUpdateSessionState extends State<AddUpdateSession> {
           return SizedBox();
 
       }),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(100)
+          borderRadius: BorderRadius.circular(10)
         ),
         backgroundColor: Theme.of(context).primaryColor,
         onPressed: (){
@@ -333,8 +333,9 @@ class _AddUpdateSessionState extends State<AddUpdateSession> {
             ],
           )
           ));
-        },child: Icon(Icons.add,color: Colors.white,),),
-    );
+        }, label: Text("Add Session",style: TextStyle(color: Colors.white),),
+        icon: Icon(Icons.add,color: Colors.white,),
+    ));
 
   }
   getFirstDate() async {

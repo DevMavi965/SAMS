@@ -100,7 +100,7 @@ class _CourseOpsState extends State<CourseOps> {
           return SizedBox();
         },
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
           Navigator.push(
             context,
@@ -115,7 +115,8 @@ class _CourseOpsState extends State<CourseOps> {
             ),
           );
         },
-        child: FaIcon(FontAwesomeIcons.plus),
+        backgroundColor: Theme.of(context).primaryColor, label: Text("Add Course",style: TextStyle(color: Colors.white),),
+        icon: FaIcon(FontAwesomeIcons.plus,color: Colors.white,),
       ),
     );
   }

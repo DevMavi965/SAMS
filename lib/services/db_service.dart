@@ -487,11 +487,11 @@ class DbService with ChangeNotifier{
               created_at: v['created_at'].toDate(),
           );
           if(context.mounted){
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-              content: Text("successfully logged-in as ${student.name}"),
-              backgroundColor: Theme
-                  .of(context)
-                  .primaryColor,));
+            // ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            //   content: Text("successfully logged-in as ${student.name}"),
+            //   backgroundColor: Theme
+            //       .of(context)
+            //       .primaryColor,));
             Navigator.pushAndRemoveUntil(context, MaterialPageRoute(
                 builder: (_) => StudentDeshboard(student: student)), (
                 r) => false);

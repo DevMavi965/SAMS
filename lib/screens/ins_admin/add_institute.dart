@@ -99,7 +99,7 @@ class _AddInstituteState extends State<AddInstitute> {
                 validator: (v){
                   if(v!.isEmpty){
                     return "Please enter contact";
-                  }else if(v.length<10){
+                  }else if(v.length<6){
                     return "contact must be at least 10 characters";
                   }else if(v.contains(" ")){
                     return "contact must not contain spaces";
@@ -180,11 +180,19 @@ class _AddInstituteState extends State<AddInstitute> {
                     title: Text("Add institute"),
                     content: Text("Are you sure you want to add this institute?"),
                     actions: [
-                      TextButton(onPressed: (){
+                      TextButton(
+                          style:TextButton.styleFrom(
+                            backgroundColor: Theme.of(context).primaryColor
+                          ),
+                          onPressed: (){
 
                         Navigator.pop(context);
-                      }, child: Text("No")),
-                      TextButton(onPressed: (){
+                      }, child: Text("No",style: TextStyle(color: Colors.white))),
+                      TextButton(
+                          style:TextButton.styleFrom(
+                              backgroundColor: Colors.red
+                          ),
+                          onPressed: (){
                         Provider.of<DbService>(context,listen: false).addInstitute(context,
                             widget.insAdmin.id!, Institute(
                                 name: name.text.trim(),
@@ -200,7 +208,7 @@ class _AddInstituteState extends State<AddInstitute> {
                             ));
                         Navigator.pop(context);
                         Navigator.pop(context);
-                      }, child: Text("Yes")),
+                      }, child: Text("Yes",style: TextStyle(color: Colors.white),)),
                     ],
                   ));
                 }

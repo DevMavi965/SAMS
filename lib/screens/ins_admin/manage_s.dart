@@ -147,15 +147,18 @@ class _ManageAdminsState extends State<ManageAdmins> {
                     style: TextStyle(color: Theme.of(context).primaryColor),
                   ),
                 ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(admin.name, style: TextStyle(fontWeight: FontWeight.w600)),
-                    SizedBox(height: 3),
-                    Text(admin.email, style: TextStyle(color: Colors.grey)),
-                  ],
+                SizedBox(width: 5),
+                Flexible(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(admin.name, style: TextStyle(fontWeight: FontWeight.w600)),
+                      SizedBox(height: 3),
+                      Text(admin.email, style: TextStyle(color: Colors.grey)),
+                    ],
+                  ),
                 ),
-                SizedBox(),
+                SizedBox(width: 5,),
                 Badge(
                     backgroundColor: Theme.of(context).primaryColor.withAlpha(240),
                     label: Padding(

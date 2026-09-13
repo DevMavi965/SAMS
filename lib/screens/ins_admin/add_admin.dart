@@ -104,7 +104,7 @@ class _AddAdminPageState extends State<AddAdminPage> {
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).primaryColor),
             onPressed: () => Navigator.pop(context),
-            child: const Text("No"),
+            child: const Text("No",style: TextStyle(color: Colors.white),),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).primaryColor),
@@ -160,7 +160,7 @@ class _AddAdminPageState extends State<AddAdminPage> {
               Navigator.pop(context);
               Navigator.pop(context);
             },
-            child: const Text("Yes"),
+            child: const Text("Yes",style: TextStyle(color: Colors.white),),
           ),
         ],
       ),

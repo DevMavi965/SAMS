@@ -314,31 +314,23 @@ class _FacManageState extends State<FacManage> {
              return Center(child: Text("No data found."),);
 
           })),
-      floatingActionButton: FloatingActionButton(
+
+      floatingActionButton: FloatingActionButton.extended(
         backgroundColor: Theme.of(context).primaryColor,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(50)
+          borderRadius: BorderRadius.circular(10)
         ),
         onPressed: (){
           Navigator.push(context, MaterialPageRoute(builder: (_)=>AddFacultyScreen(insAdmin: widget.insAdmin, institute: widget.institute,department: widget.department)));
-          // Provider.of<DbService>(context,listen: false).registerFac(
-          //     widget.insAdmin.id!, widget.institute.id!,
-          //     Lecturer(
-          //         name: "Ayesha Zainab",
-          //         deprt: "Physics",
-          //         role: "faculty",
-          //         instituteId: widget.institute.id!,
-          //         insAdminId: widget.insAdmin.id!,
-          //         designation: "Assistant Professor",
-          //         status: "active",
-          //         email: "az12@gmail.com",
-          //         semesters: [4,6,8],
-          //         courses: ["CS101","CS102","CS103","CS104"],
-          //         created_at: DateTime.now(),
-          //         phone: "32466676544")
-          //     , "12341234", context);
-      },child:
-      Icon(Icons.add,color: Colors.white,fontWeight: FontWeight.bold,),
+
+      }, label:
+      Row(
+        children: [
+          Icon(Icons.add,color: Colors.white,fontWeight: FontWeight.bold,),
+          SizedBox(width: 10,),
+          Text("Add Faculty",style: TextStyle(color: Colors.white,fontWeight: FontWeight.bold),)
+        ],
+      ),
       ),
     );
   }

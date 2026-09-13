@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:smas3/firebase_options.dart';
 import 'package:smas3/models/Routes.dart';
-import 'package:smas3/providers/theme_Provider.dart';
+import 'package:smas3/providers/provider1.dart';
 import 'package:smas3/services/db_service.dart';
 import 'package:smas3/services/notification_helper.dart';
 

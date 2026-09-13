@@ -40,11 +40,12 @@ class _insAdminProfileState extends State<insAdminProfile> {
         SizedBox(height: 10,),
         InsAdminSetting(insAdmin: widget.insAdmin),
         SizedBox(height: 25,),
-        OutlinedButton.icon(
+        ElevatedButton.icon(
           style: OutlinedButton.styleFrom(
             iconColor: Colors.red,
+            backgroundColor: Colors.white,
             foregroundColor: Colors.red,
-            side: BorderSide(color: Colors.red,width: 0.5),
+            side: BorderSide(color: Colors.red,width: 0.6),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(7),
             ),

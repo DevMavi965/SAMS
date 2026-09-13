@@ -5,6 +5,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:lottie/lottie.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:provider/provider.dart';
+import 'package:smas3/maxins/rm_functions.dart';
 import 'package:smas3/models/admin_model.dart';
 import 'package:smas3/models/student_model.dart';
 import 'package:smas3/screens/auth_screens/forgot_password.dart';
@@ -419,7 +420,7 @@ class _LoginScreenState extends State<LoginScreen> {
               keyboardType: TextInputType.emailAddress,
               decoration: InputDecoration(
                 labelText: "Email",
-                hintText: "you@example.com",
+                hintText: "Enter your email here..",
                 prefixIcon: const Icon(Icons.mail_outline, color: _Palette.slate),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
               ),
@@ -452,6 +453,19 @@ class _LoginScreenState extends State<LoginScreen> {
               validator: (v) {
                 if (v == null || v.isEmpty) return "Enter your password";
                 if (v.length < 8) return "Password must be at least 8 characters";
+
+                if (!RegExp(r'[A-Z]').hasMatch(v)) {
+                  return "Password must contain at least one uppercase letter";
+                }
+                if (!RegExp(r'[a-z]').hasMatch(v)) {
+                  return "Password must contain at least one lowercase letter";
+                }
+                if (!RegExp(r'[0-9]').hasMatch(v)) {
+                  return "Password must contain at least one number";
+                }
+                if (!RegExp(r'[!@#$%^&*(),.?":{}|<>_\-\[\]\\/;+=~`]').hasMatch(v)) {
+                  return "Password must contain at least one special character";
+                }
                 return null;
               },
             ),
@@ -494,9 +508,13 @@ class _LoginScreenState extends State<LoginScreen> {
                   padding: const EdgeInsets.symmetric(vertical: 15),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 ),
-                child:  Text(
-                  Provider.of<DbService>(context,listen: false).loading?"signing in...":
-                  "Sign in",
+                child:
+                  Provider.of<DbService>(context,listen: false).loading?
+                  Center(child:
+                  SizedBox(
+                      width: 24,height: 24,
+                      child: CircularProgressIndicator(color: Colors.white,strokeWidth:2.5,padding: EdgeInsets.all(8),))):
+                  Text( "Sign in",
                   style: TextStyle(
                       fontSize: 15.5, color: Colors.white, fontWeight: FontWeight.w600),
                 ),
