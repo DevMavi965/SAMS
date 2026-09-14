@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:lottie/lottie.dart';
 import 'package:provider/provider.dart';
+import 'package:smas3/maxins/rm_functions.dart';
 import 'package:smas3/models/admin_model.dart';
 import 'package:smas3/models/ins_admin.dart';
 import 'package:smas3/models/institute.dart';
@@ -147,14 +148,14 @@ class _ManageAdminsState extends State<ManageAdmins> {
                     style: TextStyle(color: Theme.of(context).primaryColor),
                   ),
                 ),
-                SizedBox(width: 5),
-                Flexible(
+                SizedBox(width: 10),
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(admin.name, style: TextStyle(fontWeight: FontWeight.w600)),
+                      Text(RMFuncts.getSentenceCase(admin.name), style: TextStyle(fontWeight: FontWeight.w600)),
                       SizedBox(height: 3),
-                      Text(admin.email, style: TextStyle(color: Colors.grey)),
+                      Text(admin.email,maxLines: 1,overflow: TextOverflow.ellipsis, style: TextStyle(color: Colors.grey)),
                     ],
                   ),
                 ),

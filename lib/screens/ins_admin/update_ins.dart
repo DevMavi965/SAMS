@@ -167,10 +167,18 @@ class _Update_InstituteState extends State<Update_Institute> {
                     title: Text("Add institute"),
                     content: Text("Are you sure you want to update this institute?"),
                     actions: [
-                      TextButton(onPressed: (){
+                      ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Theme.of(context).primaryColor,
+                          ),
+                          onPressed: (){
                         Navigator.pop(context);
-                      }, child: Text("No")),
-                      TextButton(onPressed: (){
+                      }, child: Text("No",style: TextStyle(color: Colors.white),)),
+                      ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red
+                          ),
+                          onPressed: (){
                         Provider.of<DbService>(context,listen: false).updateInstitute(context, Institute(
                           name: name.text.trim(),
                                 id: widget.institute.id,
@@ -186,7 +194,7 @@ class _Update_InstituteState extends State<Update_Institute> {
                         ));
                         Navigator.pop(context);
                         Navigator.pop(context);
-                      }, child: Text("Yes")),
+                      }, child: Text("Yes",style: TextStyle(color: Colors.white),)),
                     ],
                   ));
                 }

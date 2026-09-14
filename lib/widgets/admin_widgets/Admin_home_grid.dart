@@ -226,134 +226,52 @@ class AdminHomeGrid extends StatelessWidget {
     }
   }
 
-  Future<Object?>? getAvgAtt(BuildContext context, String insAdminId, String instituteId) async {
+  Future<double> getAvgAtt(BuildContext context, String insAdminId, String instituteId) async {
     try {
-      int totalPresentRecords = 0;
-      int totalPossibleRecords = 0;
+      final db = Provider.of<DbService>(context, listen: false);
 
-      // Get all departments
-      final departmentsSnapshot = await Provider.of<DbService>(context,listen: false). dbref
-          .collection("ins_admins")
-          .doc(insAdminId)
-          .collection("institutes")
-          .doc(instituteId)
-          .collection("departments")
+      final indexSnap = await db.indexDoc
+          .where('institute_id', isEqualTo: instituteId)
+          .where('type', isEqualTo: 'lecture')
           .get();
 
-      for (var deptDoc in departmentsSnapshot.docs) {
-        // Get all sessions for this department
-        final sessionsSnapshot = await Provider.of<DbService>(context,listen: false).dbref
-            .collection("ins_admins")
-            .doc(insAdminId)
-            .collection("institutes")
-            .doc(instituteId)
-            .collection("departments")
-            .doc(deptDoc.id)
-            .collection("sessions")
+      final lectureDocs = await Future.wait(indexSnap.docs.map((idx) {
+        final data = idx.data() as Map<String, dynamic>;
+        return db.dbref
+            .collection("ins_admins").doc(insAdminId)
+            .collection("institutes").doc(instituteId)
+            .collection("departments").doc(data['department_id'])
+            .collection("sessions").doc(data['session_id'])
+            .collection("semesters").doc(data['semester_id'])
+            .collection("courses").doc(data['course_id'])
+            .collection("lectures").doc(idx.id)
             .get();
+      }));
 
-        for (var sessionDoc in sessionsSnapshot.docs) {
-          // Get all semesters
-          final semestersSnapshot = await Provider.of<DbService>(context,listen: false).dbref
-              .collection("ins_admins")
-              .doc(insAdminId)
-              .collection("institutes")
-              .doc(instituteId)
-              .collection("departments")
-              .doc(deptDoc.id)
-              .collection("sessions")
-              .doc(sessionDoc.id)
-              .collection("semesters")
-              .get();
+      int present = 0;
+      int total = 0;
 
-          for (var semesterDoc in semestersSnapshot.docs) {
-            // Get students in this semester
-            final studentsSnapshot = await Provider.of<DbService>(context,listen: false).dbref
-                .collection("ins_admins")
-                .doc(insAdminId)
-                .collection("institutes")
-                .doc(instituteId)
-                .collection("departments")
-                .doc(deptDoc.id)
-                .collection("sessions")
-                .doc(sessionDoc.id)
-                .collection("semesters")
-                .doc(semesterDoc.id)
-                .collection("students")
-                .get();
+      for (final lecDoc in lectureDocs) {
+        if (!lecDoc.exists) continue;
+        final lectureData = lecDoc.data() as Map<String, dynamic>;
+        final attendance = (lectureData['attendance'] as List?) ?? [];
+        if (attendance.isEmpty) continue; // not conducted yet
 
-            // Get courses in this semester
-            final coursesSnapshot = await Provider.of<DbService>(context,listen: false).dbref
-                .collection("ins_admins")
-                .doc(insAdminId)
-                .collection("institutes")
-                .doc(instituteId)
-                .collection("departments")
-                .doc(deptDoc.id)
-                .collection("sessions")
-                .doc(sessionDoc.id)
-                .collection("semesters")
-                .doc(semesterDoc.id)
-                .collection("courses")
-                .get();
-
-            // Process each course's lectures
-            for (var courseDoc in coursesSnapshot.docs) {
-              final lecturesSnapshot = await Provider.of<DbService>(context,listen: false).dbref
-                  .collection("ins_admins")
-                  .doc(insAdminId)
-                  .collection("institutes")
-                  .doc(instituteId)
-                  .collection("departments")
-                  .doc(deptDoc.id)
-                  .collection("sessions")
-                  .doc(sessionDoc.id)
-                  .collection("semesters")
-                  .doc(semesterDoc.id)
-                  .collection("courses")
-                  .doc(courseDoc.id)
-                  .collection("lectures")
-                  .get();
-
-              // Process each lecture's attendance
-              for (var lectureDoc in lecturesSnapshot.docs) {
-                final lectureData = lectureDoc.data() as Map;
-                final attendanceList = lectureData['attendance'] as List? ?? [];
-
-                // Add to total possible records
-                totalPossibleRecords += studentsSnapshot.docs.length;
-
-                // Count present students
-                for (var record in attendanceList) {
-                  if (record is Map) {
-                    final status = record['status']?.toString() ?? '';
-                    final midPoint = record['mid_point'] ?? false;
-
-                    // Consider student present if status is present/late or mid_point is true
-                    if (status == 'present' ||
-                        status == 'late' ||
-                        midPoint == true) {
-                      totalPresentRecords++;
-                    }
-                  }
-                }
-              }
-            }
+        for (final record in attendance) {
+          if (record is! Map) continue;
+          final status = record['status']?.toString();
+          total++;
+          if (status == 'present' || status == 'late') {
+            present++;
           }
         }
       }
 
-      // Calculate average
-      if (totalPossibleRecords == 0) {
-        return 0.0;
-      }
-
-      double avgAttendance = (totalPresentRecords / totalPossibleRecords) * 100;
-      return double.parse(avgAttendance.toStringAsFixed(2));
-
-    } catch(e) {
+      if (total == 0) return 0.0;
+      return double.parse(((present / total) * 100).toStringAsFixed(2));
+    } catch (e) {
       print(e.toString());
-      return 0;
+      return 0.0;
     }
   }
 

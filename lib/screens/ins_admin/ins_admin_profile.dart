@@ -31,7 +31,7 @@ class _insAdminProfileState extends State<insAdminProfile> {
         Text("System Configuration",style: TextStyle(fontSize: 15,color: Colors.grey),),
         SizedBox(height: 10,),
         InsAdmin_ProfileCard(insAdmin: widget.insAdmin, institute: widget.institute,),
-        SizedBox(height: 25,),
+        SizedBox(height: 35,),
         Text("System Settings",style: TextStyle(fontSize: 16,fontWeight: FontWeight.w500),),
         SizedBox(height: 10,),
         Ins_info_card(insAdmin: widget.insAdmin,institute: widget.institute,),
@@ -40,6 +40,7 @@ class _insAdminProfileState extends State<insAdminProfile> {
         SizedBox(height: 10,),
         InsAdminSetting(insAdmin: widget.insAdmin),
         SizedBox(height: 25,),
+
         ElevatedButton.icon(
           style: OutlinedButton.styleFrom(
             iconColor: Colors.red,

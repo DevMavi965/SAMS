@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:provider/provider.dart';
+import 'package:smas3/maxins/rm_functions.dart';
 import 'package:smas3/models/announcement_model.dart';
 import 'package:smas3/widgets/admin_widgets/admin_ann_card.dart';
 import 'package:smas3/widgets/admin_widgets/admin_ann_grid.dart';
@@ -61,7 +62,7 @@ class _AlertTabState extends State<AlertTab> {
             .doc(widget.institute.id).collection("announcements").snapshots(),
             builder: (StreamContext,snapshot){
               if(snapshot.connectionState==ConnectionState.waiting){
-                return Center(child: CircularProgressIndicator(),);
+                return RMFuncts.loadingAnimation(context);
               }else if(snapshot.hasError){
                 return Center(child: Text(snapshot.error.toString()),);
               }else if(!snapshot.hasData){

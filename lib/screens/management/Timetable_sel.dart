@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:lottie/lottie.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:provider/provider.dart';
+import 'package:smas3/maxins/rm_functions.dart';
 import 'package:smas3/models/department.dart';
 import 'package:smas3/models/ins_admin.dart';
 import 'package:smas3/models/institute.dart';
@@ -62,7 +63,7 @@ class _TimetableSelState extends State<TimetableSel> {
                       .collection("departments").snapshots() ,
                   builder: (context,snapshot){
                     if(snapshot.connectionState==ConnectionState.waiting){
-                      return Center(child: CircularProgressIndicator(),);
+                      return RMFuncts.loadingAnimation(context);
                     }else if(snapshot.hasError){
                       return Center(child: Text(snapshot.error.toString()),);
                     }else if(!snapshot.hasData){
@@ -122,10 +123,7 @@ class _TimetableSelState extends State<TimetableSel> {
                       .snapshots() ,
                   builder: (context,snapshot){
                     if(snapshot.connectionState==ConnectionState.waiting){
-                      return Center(child: SizedBox(
-                          height: 60,
-                          width: 60,
-                          child: Lottie.asset("assets/anims/an1.json")),);
+                      return RMFuncts.loadingAnimation(context);
                     }else if(snapshot.hasError){
                       return Center(child: Text(snapshot.error.toString()),);
                     }else if(!snapshot.hasData){
@@ -186,10 +184,7 @@ class _TimetableSelState extends State<TimetableSel> {
                       .snapshots() ,
                   builder: (context,snapshot){
                     if(snapshot.connectionState==ConnectionState.waiting){
-                      return Center(child:SizedBox(
-                          height: 60,
-                          width: 60,
-                          child: Lottie.asset("assets/anims/an1.json")),);
+                      return RMFuncts.loadingAnimation(context);
                     }else if(snapshot.hasError){
                       return Center(child: Text(snapshot.error.toString()),);
                     }else if(!snapshot.hasData){

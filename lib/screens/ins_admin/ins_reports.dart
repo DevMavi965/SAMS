@@ -332,11 +332,7 @@ class _StatCard extends StatelessWidget {
               stream: stream,
               builder: (context, snap) {
                 if (!snap.hasData) {
-                  return const SizedBox(
-                    width: 14,
-                    height: 14,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  );
+                 return RMFuncts.loadingAnimation(context);
                 }
                 return Text(
                   "${snap.data}",
@@ -394,7 +390,7 @@ class _DistributionPie extends StatelessWidget {
             final entries = counts.entries.toList()
               ..sort((a, b) => b.value.compareTo(a.value));
             final total = docs.length;
-
+//progress
             return Container(
               padding: const EdgeInsets.all(14),
               decoration: _cardDecoration(),

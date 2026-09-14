@@ -117,6 +117,12 @@ mixin RMFuncts{
           child: Lottie.asset("assets/anims/an1.json")),
    );
   }
+ static loadingAnimation2 (BuildContext context){
+   return Center(child:
+   SizedBox(
+       width:150,height: 150,
+       child: Lottie.asset("assets/anims/m2.json")),);
+  }
 
 
   static String generatePassword({int length = 8}) {

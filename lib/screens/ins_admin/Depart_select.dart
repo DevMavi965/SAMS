@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:smas3/maxins/rm_functions.dart';
 import 'package:smas3/models/department.dart';
 import 'package:smas3/models/ins_admin.dart';
 import 'package:smas3/models/institute.dart';
@@ -33,7 +34,7 @@ class _DepartSelectState extends State<DepartSelect> {
           .collection("departments").snapshots(),
           builder: (context,snapshot){
             if(snapshot.connectionState==ConnectionState.waiting){
-              return Center(child: CircularProgressIndicator(),);
+              return Center(child: RMFuncts.loadingAnimation(context),);
             }else if(snapshot.hasError){
               return Center(child: Text(snapshot.error.toString()),);
             }else if(!snapshot.hasData){

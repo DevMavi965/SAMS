@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:smas3/maxins/rm_functions.dart';
 import 'package:smas3/models/ins_admin.dart';
 import 'package:smas3/models/institute.dart';
 
@@ -77,7 +78,7 @@ class _AdminReportsState extends State<AdminReports> {
         stream: departmentsRef.snapshots(),
         builder: (context, deptSnap) {
           if (!deptSnap.hasData) {
-            return const Center(child: CircularProgressIndicator());
+            return RMFuncts.loadingAnimation(context);
           }
           final departments = deptSnap.data!.docs;
 

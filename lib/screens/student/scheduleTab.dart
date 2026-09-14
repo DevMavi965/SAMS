@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:provider/provider.dart';
+import 'package:smas3/maxins/rm_functions.dart';
 import 'package:smas3/models/department.dart';
 import 'package:smas3/models/ins_admin.dart';
 import 'package:smas3/models/institute.dart';
@@ -19,24 +20,6 @@ DateTime _combine(DateTime date, TimeOfDay time) {
   return DateTime(date.year, date.month, date.day, time.hour, time.minute);
 }
 
-/// Weekly class schedule, Mon-Fri, with a day-tab selector.
-///
-/// Previously this showed nothing, for two independent reasons:
-///  1. `getLectures()` was an empty stub (`async {}`) — it never queried
-///     Firestore at all, so `snapshot.hasData` was always false and the
-///     branch that built `lecturesTinsWeek` never ran.
-///  2. Even in that dead branch, nothing ever rendered the list — the
-///     actual card loop was commented out, and it referenced
-///     `widget.lectures`, a field that doesn't exist on this widget
-///     (it takes `insAdmin`/`institute`/`department`/`session`/`semester`,
-///     not a lecture list — that field must have been left over from an
-///     earlier version of this widget).
-///
-/// Now: courses for this department/session/semester are looked up once,
-/// their lectures for the current Mon-Sun week are fetched in parallel
-/// and cached (`_weekLecturesFuture`, set once in `initState`, not
-/// re-queried on every rebuild/tab tap), then the selected day's lectures
-/// are filtered from that cached list and actually rendered.
 class Scheduletab extends StatefulWidget {
   final InsAdmin insAdmin;
   final Institute institute;
@@ -60,16 +43,6 @@ class Scheduletab extends StatefulWidget {
 class _ScheduletabState extends State<Scheduletab> {
   static const List<String> _days = ["Mon", "Tue", "Wed", "Thu", "Fri"];
 
-  // Given a plain default value directly, instead of being assigned only
-  // inside initState() as `late`. `_weekLecturesFuture` still has to be
-  // late+initState since it depends on `widget`, which isn't available
-  // until the State is attached — but `_selected` has no such dependency,
-  // so it doesn't need to carry that risk. (A `late` field assigned only
-  // in initState can come back uninitialized after a hot *reload* — the
-  // framework patches the class on an already-running State without
-  // re-running initState, so the field's slot can end up empty. A hot
-  // *restart* always clears it; this just avoids the class of bug outright
-  // for a field that doesn't need `late` in the first place.)
   int _selected = _defaultSelectedDay();
   late Future<List<LectureModel>> _weekLecturesFuture;
 
@@ -80,19 +53,7 @@ class _ScheduletabState extends State<Scheduletab> {
     return (todayWeekday >= 1 && todayWeekday <= 5) ? todayWeekday - 1 : 0;
   }
 
-  // Computed once and cached, not a getter re-evaluating DateTime.now()
-  // on every call. It was previously read separately by the initial
-  // Firestore fetch (in initState) and by the day filter (in build) —
-  // if the session stayed open across a week boundary, those two calls
-  // could resolve to different weeks, silently pulling lecture cards
-  // from the wrong days. Caching it once removes that drift entirely.
-  //
-  // On a weekend, this points to the *upcoming* Mon-Fri rather than the
-  // one that just ended. A student opening their schedule on Sunday
-  // means "what do I have this coming week", not "here's Monday from
-  // six days ago" — which is what made tapping "Mon" look out of sync
-  // with reality even though the tab and the card dates technically
-  // agreed with each other.
+  
   late final DateTime _startOfWeek = _computeStartOfWeek();
 
   static DateTime _computeStartOfWeek() {
@@ -188,7 +149,7 @@ class _ScheduletabState extends State<Scheduletab> {
           _combine(a.dated, a.start_time).compareTo(_combine(b.dated, b.start_time)));
     return matching;
   }
-
+//progress
   @override
   Widget build(BuildContext context) {
     return Center(
@@ -272,9 +233,9 @@ class _ScheduletabState extends State<Scheduletab> {
               future: _weekLecturesFuture,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 24),
-                    child: Center(child: CircularProgressIndicator()),
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 24),
+                    child: RMFuncts.loadingAnimation(context),
                   );
                 }
                 if (snapshot.hasError) {

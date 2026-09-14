@@ -53,6 +53,7 @@ class GeofenceService {
         targetLongitude,
       );
       print(currentPosition.toString());
+      print("target lat:$targetLatitude target long:$targetLongitude");
       if (distanceInMeters <= allowedRadiusMeters) {
         if(context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(

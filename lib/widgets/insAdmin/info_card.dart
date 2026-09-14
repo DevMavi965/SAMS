@@ -39,7 +39,7 @@ class _Ins_info_cardState extends State<Ins_info_card> {
           width: 0.2,
         ),
         children: [
-          //semester current
+          //insSetting
           TableRow(
               children: [
                 InkWell(
@@ -76,41 +76,7 @@ class _Ins_info_cardState extends State<Ins_info_card> {
               ]
           ),
           //email
-          TableRow(
-              children: [
-                InkWell(
-                  onTap: (){
 
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.all(12.0),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 45,
-                          height: 45,
-                          decoration: BoxDecoration(
-                            color: Colors.green.shade50,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(Icons.people_alt_outlined,size: 25,color: Theme.of(context).primaryColor,),
-                        ),
-                        SizedBox(width: 10,),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text("User Management",),
-                            Text("Add,Remove,Manage Users",style: TextStyle(color: Colors.grey),),
-                          ],
-                        ),
-                        Spacer(),
-                        Icon(Icons.arrow_forward_ios,color: Colors.grey,)
-                      ],
-                    ),
-                  ),
-                )
-              ]
-          ),
           //phone
           TableRow(
               children: [
@@ -148,41 +114,41 @@ class _Ins_info_cardState extends State<Ins_info_card> {
               ]
           ),
           //course enrolled date
-          TableRow(
-              children: [
-                InkWell(
-                  onTap: (){
-
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.all(12.0),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 45,
-                          height: 45,
-                          decoration: BoxDecoration(
-                            color: Colors.green.shade50,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(Icons.shield_outlined,size: 25,color: Theme.of(context).primaryColor,),
-                        ),
-                        SizedBox(width: 10,),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text("Security & Permissions",),
-                            Text("Manage access control",style: TextStyle(color: Colors.grey),),
-                          ],
-                        ),
-                        Spacer(),
-                        Icon(Icons.arrow_forward_ios,color: Colors.grey,)
-                      ],
-                    ),
-                  ),
-                )
-              ]
-          ),
+          // TableRow(
+          //     children: [
+          //       InkWell(
+          //         onTap: (){
+          //
+          //         },
+          //         child: Padding(
+          //           padding: const EdgeInsets.all(12.0),
+          //           child: Row(
+          //             children: [
+          //               Container(
+          //                 width: 45,
+          //                 height: 45,
+          //                 decoration: BoxDecoration(
+          //                   color: Colors.green.shade50,
+          //                   shape: BoxShape.circle,
+          //                 ),
+          //                 child: Icon(Icons.shield_outlined,size: 25,color: Theme.of(context).primaryColor,),
+          //               ),
+          //               SizedBox(width: 10,),
+          //               Column(
+          //                 crossAxisAlignment: CrossAxisAlignment.start,
+          //                 children: [
+          //                   Text("Security & Permissions",),
+          //                   Text("Manage access control",style: TextStyle(color: Colors.grey),),
+          //                 ],
+          //               ),
+          //               Spacer(),
+          //               Icon(Icons.arrow_forward_ios,color: Colors.grey,)
+          //             ],
+          //           ),
+          //         ),
+          //       )
+          //     ]
+          // ),
 
         ],
       ),

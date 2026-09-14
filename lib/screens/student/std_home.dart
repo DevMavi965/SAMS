@@ -438,7 +438,7 @@ class _StdHomeState extends State<StdHome> {
                 totalDays: stats.thisMonth.total > 0 ? stats.thisMonth.total.toDouble() : 1.0,
               ),
               const SizedBox(height: 20),
-
+//progress
               if (stats.trendMonths.isNotEmpty)
                 CustomeLineChart(
                   Months: stats.trendMonths,
@@ -450,10 +450,7 @@ class _StdHomeState extends State<StdHome> {
               const SizedBox(height: 7),
 
               if (isWaiting)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 20),
-                  child: Center(child: CircularProgressIndicator()),
-                )
+                RMFuncts.loadingAnimation(context)
               else if (snapshot.hasError)
                 Text("Error: ${snapshot.error}")
               else if (todaysLectures.isEmpty)
@@ -567,7 +564,7 @@ class _TodayAttendanceCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 10),
-          _buildStatusRow(),
+          _buildStatusRow(context),
           const SizedBox(height: 15),
           const Divider(thickness: 1.5, color: Colors.white),
           const SizedBox(height: 10),
@@ -602,18 +599,9 @@ class _TodayAttendanceCard extends StatelessWidget {
     );
   }
 
-  Widget _buildStatusRow() {
+  Widget _buildStatusRow(BuildContext context) {
     if (connectionState == ConnectionState.waiting) {
-      return const SizedBox(
-        height: 24,
-        child: Center(
-          child: SizedBox(
-            width: 18,
-            height: 18,
-            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-          ),
-        ),
-      );
+      return RMFuncts.loadingAnimation(context);
     }
     if (error != null) {
       return Text("Error: $error", style: const TextStyle(color: Colors.white));

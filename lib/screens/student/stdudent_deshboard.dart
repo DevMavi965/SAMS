@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:provider/provider.dart';
+import 'package:smas3/maxins/rm_functions.dart';
 import 'package:smas3/models/admin_model.dart';
 import 'package:smas3/models/announcement_model.dart';
 import 'package:smas3/models/lecture.dart';
@@ -249,7 +250,7 @@ class _StudentDeshboardState extends State<StudentDeshboard> {
           ),
         );
       }
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return Scaffold(body: RMFuncts.loadingAnimation2(context));
     }
 
     return Scaffold(

@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:smas3/maxins/rm_functions.dart';
 import 'package:smas3/models/Leave_Application_Model.dart';
 import 'package:smas3/models/ins_admin.dart';
 import 'package:smas3/models/student_model.dart';
@@ -134,7 +135,7 @@ class _LeaveTabState extends State<LeaveTab> {
                 .snapshots(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
+                return RMFuncts.loadingAnimation(context);//progress
               } else if (snapshot.hasError) {
                 return const Center(child: Text("error"));
               }
@@ -179,7 +180,7 @@ class _LeaveTabState extends State<LeaveTab> {
                 .snapshots(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
+                return RMFuncts.loadingAnimation(context);
               } else if (snapshot.hasError) {
                 return const Center(child: Text("error"));
               } else if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {

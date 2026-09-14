@@ -100,9 +100,9 @@ class _UpdateAdminPageState extends State<UpdateAdminPage> {
         content: const Text("Are you sure to update the admin?"),
         actions: [
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).primaryColor),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () => Navigator.pop(context),
-            child: const Text("No"),
+            child: const Text("No",style: TextStyle(color: Colors.white),),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).primaryColor),
@@ -126,7 +126,7 @@ class _UpdateAdminPageState extends State<UpdateAdminPage> {
               Provider.of<DbService>(context, listen: false).updateAdmin(context, updated);
               Navigator.pop(context); // close page, back to ManageAdmins
             },
-            child: const Text("Yes"),
+            child: const Text("Yes",style: TextStyle(color: Colors.white),),
           ),
         ],
       ),
