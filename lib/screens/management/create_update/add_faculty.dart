@@ -159,7 +159,7 @@ class _AddFacultyScreenState extends State<AddFacultyScreen> {
                 keyboardType: TextInputType.emailAddress,
                 decoration: InputDecoration(
                   labelText: "Email",
-                  hintText: "you@example.com",
+                  hintText: "Enter email here",
                   prefixIcon: const Icon(Icons.mail_outline, color: _Palette.slate),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                 ),
@@ -225,43 +225,77 @@ class _AddFacultyScreenState extends State<AddFacultyScreen> {
               SizedBox(height: 20,),
               ElevatedButton.icon(onPressed: ()async{
                 if(fkey.currentState!.validate()){
-                    try{
-                     await Provider.of<DbService>(context,listen: false).registerFac(
-                          widget.insAdmin.id!, widget.institute.id!,widget.department.id!,
-                          Lecturer(
-                              name: name.text.trim(),
-                              deprt: widget.department.name,
-                              role: "faculty",
-                              insAdminId: widget.insAdmin.id!,
-                              instituteId: widget.institute.id!,
-                              departmentId: widget.department.id!,
-                              designation: designation.text.trim(),
-                              status: "active",
-                              email: email.text.trim(),
-                              phone: phone.text.trim(),
-                              semesters: [],
-                              courses: [],
-                              created_at: DateTime.now()
-                          ),
-                          password.text.trim(), context);
-                      Fluttertoast.showToast(msg: "Faculty added successfully ");
-                      await RMFuncts.sendSamsCredentialsEmail(
-                        email.text.trim(),
-                        name.text.trim(),
-                        password.text.trim(),
-                      );
-                      Fluttertoast.showToast(msg: "credential-Email sent successfully");
-                      if(mounted){
-                        Navigator.pop(context);
-                      }
+                   showDialog(context: context, builder: (context)=>AlertDialog(
+                     title: Text("Add Faculty"),
+                     content: Text("Are you sure you want to add this faculty?"),
+                    actions: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          ElevatedButton(
+                              style:ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.red,
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(6)
+                                  )
+                              ),
+                              onPressed: (){Navigator.pop(context);}, child: Text("No",style: TextStyle(
+                              color: Colors.white
+                          ),)),
+                          ElevatedButton(
+                              style:ElevatedButton.styleFrom(
+                                  backgroundColor: Theme.of(context).primaryColor,
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(6)
+                                  )
+                              ),
+                              onPressed: ()async{
+                            try
+                            {
+                              await Provider.of<DbService>(context,listen: false).registerFac(
+                                  widget.insAdmin.id!, widget.institute.id!,widget.department.id!,
+                                  Lecturer(
+                                      name: name.text.trim(),
+                                      deprt: widget.department.name,
+                                      role: "faculty",
+                                      insAdminId: widget.insAdmin.id!,
+                                      instituteId: widget.institute.id!,
+                                      departmentId: widget.department.id!,
+                                      designation: designation.text.trim(),
+                                      status: "active",
+                                      email: email.text.trim(),
+                                      phone: phone.text.trim(),
+                                      semesters: [],
+                                      courses: [],
+                                      created_at: DateTime.now()
+                                  ),
+                                  password.text.trim(), context);
+                              Fluttertoast.showToast(msg: "Faculty added successfully ");
+                              await RMFuncts.sendSamsCredentialsEmail(
+                                email.text.trim(),
+                                name.text.trim(),
+                                password.text.trim(),
+                              );
+                              Fluttertoast.showToast(msg: "credential-Email sent successfully");
+                              if(mounted){
+                                Navigator.pop(context);
+                              }
+                              Navigator.pop(context);
+                            }catch(e){
+                              print(e.toString());
+                            }
+                            Navigator.pop(context);
+                            Navigator.pop(context);
+                          }, child: Text("yes",style: TextStyle(
+                            color: Colors.white
+                          ),)),
 
-
-                      Navigator.pop(context);
-                    }catch(e){
-                      print(e.toString());
-                    }
+                        ],
+                      )
+                    ],
+                   ));
                     // ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Faculty added successfully"),));
-                   Navigator.pop(context);
+
                 }else{
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Please fill all fields"),));
                 }

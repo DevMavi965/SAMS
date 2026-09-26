@@ -230,7 +230,7 @@ class _ManageAdminsState extends State<ManageAdmins> {
                             ),
                             ElevatedButton(
                               style: ElevatedButton.styleFrom(
-                                  backgroundColor: Theme.of(context).primaryColor),
+                                  backgroundColor: Colors.red),
                               onPressed: () {
                                 setState(() {
                                   admins.remove(admin);

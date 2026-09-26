@@ -72,8 +72,8 @@ class _TimetableSelState extends State<TimetableSel> {
                       if(snapshot.data!.docs.isEmpty) {
                         return Center(
                           child: Container(//Holiday added successfully
-                              padding: EdgeInsets.symmetric(horizontal: 5,vertical: 5),
-                              child: Card(child: Text("No department found,add department to continue"))),);
+                              // padding: EdgeInsets.symmetric(horizontal: 5,vertical: 5),
+                              child: Text("No department found,add department to continue")),);
                       }
                       departments.clear();
                       for(var doc in snapshot.data!.docs){
@@ -280,7 +280,7 @@ class _TimetableSelState extends State<TimetableSel> {
                   .collection("holidays")
                   .snapshots(), builder: (context,snapshot){
                 if(snapshot.connectionState==ConnectionState.waiting){
-                  return Center(child: CircularProgressIndicator(),);
+                  return RMFuncts.loadingAnimation(context);
                 }else if(snapshot.hasError){
                   return Center(child: Text(snapshot.error.toString()),);
                 }else if(!snapshot.hasData){
@@ -290,7 +290,8 @@ class _TimetableSelState extends State<TimetableSel> {
                     return Center(
                       child: Container(
                           padding: EdgeInsets.symmetric(horizontal: 5,vertical: 5),
-                          child: Card(child: Text("No holiday found,add holiday to continue"))),);
+                          child:
+                          Text("No holiday found,add holiday to continue")),);
                   }else{
                     holidays.clear();
                     for(var h in snapshot.data!.docs){

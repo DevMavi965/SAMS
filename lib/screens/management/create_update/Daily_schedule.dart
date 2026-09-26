@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -59,7 +60,7 @@ class _DailyScheduleState extends State<DailySchedule> {
         : a.start_time.minute.compareTo(b.start_time.minute));
     return all;
   }
-
+//delete
   List<Course> get availableCourses => courses
       .where((c) => todayLectures.where((l) => l.course == c.name).isEmpty)
       .toList();
@@ -426,8 +427,44 @@ class _DailyScheduleState extends State<DailySchedule> {
                       lecture: lecture, courseId: course.id);
                 },
                 onDelete: () {
-                  Provider.of<DbService>(context, listen: false)
-                      .removeLecture(context, lecture.id!);
+                  showDialog(context: context, builder: (_)=>
+                      AlertDialog(
+                        title: const Text("Delete Lecture",style: TextStyle(fontWeight: FontWeight.w500),),
+                        icon: Icon(Icons.delete,size: 28,color: Theme.of(context).primaryColor,),
+                        content: Text("Are you sure you want to delete this lecture?",style: TextStyle(fontSize: 16),),
+                        actions: [
+                          Row(
+                            children: [
+                              ElevatedButton(onPressed: (){
+                                Navigator.pop(context);
+                              },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.white60,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(7),
+
+                                    ),),
+                                  child: Text("Cancel",style: TextStyle(color: Colors.black),)),
+                              Spacer(),
+                              ElevatedButton(onPressed: (){
+                                Provider.of<DbService>(context,listen: false).removeLecture(context, lecture.id!);
+                                Navigator.pop(context);
+                              },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.red,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(7),
+                                      side: BorderSide(color: Colors.red,width: 0.5),
+                                    ),),
+                                  child: Text("ok",style: TextStyle(color: Colors.white),)),
+                            ],
+                          ),
+
+                        ],
+                      )
+                  );
+                  // Provider.of<DbService>(context, listen: false)
+                  //     .removeLecture(context, lecture.id!);
                 },
               ),
 
@@ -780,7 +817,7 @@ class _DailyScheduleState extends State<DailySchedule> {
                             .firstWhere((c) => c.id == selectedCourse)
                             .lecturer_id;
 
-                        if (lecturerId != null) {
+                        if (lecturerId != null) {//scaffold
                           set(() => _checkingConflict = true);
                           final conflictError = await _checkLecturerConflict(
                             widget.insAdmin.id!,
@@ -796,13 +833,7 @@ class _DailyScheduleState extends State<DailySchedule> {
 
                           if (conflictError != null) {
                             set(() => timeError = conflictError);
-                            ScaffoldMessenger.of(sheetContext).showSnackBar(
-                              SnackBar(
-                                content: Text(conflictError),
-                                backgroundColor: Colors.red.shade700,
-                                duration: const Duration(seconds: 4),
-                              ),
-                            );
+                            Fluttertoast.showToast(msg: "$conflictError");
                             return;
                           }
                         }

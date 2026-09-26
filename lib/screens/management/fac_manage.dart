@@ -30,7 +30,7 @@ class _FacManageState extends State<FacManage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Manage Faculty"),
+        title: Text("Faculty of ${widget.department.name}"),
         centerTitle: true,
         backgroundColor: Theme.of(context).primaryColor,
       ),
@@ -42,14 +42,14 @@ class _FacManageState extends State<FacManage> {
           .collection("faculty").snapshots(),
           builder: (context,snapshot){
            if(snapshot.connectionState==ConnectionState.waiting){
-             return Center(child: CircularProgressIndicator(),);
+             return RMFuncts.loadingAnimation(context);
            }else if(snapshot.hasError){
              return Center(child: Text(snapshot.error.toString()),);
            }else if(!snapshot.hasData){
              return Center(child: Text("No data found"),);
            }else if(snapshot.hasData){
              if(snapshot.data!.docs.isEmpty){
-               return Center(child: Text("No faculty found,add faculty to continue"),);
+               return Center(child: RMFuncts.emptyIcon("faculty"),);
              }
              lecturers.clear();
             for(var doc in snapshot.data!.docs){

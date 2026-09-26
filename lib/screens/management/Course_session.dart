@@ -50,7 +50,7 @@ class _CourseSessionState extends State<CourseSession> {
             }else if(snapshot.hasData){
               sessions.clear();
               if(snapshot.data!.docs.isEmpty){
-                return Center(child: Text("No sessions found"),);
+                return Center(child: RMFuncts.emptyIcon("sessions"),);
               }else{
                 for(var session in snapshot.data!.docs){
                   sessions.add(

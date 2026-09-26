@@ -43,10 +43,10 @@ class _insAdminProfileState extends State<insAdminProfile> {
 
         ElevatedButton.icon(
           style: OutlinedButton.styleFrom(
-            iconColor: Colors.red,
-            backgroundColor: Colors.white,
-            foregroundColor: Colors.red,
-            side: BorderSide(color: Colors.red,width: 0.6),
+            iconColor: Colors.white,
+            backgroundColor: Theme.of(context).primaryColor,
+            // foregroundColor: Colors.red,
+            side: BorderSide(color: Colors.grey.shade100,width: 0.6),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(7),
             ),
@@ -89,7 +89,7 @@ class _insAdminProfileState extends State<insAdminProfile> {
             )
             );
           },
-          label: Text("Logout"),
+          label: Text("Logout",style: TextStyle(color: Colors.white),),
           icon: Icon(Icons.logout),
         ),
         SizedBox(height: 35,),

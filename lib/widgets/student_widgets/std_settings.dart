@@ -141,12 +141,12 @@ class _StdSettingsState extends State<StdSettings> {
                         child: Icon(CupertinoIcons.bell,size: 25,color: Theme.of(context).primaryColor,),
                       ),
                       SizedBox(width: 10,),
-                      Flexible(
+                      Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text("Push Notifications",),
-                            Text("receive notifications from us",style: TextStyle(color: Colors.grey),),
+                            Text("Push Notifications",maxLines: 1,overflow: TextOverflow.ellipsis,),
+                            Text("receive notifications from us",maxLines: 1,overflow: TextOverflow.ellipsis,style: TextStyle(color: Colors.grey),),
                           ],
                         ),
                       ),
@@ -180,7 +180,7 @@ class _StdSettingsState extends State<StdSettings> {
                 )
               ]
           ),
-          //Dark mode
+          // Dark mode
           // TableRow(
           //     children: [
           //       Padding(

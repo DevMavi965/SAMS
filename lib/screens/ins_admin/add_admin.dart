@@ -102,7 +102,7 @@ class _AddAdminPageState extends State<AddAdminPage> {
         content: const Text("Are you sure to add the admin?"),
         actions: [
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).primaryColor),
+            style: ElevatedButton.styleFrom(backgroundColor:Colors.red),
             onPressed: () => Navigator.pop(context),
             child: const Text("No",style: TextStyle(color: Colors.white),),
           ),

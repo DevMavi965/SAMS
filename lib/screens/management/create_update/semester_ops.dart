@@ -55,7 +55,7 @@ class _SemesterOpsState extends State<SemesterOps> {
           .snapshots(),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return Center(child: CircularProgressIndicator(),);
+              return RMFuncts.loadingAnimation(context);
             } else if (snapshot.hasError) {
               return Center(child: Text(snapshot.error.toString()),);
             } else if (!snapshot.hasData) {
@@ -76,7 +76,10 @@ class _SemesterOpsState extends State<SemesterOps> {
               }
               return Scaffold(
                 body: semesters.isEmpty ? Center(
-                  child: Text("No semesters found, Add first"),) : ListView
+                  child:
+                  RMFuncts.emptyIcon("semesters")
+                  ,)
+                    : ListView
                     .builder(
                     itemCount: semesters.length,
                     itemBuilder: (_, count) {
@@ -234,11 +237,7 @@ class _SemesterOpsState extends State<SemesterOps> {
                                                           },
                                                           child: Row(
                                                             children: [
-                                                              Icon(Icons
-                                                                  .calendar_month,
-                                                                color: Theme
-                                                                    .of(context)
-                                                                    .primaryColor,),
+                                                              RMFuncts.dateicon(),
                                                               SizedBox(
                                                                 width: 10,),
                                                               Text(startDate1 ==
@@ -265,11 +264,7 @@ class _SemesterOpsState extends State<SemesterOps> {
                                                           },
                                                           child: Row(
                                                             children: [
-                                                              Icon(Icons
-                                                                  .calendar_month,
-                                                                color: Theme
-                                                                    .of(context)
-                                                                    .primaryColor,),
+                                                              RMFuncts.dateicon(),
                                                               SizedBox(
                                                                 width: 10,),
                                                               Text(
@@ -498,6 +493,7 @@ class _SemesterOpsState extends State<SemesterOps> {
                                 children: [
                                   SizedBox(height: 10,), //delete
                                   DropdownButton(
+                                    hint: Text("Select Semester"),
                                       value: selectedSemester,
                                       items: [
                                         for(int i = 1; i <= 8; i++)
@@ -524,9 +520,7 @@ class _SemesterOpsState extends State<SemesterOps> {
                                       child:
                                       Row(
                                         children: [
-                                          Icon(Icons.calendar_month, color: Theme
-                                              .of(context)
-                                              .primaryColor,),
+                                          RMFuncts.dateicon(),
                                           SizedBox(width: 10,),
                                           Text(startDate == null
                                               ? "select Start Date"
@@ -548,9 +542,7 @@ class _SemesterOpsState extends State<SemesterOps> {
                                       },
                                       child: Row(
                                         children: [
-                                          Icon(Icons.calendar_month, color: Theme
-                                              .of(context)
-                                              .primaryColor,),
+                                          RMFuncts.dateicon(),
                                           SizedBox(width: 10,),
                                           Text(endDate == null
                                               ? "select Start Date"

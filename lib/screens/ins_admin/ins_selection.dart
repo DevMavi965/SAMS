@@ -5,6 +5,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:lottie/lottie.dart';
 import 'package:provider/provider.dart';
+import 'package:smas3/maxins/rm_functions.dart';
 import 'package:smas3/models/ins_admin.dart';
 import 'package:smas3/models/institute.dart';
 import 'package:smas3/screens/auth_screens/login_screen.dart';
@@ -222,7 +223,7 @@ class _InstituteCardState extends State<InstituteCard> {
                     CrossAxisAlignment.start,
                     children: [
                       Text(
-                        widget.institute.name,
+                       widget.institute.name.toUpperCase(),
                         style: const TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
@@ -259,7 +260,7 @@ class _InstituteCardState extends State<InstituteCard> {
                            backgroundColor: MaterialStateProperty.all(Colors.red),
                          ),
                          onPressed: (){
-                       Provider.of<DbService>(context,listen: false).removeInstitute(context, widget.institute.id!);
+                       Provider.of<DbService>(context,listen: false).removeInstitute(context, widget.insAdmin.id!, widget.institute.id!);
                        Navigator.pop(context);
                      }, child: Text("Yes",style: TextStyle(color: Colors.white),)),
                    ],

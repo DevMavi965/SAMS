@@ -50,7 +50,7 @@ class _FacHomeTabState extends State<FacHomeTab> {
   // One in-app Timer per today's lecture, firing at that lecture's end
   // time to auto-finalize its attendance (see _armAutoFinalize below).
   // Cancelled in dispose so they don't fire against an unmounted state.
-  final List<Timer> _autoFinalizeTimers = [];
+  // final List<Timer> _autoFinalizeTimers = [];
 
   // ---- shared helpers for parsing the "attendance" field stored on a lecture doc ----
 
@@ -169,9 +169,9 @@ class _FacHomeTabState extends State<FacHomeTab> {
 
       // Arm (or immediately run) automatic attendance finalization for
       // each of today's lectures — see _armAutoFinalize below.
-      for (var lecture in todaysLectures) {
-        _armAutoFinalize(lecture);
-      }
+      // for (var lecture in todaysLectures) {
+      //   _armAutoFinalize(lecture);
+      // }
 
       return todaysLectures;
     } catch (e) {
@@ -179,22 +179,22 @@ class _FacHomeTabState extends State<FacHomeTab> {
       return [];
     }
   }
-  void _armAutoFinalize(LectureModel lecture) {
-    final dbService = Provider.of<DbService>(context, listen: false);
-    final end = _combineDateAndTime(lecture.dated, lecture.end_time);
-    final now = DateTime.now();
-
-    if (!now.isBefore(end)) {
-      dbService.finalizeLectureAttendance(null, lecture);
-      return;
-    }
-
-    final timer = Timer(end.difference(now), () {
-      if (!mounted) return;
-      dbService.finalizeLectureAttendance(null, lecture);
-    });
-    _autoFinalizeTimers.add(timer);
-  }
+  // void _armAutoFinalize(LectureModel lecture) {
+  //   final dbService = Provider.of<DbService>(context, listen: false);
+  //   final end = _combineDateAndTime(lecture.dated, lecture.end_time);
+  //   final now = DateTime.now();
+  //
+  //   if (!now.isBefore(end)) {
+  //     dbService.finalizeLectureAttendance(null, lecture);
+  //     return;
+  //   }
+  //
+  //   final timer = Timer(end.difference(now), () {
+  //     if (!mounted) return;
+  //     dbService.finalizeLectureAttendance(null, lecture);
+  //   });
+  //   _autoFinalizeTimers.add(timer);
+  // }
 
   @override
   void initState() {
@@ -203,14 +203,6 @@ class _FacHomeTabState extends State<FacHomeTab> {
     _weeklyStatsFuture = _computeWeeklyStats(
       context, widget.insAdmin.id!, widget.institute.id!, widget.department.id!,
     );
-  }
-
-  @override
-  void dispose() {
-    for (final t in _autoFinalizeTimers) {
-      t.cancel();
-    }
-    super.dispose();
   }
 
   @override
@@ -227,7 +219,7 @@ class _FacHomeTabState extends State<FacHomeTab> {
 
         // _MarkAttendanceCard(context),
         SizedBox(height: 25,),
-
+       //progress
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -512,7 +504,6 @@ class _FacHomeTabState extends State<FacHomeTab> {
       BuildContext context, String insAdminId, String instituteId, String departmentId) async
   {
     final dbService = Provider.of<DbService>(context, listen: false);
-
     final now = DateTime.now();
     // Week starts Monday, ends Sunday (inclusive).
     final startOfWeek = DateTime(now.year, now.month, now.day)

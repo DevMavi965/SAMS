@@ -41,11 +41,12 @@ class _FacProfileTabState extends State<FacProfileTab> {
         SizedBox(height: 10,),
         FacSettingCard(lecturer: widget.lecturer, insAdmin: widget.insAdmin, institute: widget.institute,),
         SizedBox(height: 25,),
-        OutlinedButton.icon(
+        ElevatedButton.icon(
           style: OutlinedButton.styleFrom(
-            iconColor: Colors.red,
-            foregroundColor: Colors.red,
-            side: BorderSide(color: Colors.red,width: 0.5),
+            iconColor: Colors.white,
+            backgroundColor: Theme.of(context).primaryColor,
+            // foregroundColor: Colors.red,
+            // side: BorderSide(color: Colors.grey.shade100,width: 0.6),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(7),
             ),
@@ -58,13 +59,14 @@ class _FacProfileTabState extends State<FacProfileTab> {
                   actions: [
                     Row(
                       children: [
-                        OutlinedButton(onPressed: (){
+                        ElevatedButton(onPressed: (){
                           Navigator.pop(context);
                         },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.white60,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(7),
+
                               ),),
                             child: Text("Cancel",style: TextStyle(color: Colors.black),)),
                         Spacer(),
@@ -87,9 +89,9 @@ class _FacProfileTabState extends State<FacProfileTab> {
                 )
             );
           },
-          label: Text("Logout"),
+          label: Text("Logout",style: TextStyle(color: Colors.white),),
           icon: Icon(Icons.logout),
-        )
+        ),
       ],
     )
     );

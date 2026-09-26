@@ -52,6 +52,7 @@ class _Update_InstituteState extends State<Update_Institute> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        iconTheme: IconThemeData(color: Colors.white),
         backgroundColor: Theme.of(context).primaryColor,
         title: Text("Update Institute",style: TextStyle(color: Colors.white,fontWeight: FontWeight.bold,fontSize: 22),),
       ),
@@ -161,7 +162,9 @@ class _Update_InstituteState extends State<Update_Institute> {
                 ),
               ),
               SizedBox(height: 20,),
-              ElevatedButton.icon(onPressed: (){
+              ElevatedButton.icon(style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).primaryColor,
+              ),onPressed: (){
                 if(fkey.currentState!.validate()){
                   showDialog(context: context, builder: (_)=>AlertDialog(
                     title: Text("Add institute"),
@@ -199,8 +202,8 @@ class _Update_InstituteState extends State<Update_Institute> {
                   ));
                 }
               },
-                  label: Text("Update institute",style: TextStyle(color: Theme.of(context).primaryColor),),
-                  icon: Icon(Icons.add_business_rounded,color: Theme.of(context).primaryColor,))
+                  label: Text("Update institute",style: TextStyle(color:Colors.white),),
+                  icon: Icon(Icons.add_business_rounded,color: Colors.white))
 
             ],
           ),

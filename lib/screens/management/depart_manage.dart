@@ -54,7 +54,7 @@ class _DepartManageState extends State<DepartManage> {
             .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return RMFuncts.loadingAnimation(context);
           } else if (snapshot.hasError) {
             return Center(child: Text(snapshot.error.toString()));
           } else if (!snapshot.hasData) {
@@ -223,10 +223,19 @@ class _DepartManageState extends State<DepartManage> {
   // Confirm
   void _confirmDelete(Department department) async {
     final count = await getSessionCount(context, department.id!);
+    final count2 = await getFacultyCount(context, department.id!);
     if (count > 0) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
         content: Text("Cannot delete department with sessions"),
+        backgroundColor: Colors.red,
+      ));
+      return;
+    }
+    if (count2 > 0) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text("Cannot delete department with faculty"),
         backgroundColor: Colors.red,
       ));
       return;
@@ -356,6 +365,24 @@ class _DepartManageState extends State<DepartManage> {
           .collection("departments")
           .doc(departmentId)
           .collection("sessions")
+          .count()
+          .get();
+      return counter.count ?? 0;
+    } catch (e) {
+      return 0;
+    }
+  }
+  Future<int> getFacultyCount(BuildContext context, String departmentId) async {
+    try {
+      final counter = await Provider.of<DbService>(context, listen: false)
+          .dbref
+          .collection("ins_admins")
+          .doc(widget.insAdmin.id)
+          .collection("institutes")
+          .doc(widget.institute.id)
+          .collection("departments")
+          .doc(departmentId)
+          .collection("faculty")
           .count()
           .get();
       return counter.count ?? 0;

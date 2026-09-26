@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:lottie/lottie.dart';
 import 'package:provider/provider.dart';
+import 'package:smas3/maxins/rm_functions.dart';
 import 'package:smas3/models/attendance.dart';
 import 'package:smas3/models/ins_admin.dart';
 import 'package:smas3/models/institute.dart';
@@ -139,11 +140,7 @@ class _FacMarkAttendanceTabState extends State<FacMarkAttendanceTab> {
                 .snapshots(),
             builder: (context, courseIndexSnapshot) {
               if (courseIndexSnapshot.connectionState == ConnectionState.waiting) {
-                return Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(20),
-                      child: CircularProgressIndicator(),
-                    ));
+                return RMFuncts.loadingAnimation(context);
               } else if (courseIndexSnapshot.hasError) {
                 return Center(child: Text("Error: ${courseIndexSnapshot.error}"));
               } else if (!courseIndexSnapshot.hasData ||
@@ -175,11 +172,7 @@ class _FacMarkAttendanceTabState extends State<FacMarkAttendanceTab> {
                 future: _lecturesFuture(context, courseIdxDocs),
                 builder: (context, lecSnapshot) {
                   if (lecSnapshot.connectionState == ConnectionState.waiting) {
-                    return Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(20),
-                          child: CircularProgressIndicator(),
-                        ));
+                   return RMFuncts.loadingAnimation(context);
                   }
                   if (lecSnapshot.hasError) {
                     return Center(child: Text("Error: ${lecSnapshot.error}"));
@@ -223,13 +216,11 @@ class _FacMarkAttendanceTabState extends State<FacMarkAttendanceTab> {
                           itemBuilder: (context, i) {
                             final entry = entries[i];
                             final lecture = entry.lecture;
-
                             // Real start/end timestamps, not just the bare date.
                             final start = _combineDateAndTime(
                                 lecture.dated, lecture.start_time);
                             final end = _combineDateAndTime(
                                 lecture.dated, lecture.end_time);
-
                             return _LectureCard(
                               lecture: lecture,
                               start: start,

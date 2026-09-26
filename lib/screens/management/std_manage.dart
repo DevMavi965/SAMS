@@ -39,13 +39,13 @@ class _Std_manageState extends State<Std_manage> {
           .collection("departments").snapshots(),
           builder: (context,snapshot){
             if(snapshot.connectionState==ConnectionState.waiting){
-              return Center(child: CircularProgressIndicator(),);
+              return RMFuncts.loadingAnimation(context);
             }else if(snapshot.hasError){
               return Center(child: Text(snapshot.error.toString()),);
             }else if(!snapshot.hasData){
               return Center(child: Text("No data found"),);
             }else if(snapshot.data!.docs.isEmpty){
-              return Center(child: Text("No departments found"),);
+              return Center(child: RMFuncts.emptyIcon("departments"),);
             }
             departments.clear();
             for(var dep in snapshot.data!.docs){

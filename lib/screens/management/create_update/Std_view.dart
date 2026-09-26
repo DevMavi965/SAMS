@@ -71,7 +71,7 @@ class _StdViewState extends State<StdView> {
                 )
               );
             }
-            return students.isEmpty?Center(child: Text("no students found,Add first"),):
+            return students.isEmpty?Center(child: RMFuncts.emptyIcon("students"),):
             ListView.builder(
                 itemCount: students.length,
                 itemBuilder: (_,i){

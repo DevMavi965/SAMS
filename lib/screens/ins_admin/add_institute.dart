@@ -35,6 +35,7 @@ class _AddInstituteState extends State<AddInstitute> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+
         backgroundColor: Theme.of(context).primaryColor,
         title: Text("Add Institute",style: TextStyle(color:Colors.white,fontWeight: FontWeight.bold,fontSize: 22),),
       ),
@@ -122,9 +123,12 @@ class _AddInstituteState extends State<AddInstitute> {
               SizedBox(height: 20,),
               TextFormField(
                 controller: longtitude,
+                keyboardType: TextInputType.number,
                 validator: (v){
                   if(v!.isEmpty){
                     return "Please enter longitude";
+                  }else if(v.length<8){
+                    return "enter upto 8 digits for better accuracy";
                   }else if(double.tryParse(v)==null){
                     return "enter valid value";
                   }else if(v.contains(" ")){
@@ -135,6 +139,8 @@ class _AddInstituteState extends State<AddInstitute> {
                   return null;
                 },
                 decoration: InputDecoration(
+                  //type of input number
+
                   labelText: "institute longitude",
                   focusedBorder: OutlineInputBorder(
                       borderSide: BorderSide(
@@ -143,15 +149,19 @@ class _AddInstituteState extends State<AddInstitute> {
                       )
                   ),
                   prefixIcon: Icon(Icons.edit_location_alt),
+
                   border: OutlineInputBorder(),
                 ),
               ),
               SizedBox(height: 20,),
               TextFormField(
+                keyboardType: TextInputType.number,
                 controller: latitude,
                 validator: (v){
                   if(v!.isEmpty){
                     return "Please enter latitude";
+                  }else if(v.length<8){
+                    return "enter upto 8 digits for better accuracy";
                   }else if(double.tryParse(v)==null){
                     return "enter valid value";
                   }else if(v.contains(" ")){
@@ -174,7 +184,11 @@ class _AddInstituteState extends State<AddInstitute> {
                 ),
               ),
               SizedBox(height: 20,),
-              ElevatedButton.icon(onPressed: (){
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).primaryColor,
+                ),
+                onPressed: (){
                 if(fkey.currentState!.validate()){
                   showDialog(context: context, builder: (_)=>AlertDialog(
                     title: Text("Add institute"),
@@ -213,8 +227,8 @@ class _AddInstituteState extends State<AddInstitute> {
                   ));
                 }
               },
-                  label: Text("Add institute",style: TextStyle(color: Theme.of(context).primaryColor),),
-                  icon: Icon(Icons.add_business_rounded,color: Theme.of(context).primaryColor,),
+                  label: Text("Add institute",style: TextStyle(color: Colors.white),),
+                  icon: Icon(Icons.add_business_rounded,color:Colors.white,),
               )
 
             ],

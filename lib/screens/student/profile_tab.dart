@@ -99,11 +99,12 @@ class _ProfileTabState extends State<ProfileTab> {
                 // )
               ],
             ),
-            OutlinedButton.icon(
+            ElevatedButton.icon(
               style: OutlinedButton.styleFrom(
-                iconColor: Colors.red,
-                foregroundColor: Colors.red,
-                side: BorderSide(color: Colors.red,width: 0.5),
+                iconColor: Colors.white,
+                backgroundColor: Theme.of(context).primaryColor,
+                // foregroundColor: Colors.red,
+                side: BorderSide(color: Colors.grey.shade100,width: 0.6),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(7),
                 ),
@@ -146,7 +147,7 @@ class _ProfileTabState extends State<ProfileTab> {
                     )
                 );
               },
-              label: Text("Logout"),
+              label: Text("Logout",style: TextStyle(color: Colors.white),),
               icon: Icon(Icons.logout),
             ),
             SizedBox(height: 35,),

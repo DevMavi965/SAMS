@@ -8,6 +8,7 @@ import 'package:smas3/models/semester.dart';
 import 'package:smas3/models/session.dart';
 import 'package:smas3/screens/management/create_update/Std_view.dart';
 
+import '../../../maxins/rm_functions.dart';
 import '../../../models/department.dart';
 import '../../../services/db_service.dart';
 
@@ -63,7 +64,7 @@ class _Std_Sem_manageState extends State<Std_Sem_manage> {
                     end_date: sems['end_date'].toDate()
                 ));
               }
-              return semesters.isEmpty?Center(child: Text("No semesters found, Add first"),): ListView.builder(
+              return semesters.isEmpty?Center(child: RMFuncts.emptyIcon("semesters"),): ListView.builder(
                   itemCount: semesters.length,
                   itemBuilder: (_,count){
                     return InkWell(

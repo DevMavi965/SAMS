@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
+import 'package:smas3/maxins/rm_functions.dart';
 import 'package:smas3/models/course.dart';
 import 'package:smas3/models/ins_admin.dart';
 import 'package:smas3/screens/management/Course_add.dart';
@@ -66,7 +67,7 @@ class _CourseOpsState extends State<CourseOps> {
             return Center(child: Text("No data found"));
           } else if (snapshot.hasData) {
             if (snapshot.data!.docs.isEmpty) {
-              return Center(child: Text("No course found, Add first"));
+              return Center(child:RMFuncts.emptyIcon("courses"));
             } else {
               courses.clear();
               for (var course1 in snapshot.data!.docs) {

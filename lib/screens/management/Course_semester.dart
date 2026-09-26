@@ -10,6 +10,7 @@ import 'package:smas3/screens/management/Course_ops.dart';
 
 import '../../../models/department.dart';
 import '../../../services/db_service.dart';
+import '../../maxins/rm_functions.dart';
 
 class CourseSemester extends StatefulWidget {
   final InsAdmin insAdmin;
@@ -64,7 +65,7 @@ class _CourseSemesterState extends State<CourseSemester> {
                     end_date: sems['end_date'].toDate()
                 ));
               }
-              return semesters.isEmpty?Center(child: Text("No semesters found, Add first"),): ListView.builder(
+              return semesters.isEmpty?Center(child: RMFuncts.emptyIcon("semesters"),): ListView.builder(
                   itemCount: semesters.length,
                   itemBuilder: (_,count){
                     return InkWell(

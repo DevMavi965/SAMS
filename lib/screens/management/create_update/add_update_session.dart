@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:provider/provider.dart';
@@ -40,7 +41,7 @@ class _AddUpdateSessionState extends State<AddUpdateSession> {
             .collection("sessions").snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return RMFuncts.loadingAnimation(context);
           } else if (snapshot.hasError) {
             return Center(child: Text(snapshot.error.toString()));
           } else if (!snapshot.hasData) {
@@ -48,7 +49,7 @@ class _AddUpdateSessionState extends State<AddUpdateSession> {
           } else if (snapshot.hasData) {
             sessions.clear();
             if (snapshot.data!.docs.isEmpty) {
-              return const Center(child: Text("No sessions found"));
+              return Center(child: RMFuncts.emptyIcon("sessions"));
             } else {
               for (var session in snapshot.data!.docs) {
                 sessions.add(
@@ -276,12 +277,16 @@ class _AddSessionScreenState extends State<AddSessionScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(
-              PhosphorIconsDuotone.calendarHeart,
-              color: Theme.of(context).primaryColor,
-              size: 48,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SizedBox(
+                    height: MediaQuery.of(context).size.height*0.2,
+                    width: MediaQuery.of(context).size.width*0.2,
+                    child: Image.asset("assets/icons/session.png")),
+              ],
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 5),
             const Text("Start date", style: TextStyle(fontWeight: FontWeight.w600)),
             const SizedBox(height: 10),
             _DatePickerRow(
@@ -437,7 +442,7 @@ class _DatePickerRow extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Icon(Icons.calendar_month, color: Theme.of(context).primaryColor),
+            RMFuncts.dateicon(),
             const SizedBox(width: 10),
             Text(
               date == null
@@ -496,10 +501,14 @@ class _UpdateSessionScreenState extends State<UpdateSessionScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(
-              PhosphorIconsDuotone.calendarHeart,
-              color: Theme.of(context).primaryColor,
-              size: 48,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SizedBox(
+                    height: MediaQuery.of(context).size.height*0.2,
+                    width: MediaQuery.of(context).size.width*0.2,
+                    child: Image.asset("assets/icons/session.png")),
+              ],
             ),
             const SizedBox(height: 20),
             const Text("Start date", style: TextStyle(fontWeight: FontWeight.w600)),

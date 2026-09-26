@@ -102,22 +102,36 @@ class _AttendViewState extends State<AttendView> {
 
   Widget _statusBadge(String? status) {
     if (status == "present") {
-      return CircleAvatar(
-        radius: 12,
-        backgroundColor: Theme.of(context).primaryColor,
-        child: const Text("P", style: TextStyle(color: Colors.white)),
+      return Badge(
+        backgroundColor:Theme.of(context).primaryColor,
+        label:  Padding(
+          padding: const EdgeInsets.all(3.0),
+          child: Text("Present", style: TextStyle(color: Colors.white)),
+        ),
       );
     } else if (status == "late") {
-      return CircleAvatar(
-        radius: 12,
+      return Badge(
         backgroundColor: Colors.orange,
-        child: const Text("L", style: TextStyle(color: Colors.white)),
+        label:  Padding(
+          padding: const EdgeInsets.all(3.0),
+          child: Text("Late", style: TextStyle(color: Colors.white)),
+        ),
       );
     } else if (status == "absent") {
-      return const CircleAvatar(
-        radius: 12,
+      return Badge(
         backgroundColor: Colors.red,
-        child: Text("A", style: TextStyle(color: Colors.white)),
+        label:  Padding(
+          padding: const EdgeInsets.all(3.0),
+          child: Text("Absent", style: TextStyle(color: Colors.white)),
+        ),
+      );
+    }else if (status == "leave") {
+      return Badge(
+        backgroundColor: Colors.blue,
+        label:  Padding(
+          padding: const EdgeInsets.all(3.0),
+          child: Text("on leave", style: TextStyle(color: Colors.white)),
+        ),
       );
     } else {
       // no attendance record yet — student hasn't checked in
@@ -157,6 +171,15 @@ class _AttendViewState extends State<AttendView> {
     }
     return count;
   }
+  getOnLeave(List<Attendance> attd,List<Student> students) {
+    int count=0;
+    for(var i=0;i<attd.length;i++){
+      if(attd[i].status=="leave"){
+        count++;
+      }
+    }
+    return count;
+  }
   getLate(List<Attendance> attd,List<Student> students) {
     int count=0;
     for(var i=0;i<attd.length;i++){
@@ -165,6 +188,37 @@ class _AttendViewState extends State<AttendView> {
       }
     }
     return count;
+  }//where .limit
+  getLeaveStatus(String studentId)async{
+    try {
+      final leaveApplications = await Provider
+          .of<DbService>(context, listen: false)
+          .dbref
+          .collection("ins_admins")
+          .doc(widget.insAdminId)
+          .collection("institutes")
+          .doc(widget.instituteId)
+          .collection("leave_applications")
+          .where("student_id", isEqualTo: studentId)
+          .get();
+      if (leaveApplications.docs.isEmpty) {
+        return false;
+      } else {
+        for (var doc in leaveApplications.docs) {
+          DateTime now = DateTime.now();
+          var startDate = doc['start_date'].toDate();
+          var endDate = doc['end_date'].toDate();
+          if (doc['status'] == "approved" && now.isAfter(startDate) &&
+              now.isBefore(endDate)) {
+            return true;
+          } else {
+            return false;
+          }
+        }
+      }
+    }catch(e){
+      print("error while checking leave-application status: $e");
+    }
   }
   Widget _buildStudentAttendanceCard(BuildContext context, Student student) {
     final primaryColor = Theme.of(context).primaryColor;
@@ -194,16 +248,16 @@ class _AttendViewState extends State<AttendView> {
         child: Material(
           color: Colors.transparent,
           child: InkWell(
-            onTap: () {
-              // Tap to toggle mid-point quickly
-              Provider.of<DbService>(context, listen: false)
-                  .studentMidPoint(context, widget.lecture, student.id!);
-            },
-            onDoubleTap: () {
-              // Double tap to quick-checkout
-              Provider.of<DbService>(context, listen: false)
-                  .studentCheckOut(context, widget.lecture, student.id!, "fingerprint");
-            },
+            // onTap: () {
+            //   // Tap to toggle mid-point quickly
+            //   Provider.of<DbService>(context, listen: false)
+            //       .studentMidPoint(context, widget.lecture, student.id!);
+            // },
+            // onDoubleTap: () {
+            //   // Double tap to quick-checkout
+            //   Provider.of<DbService>(context, listen: false)
+            //       .studentCheckOut(context, widget.lecture, student.id!, "fingerprint");
+            // },
             child: Padding(
               padding: const EdgeInsets.all(12),
               child: Column(

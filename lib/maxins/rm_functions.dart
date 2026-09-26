@@ -124,7 +124,29 @@ mixin RMFuncts{
        child: Lottie.asset("assets/anims/m2.json")),);
   }
 
+static dateicon(){
+    return SizedBox(
+      height: 30,
+      width: 30,
+      child: Image.asset("assets/icons/dateicon.png"),
+    );
+}
+static emptyIcon(String str){
+    return ListTile(
+      title:  SizedBox(
+        height: 40,
+        width: 40,
+        child: Image.asset("assets/icons/empty.png"),
+      ),
+      subtitle: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text("No $str found, Add first"),
+        ],
+      ),
+    );
 
+}
   static String generatePassword({int length = 8}) {
     const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
     const lowercase = 'abcdefghijklmnopqrstuvwxyz';
