@@ -1,13 +1,15 @@
 import 'dart:async';
 
-import 'package:collection/collection.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:provider/provider.dart';
 import 'package:smas3/models/lecture.dart';
+import 'package:smas3/services/db_service.dart';
 
-enum _LectureState { upcoming, ongoing, completed, notConducted, onLeave }
+enum _LectureState { upcoming, ongoing, completed }
 
 DateTime _combine(DateTime date, TimeOfDay time) {
   return DateTime(date.year, date.month, date.day, time.hour, time.minute);
@@ -30,29 +32,30 @@ class _StatusInfo {
   const _StatusInfo(this.label, this.color, this.icon);
 }
 
-class UpcomingClassCard extends StatefulWidget {
+class FacUpcomingClassCard extends StatefulWidget {
   final LectureModel lectureModel;
-  final String? studentId;
-  final bool onLeave; // approved leave covers lecture
 
-  const UpcomingClassCard({
+  const FacUpcomingClassCard({
     super.key,
     required this.lectureModel,
-    this.studentId,
-    this.onLeave = false,
   });
 
   @override
-  State<UpcomingClassCard> createState() => _UpcomingClassCardState();
+  State<FacUpcomingClassCard> createState() => _FacUpcomingClassCardState();
 }
 
-class _UpcomingClassCardState extends State<UpcomingClassCard> {
+class _FacUpcomingClassCardState extends State<FacUpcomingClassCard> {
   Timer? _timer;
+
+  // Created lazily, only once the lecture is completed, and cached so the
+  // 30s setState doesn't recreate the stream (which would cause flicker).
+  Stream<DocumentSnapshot<Map<String, dynamic>>>? _indexDocStream;
 
   @override
   void initState() {
     super.initState();
-    // refresh status every 30s
+    // Re-evaluate periodically so the card flips upcoming -> ongoing ->
+    // completed live while on screen.
     _timer = Timer.periodic(const Duration(seconds: 30), (_) {
       if (mounted) setState(() {});
     });
@@ -69,65 +72,94 @@ class _UpcomingClassCardState extends State<UpcomingClassCard> {
   DateTime get _end =>
       _combine(widget.lectureModel.dated, widget.lectureModel.end_time);
 
-  // any student attended lecture
-  bool get _classWasConducted {
-    final attendance = widget.lectureModel.attendance ?? [];
-    return attendance.any((a) => a.status == 'present' || a.status == 'late');
-  }
-
+  // Purely time based.
   _LectureState get _state {
-    // leave overrides time-based states
-    if (widget.onLeave || _attendanceStatus == 'leave') {
-      return _LectureState.onLeave;
-    }
-
     final now = DateTime.now();
     if (now.isBefore(_start)) return _LectureState.upcoming;
-    if (!now.isAfter(_end)) return _LectureState.ongoing;
-
-    if (_attendanceStatus != null) return _LectureState.completed;
-
-    return _classWasConducted ? _LectureState.completed : _LectureState.notConducted;
+    if (now.isBefore(_end)) return _LectureState.ongoing;
+    return _LectureState.completed;
   }
 
-  String? get _attendanceStatus {
-    final studentId = widget.studentId;
-    if (studentId == null) return null;
-    final record = (widget.lectureModel.attendance ?? [])
-        .firstWhereOrNull((a) => a.sid == studentId);
-    return record?.status;
-  }
-
-  _StatusInfo _statusInfo(BuildContext context) {
+  _StatusInfo _statusInfo() {
     switch (_state) {
       case _LectureState.upcoming:
         return const _StatusInfo("Upcoming", Colors.blue, CupertinoIcons.clock);
       case _LectureState.ongoing:
         return const _StatusInfo("Ongoing", Colors.orange, CupertinoIcons.play_circle_fill);
-      case _LectureState.onLeave:
-        return const _StatusInfo("On Leave", Colors.blue, PhosphorIconsBold.airplaneTakeoff);
-      case _LectureState.notConducted:
-        return const _StatusInfo("Not conducted", Colors.grey, CupertinoIcons.minus_circle);
       case _LectureState.completed:
-        switch (_attendanceStatus) {
-          case 'present':
-            return _StatusInfo(
-                "Present", Theme.of(context).primaryColor, CupertinoIcons.check_mark_circled_solid);
-          case 'late':
-            return const _StatusInfo("Late", Colors.brown, CupertinoIcons.clock_fill);
-          case 'absent':
-            return const _StatusInfo("Absent", Colors.red, CupertinoIcons.xmark_circle_fill);
-          default:
-          // conducted but no record
-            return const _StatusInfo("Not marked", Colors.grey, CupertinoIcons.question_circle);
-        }
+        return _StatusInfo("Completed", Theme.of(context).primaryColor,
+            CupertinoIcons.check_mark_circled_solid);
     }
+  }
+
+  Stream<DocumentSnapshot<Map<String, dynamic>>>? _getIndexStream() {
+    final id = widget.lectureModel.id;
+    if (id == null) return null;
+    return _indexDocStream ??= Provider.of<DbService>(context, listen: false)
+        .indexDoc
+        .doc(id)
+        .snapshots() as Stream<DocumentSnapshot<Map<String, dynamic>>>;
+  }
+
+  int _count(String status) => (widget.lectureModel.attendance ?? [])
+      .where((a) => a.status == status)
+      .length;
+
+  Widget _statsSection() {
+    final stream = _getIndexStream();
+    if (stream == null) return const SizedBox.shrink();
+
+    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+      stream: stream,
+      builder: (context, snap) {
+        final finalized = snap.data?.data()?['attendance_finalized'] == true;
+        if (!finalized) return const SizedBox.shrink();
+
+        return Padding(
+          padding: const EdgeInsets.only(top: 12),
+          child: Column(
+            children: [
+              Divider(height: 1, thickness: 0.5, color: Colors.grey.shade300),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  _StatTile(
+                    count: _count('present'),
+                    label: "Present",
+                    color: Theme.of(context).primaryColor,
+                    icon: CupertinoIcons.check_mark_circled,
+                  ),
+                  _StatTile(
+                    count: _count('late'),
+                    label: "Late",
+                    color: Colors.brown,
+                    icon: CupertinoIcons.clock,
+                  ),
+                  _StatTile(
+                    count: _count('absent'),
+                    label: "Absent",
+                    color: Colors.red,
+                    icon: CupertinoIcons.xmark_circle,
+                  ),
+                  _StatTile(
+                    count: _count('leave'),
+                    label: "On Leave",
+                    color: Colors.amber.shade700,
+                    icon: PhosphorIconsBold.airplaneTakeoff,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final lectureModel = widget.lectureModel;
-    final status = _statusInfo(context);
+    final status = _statusInfo();
 
     return Container(
       margin: const EdgeInsets.only(top: 10, bottom: 5),
@@ -191,6 +223,7 @@ class _UpcomingClassCardState extends State<UpcomingClassCard> {
                             ),
                         ],
                       ),
+                      if (_state == _LectureState.completed) _statsSection(),
                     ],
                   ),
                 ),
@@ -198,6 +231,40 @@ class _UpcomingClassCardState extends State<UpcomingClassCard> {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _StatTile extends StatelessWidget {
+  const _StatTile({
+    required this.count,
+    required this.label,
+    required this.color,
+    required this.icon,
+  });
+
+  final int count;
+  final String label;
+  final Color color;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Column(
+        children: [
+          Icon(icon, color: color, size: 22),
+          const SizedBox(height: 3),
+          Text(
+            count.toString(),
+            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+          ),
+          Text(
+            label,
+            style: TextStyle(color: Colors.grey.shade600, fontSize: 11),
+          ),
+        ],
       ),
     );
   }

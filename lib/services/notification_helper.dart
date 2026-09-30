@@ -16,7 +16,9 @@ class NotifHelper {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getBool(_prefsKey) ?? true;
   }
-
+  static Future<void> cancelNotification(int id) async {
+    await notificationsPlugin.cancel(id: id);
+  }
   /// Persists the on/off choice, and — when turning notifications off —
   /// cancels everything already scheduled so the toggle takes effect
   /// immediately instead of waiting for each pending one to fire anyway.

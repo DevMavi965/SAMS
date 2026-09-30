@@ -57,11 +57,11 @@ class _LeaveTabState extends State<LeaveTab> {
         content: const Text(
             "Are you sure you want to delete this leave application? This cannot be undone."),
         actions: [
-          TextButton(
+          ElevatedButton(
             onPressed: () => Navigator.pop(context, false),
             child: const Text("Cancel"),
           ),
-          TextButton(
+          ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
             child: const Text("Delete", style: TextStyle(color: Colors.red)),
           ),

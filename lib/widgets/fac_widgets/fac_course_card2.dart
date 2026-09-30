@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:provider/provider.dart';
+import 'package:smas3/maxins/rm_functions.dart';
 import 'package:smas3/models/department.dart';
 import 'package:smas3/models/fac_model.dart';
 import 'package:smas3/models/ins_admin.dart';
@@ -230,7 +231,7 @@ class FacCourseWiseList extends StatelessWidget {
                       future: _fetchRoster(context, c.sessionId, c.semesterId),
                       builder: (context, snapshot) {
                         if (snapshot.connectionState == ConnectionState.waiting) {
-                          return const Center(child: CircularProgressIndicator());
+                          return RMFuncts.loadingAnimation(context);
                         }
                         final roster = snapshot.data ?? [];
                         if (roster.isEmpty) {
@@ -282,9 +283,9 @@ class FacCourseWiseList extends StatelessWidget {
       future: _fetchCourseData(context),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Padding(
+          return  Padding(
             padding: EdgeInsets.symmetric(vertical: 30),
-            child: Center(child: CircularProgressIndicator()),
+            child: RMFuncts.loadingAnimation(context),
           );
         }
 

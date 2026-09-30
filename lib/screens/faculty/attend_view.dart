@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:math' as math;
+
 import 'package:collection/collection.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -32,7 +35,196 @@ class AttendView extends StatefulWidget {
 }
 
 class _AttendViewState extends State<AttendView> {
-  List<Student> students=[];
+  List<Student> students = [];
+  Set<String> _onLeave = {}; // student ids
+  bool _autoMarking = false; // prevents double runs
+  Timer? _ticker;
+  bool _finalizing = false;
+  bool _finalized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadLeaves();
+    _loadFinalized();
+    _ticker = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _ticker?.cancel();
+    super.dispose();
+  }
+
+  // true from 5 min before lecture end, and any time after it
+  bool get _canFinalize {
+    final t = widget.lecture.end_time;
+    if (t == null) return false;
+    final d = widget.lecture.dated;
+    final end = DateTime(d.year, d.month, d.day, t.hour, t.minute);
+    return DateTime.now().isAfter(end.subtract(const Duration(minutes: 5)));
+  }
+
+  // hide the button if this lecture was already finalized
+  Future<void> _loadFinalized() async {
+    try {
+      final snap = await Provider.of<DbService>(context, listen: false)
+          .indexDoc.doc(widget.lecture.id).get();
+      if (mounted && snap.data()?['attendance_finalized'] == true) {
+        setState(() => _finalized = true);
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _finalize() async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text("Finalize attendance?"),
+        content: const Text(
+            "Students without a complete record (check-in, mid-point and check-out) "
+                "will be marked absent. Approved leaves are kept. This can't be undone."),
+        actions: [
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red
+            ),
+              onPressed: () => Navigator.pop(ctx, false), child: const Text("Cancel",style: TextStyle(color: Colors.white),)),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).primaryColor
+            ),
+              onPressed: () => Navigator.pop(ctx, true), child: const Text("Finalize",style: TextStyle(color: Colors.white),)),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+
+    setState(() => _finalizing = true);
+    final done = await Provider.of<DbService>(context, listen: false)
+        .finalizeLectureAttendance(context, widget.lecture, onLeaveIds: _onLeave);
+    if (!mounted) return;
+    setState(() {
+      _finalizing = false;
+      if (done) _finalized = true;
+    });
+  }
+
+  Widget _finalizeSection() {
+    final Widget child;
+    if (_finalized) {
+      child = Container(
+        key: const ValueKey('done'),
+        margin: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.green.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.green.withOpacity(0.4)),
+        ),
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.verified_rounded, color: Colors.green, size: 18),
+            SizedBox(width: 8),
+            Text("Attendance finalized",
+                style: TextStyle(color: Colors.green, fontWeight: FontWeight.w600)),
+          ],
+        ),
+      );
+    } else if (_canFinalize) {
+      child = Padding(
+        key: const ValueKey('btn'),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+        child: _RotatingBorderButton(
+          label: "Finalize Attendance",
+          icon: Icons.verified_rounded,
+          color: Theme.of(context).primaryColor,
+          busy: _finalizing,
+          onPressed: _finalizing ? null : _finalize,
+        ),
+      );
+    } else {
+      child = const SizedBox.shrink(key: ValueKey('none'));
+    }
+
+    // fades and slides open when the 5-minute window starts
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 450),
+      transitionBuilder: (c, a) => FadeTransition(
+        opacity: a,
+        child: SizeTransition(sizeFactor: a, axisAlignment: -1, child: c),
+      ),
+      child: child,
+    );
+  }
+
+  // load approved leaves, then auto-mark them
+  Future<void> _loadLeaves() async {
+    try {
+      final snap = await Provider.of<DbService>(context, listen: false)
+          .dbref
+          .collection("ins_admins").doc(widget.insAdminId)
+          .collection("institutes").doc(widget.instituteId)
+          .collection("leave_applications")
+          .where("status", isEqualTo: "approved")
+          .get();
+
+      final d = widget.lecture.dated;
+      final day = DateTime(d.year, d.month, d.day);
+      final ids = <String>{};
+
+      for (var doc in snap.docs) {
+        final s = doc['start_date'].toDate();
+        final e = doc['end_date'].toDate();
+        final start = DateTime(s.year, s.month, s.day);
+        final end = DateTime(e.year, e.month, e.day);
+        // lecture inside leave
+        if (!day.isBefore(start) && !day.isAfter(end)) {
+          ids.add(doc['student_id']);
+        }
+      }
+      if (!mounted) return;
+      setState(() => _onLeave = ids);
+      await _autoMarkLeaves();
+    } catch (e) {
+      print("leave load error: $e");
+    }
+  }
+
+  // mark every student on leave (of this semester) automatically
+  Future<void> _autoMarkLeaves() async {
+    if (_autoMarking || _onLeave.isEmpty) return;
+    _autoMarking = true;
+    try {
+      final db = Provider.of<DbService>(context, listen: false);
+
+      // leaves are institute-wide, so keep only this semester's students
+      final stdSnap = await db.dbref
+          .collection("ins_admins").doc(widget.insAdminId)
+          .collection("institutes").doc(widget.instituteId)
+          .collection("departments").doc(widget.departmentId)
+          .collection("sessions").doc(widget.sessionId)
+          .collection("semesters").doc(widget.semesterId)
+          .collection("students")
+          .get();
+      final semesterIds = stdSnap.docs.map((d) => d.id).toSet();
+
+      // MUST be sequential: each call rewrites the whole attendance array
+      for (final id in _onLeave.where(semesterIds.contains)) {
+        if (!mounted) return;
+        await db.studentMarkLeave(context, widget.lecture, id, "auto", silent: true);
+      }
+      if (mounted) setState(() {}); // refresh cards + summary
+    } catch (e) {
+      print("auto mark leave error: $e");
+    } finally {
+      _autoMarking = false;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -45,7 +237,7 @@ class _AttendViewState extends State<AttendView> {
           ),),
         ),
         body:Provider.of<DbService>(context,listen: false).loading?
-        RMFuncts.loadingAnimation(context):
+        RMFuncts.loadingAnimation2(context):
         StreamBuilder(stream: Provider.of<DbService>(context,listen: false).dbref
             .collection("ins_admins").doc(widget.insAdminId)
             .collection("institutes").doc(widget.instituteId)
@@ -79,16 +271,23 @@ class _AttendViewState extends State<AttendView> {
                       )
                   );
                 }
+                final attd = widget.lecture.attendance ?? <Attendance>[];
                 return students.isEmpty?Center(child: Text("no students found,Add first"),):
                 ListView(
                   children: [
                     _PresentAbsentSummary(
-                      present: getPresent(widget.lecture.attendance!,students),
-                      absent:getAbsent(widget.lecture.attendance!,students),
-                      late: getLate(widget.lecture.attendance!,students),
-                      total: students.length,),
+                      present: getPresent(attd,students),
+                      absent:getAbsent(attd,students),
+                      late: getLate(attd,students),
+                      onLeave: getOnLeave(attd,students),
+                      total: students.length, date: widget.lecture.dated,
+                      start: widget.lecture.start_time,
+                      end: widget.lecture.end_time,
+                    ),
                     MarkAttGroupFacial(lecture: widget.lecture,students: students,),
-
+                    _finalizeSection(),
+                    const SizedBox(height: 10,),
+                    // attendance cards
                     for(var i=0;i<students.length;i++)
                     //student attendance card
                       _buildStudentAttendanceCard(context, students[i])
@@ -134,7 +333,7 @@ class _AttendViewState extends State<AttendView> {
         ),
       );
     } else {
-      // no attendance record yet — student hasn't checked in
+      // no record yet
       return CircleAvatar(
         radius: 12,
         backgroundColor: Colors.grey.shade400,
@@ -153,73 +352,14 @@ class _AttendViewState extends State<AttendView> {
     }
   }
 
-  getPresent(List<Attendance> attd,List<Student> students) {
-    int count=0;
-    for(var i=0;i<attd.length;i++){
-      if(attd[i].status=="present"){
-        count++;
-      }
-    }
-    return count;
-  }
-  getAbsent(List<Attendance> attd,List<Student> students) {
-    int count=0;
-    for(var i=0;i<attd.length;i++){
-      if(attd[i].status=="absent"){
-        count++;
-      }
-    }
-    return count;
-  }
-  getOnLeave(List<Attendance> attd,List<Student> students) {
-    int count=0;
-    for(var i=0;i<attd.length;i++){
-      if(attd[i].status=="leave"){
-        count++;
-      }
-    }
-    return count;
-  }
-  getLate(List<Attendance> attd,List<Student> students) {
-    int count=0;
-    for(var i=0;i<attd.length;i++){
-      if(attd[i].status=="late"){
-        count++;
-      }
-    }
-    return count;
-  }//where .limit
-  getLeaveStatus(String studentId)async{
-    try {
-      final leaveApplications = await Provider
-          .of<DbService>(context, listen: false)
-          .dbref
-          .collection("ins_admins")
-          .doc(widget.insAdminId)
-          .collection("institutes")
-          .doc(widget.instituteId)
-          .collection("leave_applications")
-          .where("student_id", isEqualTo: studentId)
-          .get();
-      if (leaveApplications.docs.isEmpty) {
-        return false;
-      } else {
-        for (var doc in leaveApplications.docs) {
-          DateTime now = DateTime.now();
-          var startDate = doc['start_date'].toDate();
-          var endDate = doc['end_date'].toDate();
-          if (doc['status'] == "approved" && now.isAfter(startDate) &&
-              now.isBefore(endDate)) {
-            return true;
-          } else {
-            return false;
-          }
-        }
-      }
-    }catch(e){
-      print("error while checking leave-application status: $e");
-    }
-  }
+  int _count(List<Attendance> attd, String status) =>
+      attd.where((a) => a.status == status).length;
+
+  int getPresent(List<Attendance> attd,List<Student> students) => _count(attd, "present");
+  int getAbsent(List<Attendance> attd,List<Student> students) => _count(attd, "absent");
+  int getOnLeave(List<Attendance> attd,List<Student> students) => _count(attd, "leave");
+  int getLate(List<Attendance> attd,List<Student> students) => _count(attd, "late");
+
   Widget _buildStudentAttendanceCard(BuildContext context, Student student) {
     final primaryColor = Theme.of(context).primaryColor;
     final record = widget.lecture.attendance
@@ -248,22 +388,12 @@ class _AttendViewState extends State<AttendView> {
         child: Material(
           color: Colors.transparent,
           child: InkWell(
-            // onTap: () {
-            //   // Tap to toggle mid-point quickly
-            //   Provider.of<DbService>(context, listen: false)
-            //       .studentMidPoint(context, widget.lecture, student.id!);
-            // },
-            // onDoubleTap: () {
-            //   // Double tap to quick-checkout
-            //   Provider.of<DbService>(context, listen: false)
-            //       .studentCheckOut(context, widget.lecture, student.id!, "fingerprint");
-            // },
             child: Padding(
               padding: const EdgeInsets.all(12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Top Row: Avatar, Info, Status Badge
+                  // top row
                   Row(
                     children: [
                       CircleAvatar(
@@ -303,12 +433,12 @@ class _AttendViewState extends State<AttendView> {
                     child: Divider(height: 1, color: Colors.black12),
                   ),
 
-                  // Bottom Section: Dynamic States or Interactive Action Controls
+                  // bottom section
                   if (isCheckedIn) ...[
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        // Check-in State//method
+                        // check-in
                         Expanded(
                           child: _buildStateTrackerItem(
                             context,
@@ -323,22 +453,34 @@ class _AttendViewState extends State<AttendView> {
                           ),
                         ),
                         const SizedBox(width: 6),
-                        // Mid-Point State
+                        // mid-point
                         Expanded(
                           child: _buildStateTrackerItem(
                             context,
                             title: "Mid-point",
-                            valueOrWidget: Icon(
-                              hasMidPoint ? CupertinoIcons.checkmark_alt_circle_fill : CupertinoIcons.circle,
+                            valueOrWidget:hasMidPoint? Icon(
+                              CupertinoIcons.checkmark_alt_circle_fill ,
                               color: hasMidPoint ? Colors.green : Colors.grey.shade400,
                               size: 20,
+                            ):OutlinedButton(
+                              onPressed: () {
+                                Provider.of<DbService>(context, listen: false)
+                                    .studentMidPoint(context, widget.lecture, student.id!,);
+                              },
+                              style: OutlinedButton.styleFrom(
+                                padding: EdgeInsets.zero,
+                                minimumSize: const Size(60, 26),
+                                side: const BorderSide(color: Colors.red, width: 0.8),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                              ),
+                              child: const Text("mid-point", style: TextStyle(fontSize: 10, color: Colors.red)),
                             ),
                             iconPhosphor: PhosphorIconsBold.target,
                             color: Colors.orange,
                           ),
                         ),
                         const SizedBox(width: 6),
-                        // Check-out State
+                        // check-out
                         Expanded(
                           child: _buildStateTrackerItem(
                             context,
@@ -379,7 +521,6 @@ class _AttendViewState extends State<AttendView> {
                       children: [
                         Expanded(
                           child: Row(
-                            // mainAxisAlignment: MainAxisAlignment.spaceAround,
                             children: [
                               SizedBox(),
                               Text(
@@ -398,8 +539,49 @@ class _AttendViewState extends State<AttendView> {
                       ],
                     ),
                     SizedBox(height: 8,),
+                  ] else if (record?.status == "leave") ...[
+                    // leave already recorded
+                    SizedBox(
+                      width: double.infinity,
+                      height: 38,
+                      child: Center(
+                        child: Text(
+                          "Approved leave",
+                          style: TextStyle(
+                            color: Colors.blue,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    )
+                  ] else if (_onLeave.contains(student.id)) ...[
+                    // on leave but not recorded yet (fallback if auto-mark failed)
+                    SizedBox(
+                      width: double.infinity,
+                      height: 38,
+                      child: ElevatedButton.icon(
+                        onPressed: () async {
+                          await Provider.of<DbService>(context, listen: false)
+                              .studentMarkLeave(context, widget.lecture, student.id!, "manual");
+                          if (mounted) setState(() {});
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        icon: const Icon(Icons.event_available_rounded, size: 16, color: Colors.white),
+                        label: const Text(
+                          "Confirm Leave",
+                          style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    )
                   ] else ...[
-                    // Not checked in yet: Show prominent mark attendance action
+                    // not checked in
                     SizedBox(
                       width: double.infinity,
                       height: 38,
@@ -431,6 +613,7 @@ class _AttendViewState extends State<AttendView> {
       ),
     );
   }
+
   Widget _buildStateTrackerItem(
       BuildContext context, {
         required String title,
@@ -477,191 +660,478 @@ class _AttendViewState extends State<AttendView> {
 }
 
 
+// Finalize button with a colorful, continuously rotating border
+class _RotatingBorderButton extends StatefulWidget {
+  final String label;
+  final IconData icon;
+  final Color color;
+  final bool busy;
+  final VoidCallback? onPressed;
+
+  const _RotatingBorderButton({
+    required this.label,
+    required this.icon,
+    required this.color,
+    required this.onPressed,
+    this.busy = false,
+  });
+
+  @override
+  State<_RotatingBorderButton> createState() => _RotatingBorderButtonState();
+}
+
+class _RotatingBorderButtonState extends State<_RotatingBorderButton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c =
+  AnimationController(vsync: this, duration: const Duration(seconds: 3))
+    ..repeat();
+
+  static const _colors = [
+    Colors.redAccent,
+    Colors.orange,
+    Colors.yellow,
+    Colors.greenAccent,
+    Colors.cyanAccent,
+    Colors.blueAccent,
+    Colors.purpleAccent,
+    Colors.redAccent, // same as first so the sweep loops seamlessly
+  ];
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _c,
+      // inner button is built once and reused every frame
+      child: Material(
+        color: widget.color,
+        borderRadius: BorderRadius.circular(11),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: widget.onPressed,
+          child: SizedBox(
+            height: 48,
+            child: Center(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  widget.busy
+                      ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: Colors.white),
+                  )
+                      : Icon(widget.icon, color: Colors.white, size: 20),
+                  const SizedBox(width: 8),
+                  Text(
+                    widget.label,
+                    style: const TextStyle(
+                        color: Colors.white, fontWeight: FontWeight.w600),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+      builder: (context, child) {//alert
+        return Container(
+          padding: const EdgeInsets.all(3), // border thickness
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            gradient: SweepGradient(
+              colors: _colors,
+              transform: GradientRotation(_c.value * 2 * math.pi),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.purpleAccent.withOpacity(0.25),
+                blurRadius: 14,
+                spreadRadius: 1,
+              ),
+            ],
+          ),
+          child: child,
+        );
+      },
+    );
+  }
+}
+
+
 class _PresentAbsentSummary extends StatelessWidget {
   final int present;
   final int absent;
   final int late;
+  final int onLeave;
   final int total;
+  final DateTime date;
+  final TimeOfDay? start;
+  final TimeOfDay? end;
   final VoidCallback? onMark;
 
   const _PresentAbsentSummary({
     required this.present,
     required this.absent,
     required this.late,
+    this.onLeave = 0,
     required this.total,
+    required this.date,
+    this.start,
+    this.end,
     this.onMark,
   });
+
+  // combine date + time
+  DateTime? _at(TimeOfDay? t) =>
+      t == null ? null : DateTime(date.year, date.month, date.day, t.hour, t.minute);
+
+  // e.g. 1h 30m
+  String _duration(DateTime s, DateTime e) {
+    final d = e.difference(s);
+    if (d.isNegative) return "--";
+    final h = d.inHours, m = d.inMinutes % 60;
+    if (h == 0) return "${m}m";
+    return m == 0 ? "${h}h" : "${h}h ${m}m";
+  }
 
   @override
   Widget build(BuildContext context) {
     final primary = Theme.of(context).primaryColor;
+    final s = _at(start), e = _at(end);
+    final now = DateTime.now();
 
-    // progress is present + late over total (both count as "attended")
-    final double attendedRatio =
+    // lecture status
+    String status = "Live";
+    Color statusColor = Colors.greenAccent;
+    if (s != null && now.isBefore(s)) {
+      status = "Upcoming";
+      statusColor = Colors.amberAccent;
+    } else if (e != null && now.isAfter(e)) {
+      status = "Ended";
+      statusColor = Colors.white70;
+    }
+
+    // attended ratio
+    final double ratio =
     total == 0 ? 0 : ((present + late) / total).clamp(0.0, 1.0);
+    final int pending = (total - present - absent - late - onLeave).clamp(0, total);
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 5, vertical: 8),
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 18,
+            color: Colors.black.withOpacity(0.07),
+            blurRadius: 20,
             offset: const Offset(0, 8),
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // ── header row ─────────────────────────────────────────
-          Row(
-            children: [
-              Container(
-                width: 34,
-                height: 34,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [primary, primary.withOpacity(0.65)],
-                  ),
-                ),
-                child: const Icon(
-                  Icons.insights_rounded,
-                  size: 18,
-                  color: Colors.white,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(22),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // time header
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [primary, primary.withOpacity(0.7)],
                 ),
               ),
-              const SizedBox(width: 10),
-              const Expanded(
-                child: Text(
-                  "Attendance Overview",
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-              // attended-count pill
-              Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(
-                  color: primary.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  "${((attendedRatio) * 100).round()}% present",
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: primary,
-                  ),
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 14),
-
-          // ── stat tiles ─────────────────────────────────────────
-          Row(
-            children: [
-              Expanded(
-                child: _StatTile(
-                  label: "Present",
-                  value: present,
-                  icon: CupertinoIcons.checkmark_alt_circle_fill,
-                  color: primary,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _StatTile(
-                  label: "Absent",
-                  value: absent,
-                  icon: CupertinoIcons.xmark_circle_fill,
-                  color: Colors.red,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _StatTile(
-                  label: "Late",
-                  value: late,
-                  icon: CupertinoIcons.time_solid,
-                  color: Colors.orange,
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 14),
-
-          // ── progress bar ───────────────────────────────────────
-          ClipRRect(
-            borderRadius: BorderRadius.circular(6),
-            child: Stack(
-              children: [
-                Container(height: 6, color: Colors.grey.shade200),
-                FractionallySizedBox(
-                  widthFactor: attendedRatio,
-                  child: Container(
-                    height: 6,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [primary, primary.withOpacity(0.7)],
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.calendar_today_rounded,
+                          size: 13, color: Colors.white70),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          DateFormat("EEE, dd MMM yyyy").format(date),
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
                       ),
+                      // status chip
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.18),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.circle, size: 8, color: statusColor),
+                            const SizedBox(width: 5),
+                            Text(
+                              status,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  Row(
+                    children: [
+                      _TimeBlock(
+                        label: "Starts",
+                        time: start?.format(context) ?? "--:--",
+                      ),
+                      // duration line
+                      Expanded(
+                        child: Column(
+                          children: [
+                            Text(
+                              (s != null && e != null) ? _duration(s, e) : "",
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                const Icon(Icons.circle,
+                                    size: 6, color: Colors.white70),
+                                Expanded(
+                                  child: Container(
+                                      height: 1.2,
+                                      color: Colors.white38),
+                                ),
+                                const Icon(Icons.arrow_forward_ios_rounded,
+                                    size: 10, color: Colors.white70),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      _TimeBlock(
+                        label: "Ends",
+                        time: end?.format(context) ?? "--:--",
+                        alignEnd: true,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),//pending
+
+            // stats body
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Expanded(
+                        child: Text(
+                          "Attendance Overview",
+                          style: TextStyle(
+                              fontSize: 15, fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: primary.withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          "${(ratio * 100).round()}% present",
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: primary,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _StatTile(
+                          label: "Present",
+                          value: present,
+                          icon: CupertinoIcons.checkmark_alt_circle_fill,
+                          color: primary,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _StatTile(
+                          label: "Absent",
+                          value: absent,
+                          icon: CupertinoIcons.xmark_circle_fill,
+                          color: Colors.red,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _StatTile(
+                          label: "Late",
+                          value: late,
+                          icon: CupertinoIcons.time_solid,
+                          color: Colors.orange,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _StatTile(
+                          label: "Leave",
+                          value: onLeave,
+                          icon: Icons.event_available_rounded,
+                          color: Colors.blue,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+
+                  // progress bar
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(6),
+                    child: Stack(
+                      children: [
+                        Container(height: 6, color: Colors.grey.shade200),
+                        FractionallySizedBox(
+                          widthFactor: ratio,
+                          child: Container(
+                            height: 6,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [primary, primary.withOpacity(0.7)],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            "${present + late} of $total students attended",
-            style: TextStyle(
-              fontSize: 11,
-              color: Colors.black.withOpacity(0.55),
-              fontWeight: FontWeight.w500,
-            ),
-          ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        "${present + late} of $total attended",
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.black.withOpacity(0.55),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      Text(
+                        "$pending pending",
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey.shade600,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
 
-          // ── mark button ────────────────────────────────────────
-          if (onMark != null) ...[
-            const SizedBox(height: 14),
-            SizedBox(
-              width: double.infinity,
-              height: 44,
-              child: ElevatedButton.icon(
-                onPressed: onMark,
-                icon: const Icon(Icons.playlist_add_check_circle,
-                    color: Colors.white, size: 20),
-                label: const Text(
-                  "Mark Attendance",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: primary,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  elevation: 0,
-                ),
+                  // mark button
+                  if (onMark != null) ...[
+                    const SizedBox(height: 14),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 44,
+                      child: ElevatedButton.icon(
+                        onPressed: onMark,
+                        icon: const Icon(Icons.playlist_add_check_circle,
+                            color: Colors.white, size: 20),
+                        label: const Text(
+                          "Mark Attendance",
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: primary,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ),
           ],
-        ],
+        ),
       ),
+    );
+  }
+}
+
+// time block
+class _TimeBlock extends StatelessWidget {
+  final String label;
+  final String time;
+  final bool alignEnd;
+
+  const _TimeBlock({
+    required this.label,
+    required this.time,
+    this.alignEnd = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment:
+      alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            color: Colors.white70,
+            fontSize: 11,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          time,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -717,7 +1187,6 @@ class _StatTile extends StatelessWidget {
 }
 
 
-
 class MarkAttGroupFacial extends StatelessWidget {
   final LectureModel lecture;
   final List<Student> students;
@@ -740,7 +1209,7 @@ class MarkAttGroupFacial extends StatelessWidget {
               children: [
                 Expanded(
                     flex: 3,
-                    child: Column(
+                    child: Column(//finalize
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text("Mark Attendance Group",style: TextStyle(fontWeight: FontWeight.w500,color: Colors.white,fontSize: 15),),
@@ -748,11 +1217,9 @@ class MarkAttGroupFacial extends StatelessWidget {
                         Text("Use facial recognition to mark attendance",style: TextStyle(
                           color: Colors.white,
                           fontSize: 13,
-                          // fontWeight: FontWeight.w400
                         ),),
                       ],
                     )),
-                // Expanded(child: SizedBox(width: 10,)),
                 Expanded(child: Icon(PhosphorIconsDuotone.userFocus,color: Colors.white,size: 40,)),
               ],
             ),
@@ -763,15 +1230,9 @@ class MarkAttGroupFacial extends StatelessWidget {
                     flex: 2,
                     child:ElevatedButton(
                         onPressed: (){
-                          List<String> studentIds=[];
-                          for(var i=0;i<students.length;i++){
-                            studentIds.add(students[i].id!);
-                          }
                           Navigator.push(context, MaterialPageRoute(builder: (_)=>GroupCheckInFace(lecture: lecture,students: students,)));
-                          // Provider.of<DbService>(context,listen: false).checkInGroup(context, lecture, studentIds,"facial");
                         },
                         style: ButtonStyle(
-                          //radius
                           shape: MaterialStateProperty.all<RoundedRectangleBorder>(
                               RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8.0),
@@ -780,7 +1241,7 @@ class MarkAttGroupFacial extends StatelessWidget {
                           backgroundColor: MaterialStateColor.resolveWith((states) => Colors.white),
                         ),
                         child: Row(
-                          children: [//Check-in
+                          children: [
                             FaIcon(FontAwesomeIcons.arrowRightToBracket,color: Colors.blue,),
                             SizedBox(width: 5,),
                             Text("Check In",style: TextStyle(color: Colors.blue),),
@@ -792,14 +1253,9 @@ class MarkAttGroupFacial extends StatelessWidget {
                     flex: 2,
                     child:ElevatedButton(
                         onPressed: (){
-                          List<String> studentIds=[];
-                          for(var i=0;i<students.length;i++){
-                            studentIds.add(students[i].id!);
-                          }
                           Navigator.push(context, MaterialPageRoute(builder: (_)=>GroupCheckInFace(lecture: lecture,students: students,)));
                         },
                         style: ButtonStyle(
-                          //radius
                           shape: MaterialStateProperty.all<RoundedRectangleBorder>(
                               RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8.0),
@@ -808,10 +1264,10 @@ class MarkAttGroupFacial extends StatelessWidget {
                           backgroundColor: MaterialStateColor.resolveWith((states) => Colors.white),
                         ),
                         child: Row(
-                          children: [//progress
+                          children: [
                             FaIcon(FontAwesomeIcons.arrowRightFromBracket,color: Colors.blue,),
                             SizedBox(width: 5,),
-                            Text("check Out",style: TextStyle(color: Colors.blue),),
+                            Text("Check Out",style: TextStyle(color: Colors.blue),),
                           ],
                         )
                     )),
@@ -822,5 +1278,4 @@ class MarkAttGroupFacial extends StatelessWidget {
       ),
     );
   }
-
 }

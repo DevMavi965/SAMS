@@ -26,7 +26,7 @@ class FacAttendanceDistributionChart extends StatelessWidget {
   // chart benefits from the full dataset rather than a 7-day slice).
   Future<Map<String, int>> _attendanceTotals(BuildContext context) async {
     final db = Provider.of<DbService>(context, listen: false);
-    int present = 0, absent = 0, late = 0;
+    int present = 0, absent = 0, late = 0,leave=0;
 
     try {
       final courseX = await db.indexDoc
@@ -59,13 +59,14 @@ class FacAttendanceDistributionChart extends StatelessWidget {
             if (status == "present") present++;
             if (status == "absent") absent++;
             if (status == "late") late++;
+            if (status == "leave") leave++;
           }
         }
       }
     } catch (e) {
       print(e.toString());
     }
-    return {"present": present, "absent": absent, "late": late};
+    return {"present": present, "absent": absent, "late": late,"leave":leave};
   }
 
   @override
@@ -91,11 +92,12 @@ class FacAttendanceDistributionChart extends StatelessWidget {
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return const Center(child: CircularProgressIndicator());
                     }
-                    final data = snapshot.data ?? {"present": 0, "absent": 0, "late": 0};
+                    final data = snapshot.data ?? {"present": 0, "absent": 0, "late": 0,"leave":0};
                     final present = data["present"]!;
                     final absent = data["absent"]!;
                     final late = data["late"]!;
-                    final total = present + absent + late;
+                    final leave=data["leave"]!;
+                    final total = present + absent + late+leave;
 
                     if (total == 0) {
                       return const Center(
@@ -128,6 +130,11 @@ class FacAttendanceDistributionChart extends StatelessWidget {
                                     color: Colors.brown.withAlpha(230),
                                     value: late.toDouble(),
                                   ),
+                                  PieChartSectionData(
+                                    showTitle: false,
+                                    color: Colors.blue.withAlpha(230),
+                                    value: leave.toDouble(),
+                                  ),
                                 ],
                               ),
                             ),
@@ -157,6 +164,13 @@ class FacAttendanceDistributionChart extends StatelessWidget {
                                   const Icon(Icons.circle, color: Colors.brown, size: 14),
                                   const SizedBox(width: 5),
                                   Text("Late : $late", style: const TextStyle(fontSize: 14)),
+                                ],
+                              ),
+                              Row(
+                                children: [
+                                  const Icon(Icons.circle, color: Colors.blue, size: 14),
+                                  const SizedBox(width: 5),
+                                  Text("Leave : $late", style: const TextStyle(fontSize: 14)),
                                 ],
                               ),
                             ],

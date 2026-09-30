@@ -115,7 +115,7 @@ class _FacWeeklyAttendanceChartState extends State<FacWeeklyAttendanceChart> {
 
   // 5 buckets (Mon..Fri), each [present, absent, late]
   List<List<int>> _computeBuckets() {
-    final buckets = List.generate(5, (_) => [0, 0, 0]);
+    final buckets = List.generate(5, (_) => [0, 0, 0,0]);
 
     final now = DateTime.now();
     final startOfWeek =
@@ -149,6 +149,9 @@ class _FacWeeklyAttendanceChartState extends State<FacWeeklyAttendanceChart> {
               break;
             case "late":
               buckets[dayIndex][2]++;
+              break;
+            case "leave":
+              buckets[dayIndex][3]++;
               break;
           }
         }
@@ -252,6 +255,12 @@ class _FacWeeklyAttendanceChartState extends State<FacWeeklyAttendanceChart> {
                         borderRadius: BorderRadius.circular(2),
                         width: 10,
                       ),
+                      BarChartRodData(
+                        toY: bar[i][3].toDouble(),
+                        color: Colors.blue,
+                        borderRadius: BorderRadius.circular(2),
+                        width: 10,
+                      ),
                     ]);
                   }),
                 ),
@@ -290,6 +299,8 @@ class _Legend extends StatelessWidget {
         dot(Colors.red, "Absent"),
         const SizedBox(width: 14),
         dot(Colors.brown, "Late"),
+        const SizedBox(width: 14),
+        dot(Colors.blue, "Leave"),
       ],
     );
   }

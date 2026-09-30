@@ -1077,7 +1077,7 @@ class _LectureCard extends StatelessWidget {
                               if (lecturerName != null)
                                 _InfoRow(
                                   icon: CupertinoIcons.person_crop_circle,
-                                  text: lecturerName!,
+                                  text: RMFuncts.getSentenceCase(lecturerName!),
                                 ),
                               const SizedBox(height: 5),
                               _InfoRow(

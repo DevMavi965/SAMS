@@ -49,7 +49,7 @@ class _AdminHomeState extends State<AdminHome> {
   @override
   Widget build(BuildContext context) {
     return SafeArea(child: ListView(children: [
-      Text("Welcome ${widget.admin.name}!",style: TextStyle(fontSize: 20,fontWeight: FontWeight.w600)),
+      Text("Welcome ${RMFuncts.getSentenceCase(widget.admin.name)}!",style: TextStyle(fontSize: 20,fontWeight: FontWeight.w600)),
       SizedBox(height: 7,),
       Text("System Overview & Management",style: TextStyle(fontSize: 15,color: Colors.grey),),
       SizedBox(height: 20,),

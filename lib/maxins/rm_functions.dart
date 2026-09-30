@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -117,6 +118,12 @@ mixin RMFuncts{
           child: Lottie.asset("assets/anims/an1.json")),
    );
   }
+  static inBoxLoadingAnimation (BuildContext context){
+   return SizedBox(
+        height: 60,
+        width: 60,
+        child: Lottie.asset("assets/anims/an1.json"));
+  }
  static loadingAnimation2 (BuildContext context){
    return Center(child:
    SizedBox(
@@ -130,6 +137,9 @@ static dateicon(){
       width: 30,
       child: Image.asset("assets/icons/dateicon.png"),
     );
+}
+static semesterIcon(){
+    return SizedBox(child: Icon(CupertinoIcons.calendar_badge_plus),);
 }
 static emptyIcon(String str){
     return ListTile(

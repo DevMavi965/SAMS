@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:lottie/lottie.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:smas3/maxins/rm_functions.dart';
 import 'package:smas3/models/ins_admin.dart';
@@ -47,7 +48,19 @@ class _InsSelectionState extends State<InsSelection> {
             }else{
               institutes_list.clear();
               if(snapshot.data!.docs.isEmpty){
-                return Center(child: Text("no data , plz add institute first"),);
+                return Center(child:Container(
+                  child:
+                  ListTile(
+                    title: Icon(PhosphorIconsRegular.buildingApartment,color: Colors.grey,),
+                    subtitle:
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text("no institute found,add first",style: TextStyle(color: Colors.grey),),
+                      ],
+                    ),
+                  )
+                ),);
               }else{
                 for(var ins in snapshot.data!.docs){
                   institutes_list.add(
@@ -282,7 +295,7 @@ class _InstituteCardState extends State<InstituteCard> {
                       const Icon(Icons.location_on_outlined),
                       const SizedBox(width: 8),
                       Expanded(
-                        child: Text(widget.institute.address),
+                        child: Text(RMFuncts.getSentenceCase(widget.institute.address)),
                       ),
                     ],
                   ),

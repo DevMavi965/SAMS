@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:provider/provider.dart';
+import 'package:smas3/maxins/rm_functions.dart';
 import 'package:smas3/models/course.dart';
 import 'package:smas3/models/fac_model.dart';
 
@@ -135,7 +136,7 @@ class _CourseUpdState extends State<CourseUpd> {
             TextFormField(
               keyboardType: TextInputType.number,
               decoration: InputDecoration(
-                labelText: "No of Lectures",
+                labelText: "Minimum Lectures required",
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(6),
                   // borderSide: BorderSide(color: Colors.grey),
@@ -173,7 +174,7 @@ class _CourseUpdState extends State<CourseUpd> {
                       .collection("faculty").snapshots() ,
                   builder: (context,snapshot){
                     if(snapshot.connectionState==ConnectionState.waiting){
-                      return Center(child: CircularProgressIndicator(),);
+                      return RMFuncts.loadingAnimation(context);
                     }else if(snapshot.hasError){
                       return Center(child: Text(snapshot.error.toString()),);
                     }else if(!snapshot.hasData){
@@ -211,7 +212,8 @@ class _CourseUpdState extends State<CourseUpd> {
                           icon: Icon(Icons.person),
                           items: [
                             for(var lec in lecturers)
-                              DropdownMenuItem(value: lec.id,child: Text(lec.name),),
+                              DropdownMenuItem(value: lec.id,
+                                child: Text(RMFuncts.getSentenceCase(lec.name)),),
                           ],
                           onChanged: (v){
                             setState(() {
@@ -232,7 +234,7 @@ class _CourseUpdState extends State<CourseUpd> {
               ),
               child: DropdownButton(
                   isExpanded: true,
-                  icon: Icon(Icons.arrow_drop_down),
+                  icon: Icon(Icons.menu_book),
                   value: selectedType,
                   hint: Text("Select Course Type"),
                   items:
@@ -250,6 +252,13 @@ class _CourseUpdState extends State<CourseUpd> {
             SizedBox(height: 15,),
 
             ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).primaryColor,
+                minimumSize: Size(double.infinity, 50),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(6),
+                ),
+              ),
                 onPressed: (){
                   if(fkey.currentState!.validate()){
                     if(selectedType!=null && selectedFac!=null){
@@ -301,7 +310,7 @@ class _CourseUpdState extends State<CourseUpd> {
                   }
 
                   // Provider.of<DbService>(context,listen: false).addCourse(context, widget.insAdmin.id!, widget.institute.id!, widget.department.id!, widget.session.id!, widget.semester.id!, course);
-                }, child: Text("update"))
+                }, child: Text("update",style: TextStyle(color: Colors.white),))
           ],
         ),
       ),

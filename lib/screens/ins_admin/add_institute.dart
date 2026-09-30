@@ -127,8 +127,8 @@ class _AddInstituteState extends State<AddInstitute> {
                 validator: (v){
                   if(v!.isEmpty){
                     return "Please enter longitude";
-                  }else if(v.length<8){
-                    return "enter upto 8 digits for better accuracy";
+                  }else if(v.length<9){
+                    return "enter at least 6 digits after decimal for better accuracy";
                   }else if(double.tryParse(v)==null){
                     return "enter valid value";
                   }else if(v.contains(" ")){
@@ -160,8 +160,8 @@ class _AddInstituteState extends State<AddInstitute> {
                 validator: (v){
                   if(v!.isEmpty){
                     return "Please enter latitude";
-                  }else if(v.length<8){
-                    return "enter upto 8 digits for better accuracy";
+                  }else if(v.length<9){
+                    return "enter at least 6 digits after decimal for better accuracy";
                   }else if(double.tryParse(v)==null){
                     return "enter valid value";
                   }else if(v.contains(" ")){

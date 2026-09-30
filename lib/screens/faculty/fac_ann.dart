@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:provider/provider.dart';
+import 'package:smas3/maxins/rm_functions.dart';
 import 'package:smas3/models/announcement_model.dart';
 import 'package:smas3/widgets/admin_widgets/admin_ann_card.dart';
 import 'package:smas3/widgets/admin_widgets/admin_ann_grid.dart';
@@ -10,6 +11,7 @@ import 'package:smas3/widgets/insAdmin/insAdminAnnCard.dart';
 import '../../models/ins_admin.dart';
 import '../../models/institute.dart';
 import '../../services/db_service.dart';
+import 'fac_anncard.dart';
 
 class FacAnnTab extends StatefulWidget {
   final InsAdmin insAdmin;
@@ -62,7 +64,7 @@ class _FacAnnTabState extends State<FacAnnTab> {
             .doc(widget.institute.id).collection("announcements").snapshots(),
             builder: (StreamContext,snapshot){
               if(snapshot.connectionState==ConnectionState.waiting){
-                return Center(child: CircularProgressIndicator(),);
+                return RMFuncts.loadingAnimation(context);
               }else if(snapshot.hasError){
                 return Center(child: Text(snapshot.error.toString()),);
               }else if(!snapshot.hasData){
@@ -104,7 +106,7 @@ class _FacAnnTabState extends State<FacAnnTab> {
                         physics: NeverScrollableScrollPhysics(),
                         itemCount: announcements.length,
                         itemBuilder: (tcontext,index)=>
-                            InsAdminAnnCard(adminAnnouncement: announcements[index])),
+                            FacAnnCard(adminAnnouncement: announcements[index])),
                   ],
                 );
               }

@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:provider/provider.dart';
+import 'package:smas3/maxins/rm_functions.dart';
 import 'package:smas3/models/course.dart';
 import 'package:smas3/models/fac_model.dart';
 
@@ -83,7 +84,7 @@ class _CourseAddState extends State<CourseAdd> {
                   // borderSide: BorderSide(color: Colors.grey),
                 ),
 
-                prefixIcon: Icon(PhosphorIconsBold.cashRegister),
+                prefixIcon: Icon(PhosphorIconsBold.hash),
               ),
               controller: course_code,
               validator: (v){
@@ -125,7 +126,7 @@ class _CourseAddState extends State<CourseAdd> {
             TextFormField(
               keyboardType: TextInputType.number,
               decoration: InputDecoration(
-                labelText: "No of Lectures",
+                labelText: "Minimum Lectures required",
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(6),
                   // borderSide: BorderSide(color: Colors.grey),
@@ -160,7 +161,7 @@ class _CourseAddState extends State<CourseAdd> {
                     .snapshots(),
                 builder: (context, indexSnapshot) {
                   if (indexSnapshot.connectionState == ConnectionState.waiting) {
-                    return Center(child: CircularProgressIndicator());
+                    return RMFuncts.loadingAnimation(context);
                   } else if (indexSnapshot.hasError) {
                     return Center(child: Text(indexSnapshot.error.toString()));
                   } else if (!indexSnapshot.hasData || indexSnapshot.data!.docs.isEmpty) {
@@ -198,7 +199,7 @@ class _CourseAddState extends State<CourseAdd> {
                     })),
                     builder: (context, facSnapshot) {
                       if (facSnapshot.connectionState == ConnectionState.waiting) {
-                        return Center(child: CircularProgressIndicator());
+                        return RMFuncts.loadingAnimation(context);
                       } else if (facSnapshot.hasError) {
                         return Center(child: Text(facSnapshot.error.toString()));
                       }
@@ -216,7 +217,7 @@ class _CourseAddState extends State<CourseAdd> {
                           for (var lec in lecturers)
                             DropdownMenuItem(
                               value: lec.id,
-                              child: Text(lec.name),
+                              child: Text(RMFuncts.getSentenceCase(lec.name)),
                             ),
                         ],
                         onChanged: (v) {
@@ -240,7 +241,7 @@ class _CourseAddState extends State<CourseAdd> {
              ),
              child: DropdownButton(
                  isExpanded: true,
-                 icon: Icon(Icons.arrow_drop_down),
+                 icon: Icon(PhosphorIconsBold.bookOpen),
                  value: selectedType,
                  hint: Text("Select Course Type"),
                  items:
@@ -257,7 +258,14 @@ class _CourseAddState extends State<CourseAdd> {
            ),
             SizedBox(height: 15,),
 
-            ElevatedButton(
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).primaryColor,
+                minimumSize: Size(double.infinity, 50),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(6),
+                ),
+              ),
                 onPressed: (){
                   if(fkey.currentState!.validate()){
                     if(selectedType!=null && selectedFac!=null){
@@ -308,7 +316,10 @@ class _CourseAddState extends State<CourseAdd> {
                   }
 
               // Provider.of<DbService>(context,listen: false).addCourse(context, widget.insAdmin.id!, widget.institute.id!, widget.department.id!, widget.session.id!, widget.semester.id!, course);
-            }, child: Text("Add"))
+            }, label: Text("Add course",style: TextStyle(color: Colors.white),),
+            
+            icon: Icon(CupertinoIcons.plus_circle,color: Colors.white,),
+            )
           ],
         ),
       ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:provider/provider.dart';
@@ -91,13 +92,13 @@ class _SemesterOpsState extends State<SemesterOps> {
                             SizedBox(width: 10,),
                             Expanded(
                               child: CircleAvatar(
-                                radius: 30,
+                                radius: 35,
                                 backgroundColor: Theme
                                     .of(context)
                                     .primaryColor
-                                    .withOpacity(1),
-                                child: Icon(PhosphorIconsDuotone.folderUser,
-                                  color: Colors.white, size: 30,),
+                                    .withOpacity(0.86),
+                                child:
+                                FaIcon(FontAwesomeIcons.chalkboardUser,color: Colors.white,),
                               ),
                             ),
                             SizedBox(width: 15,),
@@ -111,23 +112,35 @@ class _SemesterOpsState extends State<SemesterOps> {
                                     style: TextStyle(fontWeight: FontWeight.w600,
                                         fontSize: 16),),
                                   SizedBox(height: 10,),
-                                  Text("Start Date: ${semesters[count].start_date
-                                      .day}/${semesters[count].start_date
-                                      .month}/${semesters[count].start_date
-                                      .year}", style: TextStyle(
-                                      color: Colors.black87, fontSize: 12),),
+                                  Row(
+                                    children: [
+                                      Icon(PhosphorIconsDuotone.calendarStar,size: 19,),
+                                      SizedBox(width: 5,),
+                                      Text("Start Date: ${DateFormat("dd/MM/yyyy").format(semesters[count].start_date)}", style: TextStyle(
+                                          color: Colors.black87, fontSize: 12),),
+                                    ],
+                                  ),
                                   SizedBox(height: 10,),
-                                  Text("End Date: ${semesters[count].end_date
-                                      .day}/${semesters[count].end_date
-                                      .month}/${semesters[count].end_date.year}",
-                                    style: TextStyle(
-                                        color: Colors.black87, fontSize: 12),),
+                                  Row(
+                                    children: [
+                                      Icon(PhosphorIconsDuotone.calendarStar,size: 19,),
+                                      SizedBox(width: 5,),
+                                      Text("End Date: ${DateFormat("dd/MM/yyyy").format(semesters[count].end_date)}", style: TextStyle(
+                                          color: Colors.black87, fontSize: 12),),
+                                    ],
+                                  ),
                                   SizedBox(height: 10,),
-                                  Text("Duration: ${RMFuncts.getDuration(
-                                      semesters[count].start_date,
-                                      semesters[count].end_date)}",
-                                    style: TextStyle(
-                                        color: Colors.black87, fontSize: 12),),
+                                  Row(
+                                    children: [
+                                      Icon(PhosphorIconsDuotone.clockAfternoon,size: 19,),
+                                      SizedBox(width: 5,),
+                                      Text("Duration: ${RMFuncts.getDuration(
+                                          semesters[count].start_date,
+                                          semesters[count].end_date)}",
+                                        style: TextStyle(
+                                            color: Colors.black87, fontSize: 12),),
+                                    ],
+                                  ),
                                   SizedBox(height: 10,),
                                 ],),
                             ),
@@ -284,10 +297,10 @@ class _SemesterOpsState extends State<SemesterOps> {
                                                   FilledButton(onPressed: () {
                                                     if (startDate1 != null &&
                                                         endDate1 != null) {
-                                                      // making session name like cs2022-26
+                                                      //
                                                       if (startDate1!.isBefore(
                                                           endDate1!)) {
-                                                        //   session  must be at least 6 months long
+                                                        //   semester  must be at least 6 months long
                                                         if (startDate1!.isBefore(
                                                             widget.session
                                                                 .start_date) ||
@@ -300,6 +313,13 @@ class _SemesterOpsState extends State<SemesterOps> {
                                                             endDate1!.isBefore(
                                                                 widget.session
                                                                     .start_date)) {
+                                                          ScaffoldMessenger
+                                                              .of(
+                                                              context)
+                                                              .showSnackBar(
+                                                              SnackBar(
+                                                                content: Text(
+                                                                    "semester must be within session start and end date"),));
 
                                                         } else if (endDate1!
                                                             .difference(
@@ -401,8 +421,7 @@ class _SemesterOpsState extends State<SemesterOps> {
                                                                 content: Text(
                                                                     "semester must be at least 6 months long"),));
                                                         }
-                                                        else if (startDate!
-                                                            .isBefore(
+                                                        else if (startDate!                                                           .isBefore(
                                                             widget.session
                                                                 .start_date) ||
                                                             startDate!.isAfter(

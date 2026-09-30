@@ -33,8 +33,18 @@ const List<String> _monthAbbrev = [
   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 ];
 
+// reminder types per lecture
+const List<String> _notifTypes = ["before-start", "sart", "end", "bofore-end"];
+
 DateTime _combineDateAndTime(DateTime date, TimeOfDay time) {
   return DateTime(date.year, date.month, date.day, time.hour, time.minute);
+}
+
+// approved leave date range
+class _LeaveRange {
+  final DateTime start;
+  final DateTime end;
+  const _LeaveRange(this.start, this.end);
 }
 
 class _ResolvedLecture {
@@ -53,8 +63,9 @@ class _ResolvedLecture {
 
 class _MonthCount {
   final int attended;
-  final int total;
-  const _MonthCount(this.attended, this.total);
+  final int total; // leave lectures excluded
+  final int leave;
+  const _MonthCount(this.attended, this.total, [this.leave = 0]);
 
   double get percentage => total > 0 ? (attended / total) * 100 : 0.0;
 }
@@ -65,6 +76,7 @@ class _StudentStats {
   final int presentDays;
   final int lateDays;
   final int absentDays;
+  final int leaveDays;
   final _MonthCount thisMonth;
   final double lastMonthPercentage;
   final List<String> trendMonths;
@@ -76,6 +88,7 @@ class _StudentStats {
     required this.presentDays,
     required this.lateDays,
     required this.absentDays,
+    required this.leaveDays,
     required this.thisMonth,
     required this.lastMonthPercentage,
     required this.trendMonths,
@@ -88,6 +101,7 @@ class _StudentStats {
     presentDays: 0,
     lateDays: 0,
     absentDays: 0,
+    leaveDays: 0,
     thisMonth: _MonthCount(0, 0),
     lastMonthPercentage: 0,
     trendMonths: [],
@@ -107,19 +121,25 @@ class StdHome extends StatefulWidget {
 }
 
 class _StdHomeState extends State<StdHome> {
-  // Live stats stream, fed by one Firestore listener per enrolled course.
-  // Replaces the old one-shot _statsFuture so a successful check-in /
-  // midpoint / checkout write shows up automatically, with no manual
-  // "please refetch" plumbing needed from child widgets.
+  // live stats stream
   StreamController<_StudentStats>? _statsController;
+  // one listener per course
   final List<StreamSubscription<QuerySnapshot<Map<String, dynamic>>>> _lectureSubs = [];
   final Map<String, List<LectureModel>> _lecturesByCourse = {};
   final Set<String> _scheduledNotifKeys = {};
+
+  // approved leave date ranges
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _leaveSub;
+  List<_LeaveRange> _leaveRanges = [];
+
+  // first leave result ready
+  final Completer<void> _leavesReady = Completer<void>();
 
   @override
   void initState() {
     super.initState();
     _statsController = StreamController<_StudentStats>.broadcast();
+    _listenLeaves();
     _initStatsStream();
   }
 
@@ -128,6 +148,7 @@ class _StdHomeState extends State<StdHome> {
     for (final sub in _lectureSubs) {
       sub.cancel();
     }
+    _leaveSub?.cancel();
     _statsController?.close();
     super.dispose();
   }
@@ -173,6 +194,65 @@ class _StdHomeState extends State<StdHome> {
       status: data['status'],
       course: data['course_name'] ?? '',
     );
+  }
+
+  // watch own approved leaves
+  void _listenLeaves() {
+    try {
+      final student = widget.student;
+      final db = Provider.of<DbService>(context, listen: false);
+
+      _leaveSub = db.dbref
+          .collection("ins_admins").doc(student.insAdminId)
+          .collection("institutes").doc(student.instituteId)
+          .collection("leave_applications")
+          .where("student_id", isEqualTo: student.id)
+          .where("status", isEqualTo: "approved")
+          .snapshots()
+          .listen(
+            (snap) {
+          final ranges = <_LeaveRange>[];
+          for (final doc in snap.docs) {
+            final s = doc.data()['start_date'];
+            final e = doc.data()['end_date'];
+            if (s is! Timestamp || e is! Timestamp) continue;
+            final sd = s.toDate();
+            final ed = e.toDate();
+            ranges.add(_LeaveRange(
+              DateTime(sd.year, sd.month, sd.day),
+              DateTime(ed.year, ed.month, ed.day),
+            ));
+          }
+          _leaveRanges = ranges;
+
+          // cancel reminders for leave
+          final studentId = student.id ?? '';
+          for (final lecture in _lecturesByCourse.values.expand((l) => l)) {
+            if (_scheduledNotifKeys.contains(lecture.id) &&
+                _statusOf(lecture, studentId) == 'leave') {
+              _cancelNotificationsFor(lecture);
+              _scheduledNotifKeys.remove(lecture.id);
+            }
+          }
+
+          if (!_leavesReady.isCompleted) _leavesReady.complete();
+          if (!mounted) return;
+          // recompute with new leaves
+          if (_lecturesByCourse.isNotEmpty) {
+            _emitStats(studentId);
+          } else {
+            setState(() {});
+          }
+        },
+        onError: (e, st) {
+          debugPrint("StdHome leave stream error: $e");
+          if (!_leavesReady.isCompleted) _leavesReady.complete();
+        },
+      );
+    } catch (e) {
+      debugPrint("StdHome._listenLeaves error: $e");
+      if (!_leavesReady.isCompleted) _leavesReady.complete();
+    }
   }
 
   Future<void> _initStatsStream() async {
@@ -239,10 +319,16 @@ class _StdHomeState extends State<StdHome> {
     }
   }
 
-  // Notifications only need to be scheduled once per lecture, not on every snapshot event — guarded by `_scheduledNotifKeys` so a livestream doesn't re-fire these on every attendance write.
+  // schedule reminders once, skip leave
   Future<void> _scheduleNotificationsFor(List<LectureModel> lectures) async {
+    // wait briefly for leaves
+    await _leavesReady.future.timeout(const Duration(seconds: 5), onTimeout: () {});
+    final studentId = widget.student.id ?? '';
+
     for (final lecture in lectures) {
       if (_scheduledNotifKeys.contains(lecture.id)) continue;
+      // no reminders on leave
+      if (_statusOf(lecture, studentId) == 'leave') continue;
       _scheduledNotifKeys.add(lecture.id!);
       try {
         await scheduleLectureNotificationBeforeStart(lecture);
@@ -252,6 +338,17 @@ class _StdHomeState extends State<StdHome> {
       } catch (e) {
         print("error-x $e");
       }
+    }
+  }
+
+  // cancel all four reminders
+  Future<void> _cancelNotificationsFor(LectureModel lecture) async {
+    try {
+      for (final type in _notifTypes) {
+        await NotifHelper.cancelNotification(_notifId(type, lecture));
+      }
+    } catch (e) {
+      print("cancel error $e");
     }
   }
 
@@ -297,13 +394,22 @@ class _StdHomeState extends State<StdHome> {
         notifDate, _notifId("bofore-end", lecture));
   }
 
-  static String? _statusFor(LectureModel lecture, String studentId) {
-    final record = (lecture.attendance ?? []).firstWhereOrNull((a) => a.sid == studentId);
-    return record?.status;
+  // lecture falls in approved leave
+  bool _isOnApprovedLeave(LectureModel lecture) {
+    final d = lecture.dated;
+    final day = DateTime(d.year, d.month, d.day);
+    return _leaveRanges.any((r) => !day.isBefore(r.start) && !day.isAfter(r.end));
   }
 
-  static String _resolvedStatus(LectureModel lecture, String studentId) {
-    return _statusFor(lecture, studentId) ?? 'absent';
+  // record status, else leave
+  String? _statusOf(LectureModel lecture, String studentId) {
+    final record = (lecture.attendance ?? []).firstWhereOrNull((a) => a.sid == studentId);
+    if (record != null) return record.status;
+    return _isOnApprovedLeave(lecture) ? 'leave' : null;
+  }
+
+  String _resolvedStatus(LectureModel lecture, String studentId) {
+    return _statusOf(lecture, studentId) ?? 'absent';
   }
 
   static bool _isAttended(String status) => status == 'present' || status == 'late';
@@ -326,16 +432,19 @@ class _StdHomeState extends State<StdHome> {
     final conducted = resolved.where((r) => r.conducted).toList()
       ..sort((a, b) => b.start.compareTo(a.start));
 
+    // leave never breaks streak
     var streak = 0;
     for (final r in conducted) {
-      if (_isAttended(_resolvedStatus(r.lecture, studentId))) {
+      final status = _resolvedStatus(r.lecture, studentId);
+      if (status == 'leave') continue;
+      if (_isAttended(status)) {
         streak++;
       } else {
         break;
       }
     }
 
-    var present = 0, late = 0, absent = 0;
+    var present = 0, late = 0, absent = 0, leave = 0;
     for (final r in conducted) {
       switch (_resolvedStatus(r.lecture, studentId)) {
         case 'present':
@@ -344,19 +453,28 @@ class _StdHomeState extends State<StdHome> {
         case 'late':
           late++;
           break;
+        case 'leave':
+          leave++;
+          break;
         default:
           absent++;
       }
     }
 
     _MonthCount countsForRange(DateTime start, DateTime endExclusive) {
-      var attended = 0, total = 0;
+      var attended = 0, total = 0, leaveCount = 0;
       for (final r in conducted) {
         if (r.start.isBefore(start) || !r.start.isBefore(endExclusive)) continue;
+        final status = _resolvedStatus(r.lecture, studentId);
+        // leave stays out of total
+        if (status == 'leave') {
+          leaveCount++;
+          continue;
+        }
         total++;
-        if (_isAttended(_resolvedStatus(r.lecture, studentId))) attended++;
+        if (_isAttended(status)) attended++;
       }
-      return _MonthCount(attended, total);
+      return _MonthCount(attended, total, leaveCount);
     }
 
     final thisMonthStart = DateTime(now.year, now.month, 1);
@@ -385,10 +503,44 @@ class _StdHomeState extends State<StdHome> {
       presentDays: present,
       lateDays: late,
       absentDays: absent,
+      leaveDays: leave,
       thisMonth: thisMonth,
       lastMonthPercentage: lastMonth.percentage,
       trendMonths: trendMonths,
       trendPercentages: trendPercentages,
+    );
+  }
+
+  // card plus attendance section
+  Widget _lectureTile(LectureModel lecture, String studentId) {
+    final onLeave = _statusOf(lecture, studentId) == 'leave';
+
+    return Column(
+      children: [
+        InkWell(
+          child: UpcomingClassCard(
+            lectureModel: lecture,
+            studentId: studentId,
+            onLeave: onLeave,
+          ),
+        ),
+        // no attendance screen on leave
+        if (onLeave)
+          const Padding(
+            padding: EdgeInsets.only(top: 4, bottom: 8),
+            child: Text(
+              "You are on approved leave",
+              style: TextStyle(color: Colors.blue, fontSize: 12, fontWeight: FontWeight.w500),
+            ),
+          )
+        else
+          LectureAttendanceSection(
+            insAdmin: widget.insAdmin,
+            institute: widget.institute,
+            lectureModel: lecture,
+            student: widget.student,
+          ),
+      ],
     );
   }
 
@@ -419,7 +571,7 @@ class _StdHomeState extends State<StdHome> {
                 connectionState: isWaiting ? ConnectionState.waiting : ConnectionState.active,
                 error: snapshot.error,
                 todaysLectures: stats.todaysLectures,
-                studentId: studentId,
+                statusOf: (l) => _statusOf(l, studentId),
                 streakLectures: stats.streakLectures,
                 thisMonthPercent: stats.thisMonth.percentage.round(),
               ),
@@ -429,6 +581,7 @@ class _StdHomeState extends State<StdHome> {
                 present_days: stats.presentDays,
                 late_days: stats.lateDays,
                 absent_days: stats.absentDays,
+                leave_days: stats.leaveDays,
               ),
               const SizedBox(height: 25),
 
@@ -436,9 +589,11 @@ class _StdHomeState extends State<StdHome> {
                 thisMonth: stats.thisMonth.total > 0 ? stats.thisMonth.attended.toDouble() : 0.0,
                 lastMonth: stats.lastMonthPercentage,
                 totalDays: stats.thisMonth.total > 0 ? stats.thisMonth.total.toDouble() : 1.0,
+                leaveDays: stats.thisMonth.leave,
               ),
               const SizedBox(height: 20),
-//progress
+
+              // show trend chart
               if (stats.trendMonths.isNotEmpty)
                 CustomeLineChart(
                   Months: stats.trendMonths,
@@ -461,20 +616,7 @@ class _StdHomeState extends State<StdHome> {
                 else
                   Column(
                     children: [
-                      for (final lecture in todaysLectures)
-                        Column(
-                          children: [
-                            InkWell(
-                              child: UpcomingClassCard(lectureModel: lecture, studentId: studentId),
-                            ),
-                            LectureAttendanceSection(
-                              insAdmin: widget.insAdmin,
-                              institute: widget.institute,
-                              lectureModel: lecture,
-                              student: widget.student,
-                            ),
-                          ],
-                        ),
+                      for (final lecture in todaysLectures) _lectureTile(lecture, studentId),
                     ],
                   ),
             ],
@@ -528,7 +670,7 @@ class _TodayAttendanceCard extends StatelessWidget {
     required this.connectionState,
     required this.error,
     required this.todaysLectures,
-    required this.studentId,
+    required this.statusOf,
     required this.streakLectures,
     required this.thisMonthPercent,
   });
@@ -536,7 +678,7 @@ class _TodayAttendanceCard extends StatelessWidget {
   final ConnectionState connectionState;
   final Object? error;
   final List<LectureModel> todaysLectures;
-  final String studentId;
+  final String? Function(LectureModel) statusOf;
   final int streakLectures;
   final int thisMonthPercent;
 
@@ -610,8 +752,10 @@ class _TodayAttendanceCard extends StatelessWidget {
       return const Text("No lectures today", style: TextStyle(color: Colors.white));
     }
 
-    final presentCount = todaysLectures
-        .where((l) => _StdHomeState._isAttended(_StdHomeState._resolvedStatus(l, studentId)))
+    // leave lectures stay uncounted
+    final counted = todaysLectures.where((l) => statusOf(l) != 'leave').toList();
+    final attendedCount = counted
+        .where((l) => _StdHomeState._isAttended(statusOf(l) ?? 'absent'))
         .length;
 
     return Row(
@@ -620,18 +764,20 @@ class _TodayAttendanceCard extends StatelessWidget {
         Expanded(
           child: Row(children: [for (final lecture in todaysLectures) _statusIcon(lecture)]),
         ),
-        Text("($presentCount/${todaysLectures.length})", style: const TextStyle(color: Colors.white)),
+        Text("($attendedCount/${counted.length})", style: const TextStyle(color: Colors.white)),
       ],
     );
   }
 
   Widget _statusIcon(LectureModel lecture) {
-    final rawStatus = _StdHomeState._statusFor(lecture, studentId);
+    final rawStatus = statusOf(lecture);
     final IconData icon;
     if (rawStatus == null) {
       icon = Icons.circle_outlined;
     } else if (rawStatus == 'present' || rawStatus == 'late') {
       icon = Icons.check_circle_outline;
+    } else if (rawStatus == 'leave') {
+      icon = PhosphorIconsBold.airplaneTakeoff;
     } else {
       icon = Icons.cancel_outlined;
     }

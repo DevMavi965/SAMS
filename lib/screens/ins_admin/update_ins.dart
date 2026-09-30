@@ -105,8 +105,8 @@ class _Update_InstituteState extends State<Update_Institute> {
                 validator: (v){
                   if(v!.isEmpty){
                     return "Please enter contact";
-                  }else if(v.length<10){
-                    return "contact must be at least 10 characters";
+                  }else if(v.length<6){
+                    return "contact must be at least 6 characters";
                   }else if(v.contains(" ")){
                     return "contact must not contain spaces";
                   }
@@ -129,6 +129,8 @@ class _Update_InstituteState extends State<Update_Institute> {
                     return "enter valid value";
                   }else if(v.contains(" ")){
                     return "longitude must not contain spaces";
+                  }else if(v.length<9){
+                    return "enter at least 6 digits after decimal for better accuracy";
                   }else if(double.parse(v)<-180 || double.parse(v)>180){
                     return "longitude must be between -180 and 180";
                   }
@@ -148,7 +150,10 @@ class _Update_InstituteState extends State<Update_Institute> {
                     return "Please enter latitude";
                   }else if(double.tryParse(v)==null){
                     return "enter valid value";
-                  }else if(v.contains(" ")){
+                  }else if(v.length<9){
+                    return "enter at least 6 digits after decimal for better accuracy";
+                  }
+                  else if(v.contains(" ")){
                     return "latitude must not contain spaces";
                   }else if(double.parse(v)<-90 || double.parse(v)>90){
                     return "latitude must be between -90 and 90";

@@ -4,6 +4,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:smas3/maxins/rm_functions.dart';
 import 'package:smas3/models/announcement_model.dart';
+import 'package:smas3/screens/faculty/fac_anncard.dart';
 import 'package:smas3/widgets/admin_widgets/admin_ann_card.dart';
 import 'package:smas3/widgets/admin_widgets/admin_ann_grid.dart';
 import 'package:smas3/widgets/insAdmin/insAdminAnnCard.dart';
@@ -109,7 +110,7 @@ class _AlertTabState extends State<AlertTab> {
                         physics: NeverScrollableScrollPhysics(),
                         itemCount: announcements.length,
                         itemBuilder: (tcontext,index)=>
-                            InsAdminAnnCard(adminAnnouncement: announcements[index])),
+                            FacAnnCard(adminAnnouncement: announcements[index])),
                   ],
                 );
               }

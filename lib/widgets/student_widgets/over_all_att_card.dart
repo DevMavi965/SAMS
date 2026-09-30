@@ -5,22 +5,28 @@ class OverAllAttCard extends StatelessWidget {
   final double thisMonth;
   final double lastMonth;
   final double totalDays;
+  final int leaveDays; // excluded from total
 
   const OverAllAttCard({
     super.key,
     required this.thisMonth,
     required this.lastMonth,
     required this.totalDays,
+    this.leaveDays = 0,
   });
 
   @override
   Widget build(BuildContext context) {
-    //  percentage
-    double percentage = (thisMonth / totalDays) * 100;
-    double change = percentage - lastMonth;
+    // safe percentage calculation
+    final double percentage = totalDays > 0 ? (thisMonth / totalDays) * 100 : 0;
+    final double change = percentage - lastMonth;
 
-    // progress bar  0–1 value
-    double progressValue = percentage / 100;
+    // progress bar value
+    final double progressValue = percentage / 100;
+
+    final String daysText =
+        "${thisMonth.toStringAsFixed(0)} of ${totalDays.toStringAsFixed(0)} days"
+        "${leaveDays > 0 ? '  •  $leaveDays on leave' : ''}";
 
     return Container(
       height: 150,
@@ -28,10 +34,7 @@ class OverAllAttCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: Colors.grey.shade300,
-          width: 0.5,
-        ),
+        border: Border.all(color: Colors.grey.shade300, width: 0.5),
         boxShadow: [
           BoxShadow(
             color: Colors.grey.withOpacity(0.15),
@@ -45,29 +48,29 @@ class OverAllAttCard extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            // 🔹 Top Section
+            // title and percentage row
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      "Overall Attendance",
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        "Overall Attendance",
+                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
                       ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      "${thisMonth.toStringAsFixed(0)} of ${totalDays.toStringAsFixed(0)} days",
-                      style: const TextStyle(color: Colors.grey, fontSize: 11),
-                    ),
-                  ],
+                      const SizedBox(height: 2),
+                      Text(
+                        daysText,
+                        style: const TextStyle(color: Colors.grey, fontSize: 11),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
                 ),
                 Text(
-                  "${percentage.toStringAsFixed(1)}%", //
+                  "${percentage.toStringAsFixed(1)}%",
                   style: TextStyle(
                     color: Theme.of(context).primaryColor,
                     fontSize: 20,
@@ -79,7 +82,6 @@ class OverAllAttCard extends StatelessWidget {
 
             const SizedBox(height: 20),
 
-            // 🔹 Progress bar
             LinearProgressIndicator(
               value: progressValue.clamp(0.0, 1.0),
               minHeight: 12,
@@ -90,12 +92,17 @@ class OverAllAttCard extends StatelessWidget {
 
             const SizedBox(height: 8),
 
-            // 🔹 Bottom text (trend)
+            // trend text row
             Row(
               children: [
-                Icon(change>=0 ? CupertinoIcons.arrow_up_right : CupertinoIcons.arrow_down_left,color:
-                  change >= 0 ? Colors.green : Colors.red,size: 13,),
-                 SizedBox(width: 4),
+                Icon(
+                  change >= 0
+                      ? CupertinoIcons.arrow_up_right
+                      : CupertinoIcons.arrow_down_left,
+                  color: change >= 0 ? Colors.green : Colors.red,
+                  size: 13,
+                ),
+                const SizedBox(width: 4),
                 Expanded(
                   child: Text(
                     "${change >= 0 ? '+' : ''}${change.toStringAsFixed(1)}% from last month",
@@ -104,12 +111,11 @@ class OverAllAttCard extends StatelessWidget {
                       color: change >= 0 ? Colors.green : Colors.red,
                       fontWeight: FontWeight.w500,
                     ),
-                    overflow: TextOverflow.ellipsis, //  gracefully clips long text
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
             ),
-
           ],
         ),
       ),

@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -7,7 +8,7 @@ import 'package:smas3/services/db_service.dart';
 
 class LeaveApplicationFormScreen extends StatefulWidget {
   final Student student;
-  final LeaveApplication? existingLeave; // null = add mode, non-null = edit mode
+  final LeaveApplication? existingLeave; // null means add mode
 
   const LeaveApplicationFormScreen({
     super.key,
@@ -33,6 +34,7 @@ class _LeaveApplicationFormScreenState
   DateTime? tillDate;
   String? fromDateError;
   String? tillDateError;
+  String? overlapError; // clashing leave message
   bool saving = false;
 
   @override
@@ -51,15 +53,23 @@ class _LeaveApplicationFormScreenState
     super.dispose();
   }
 
+  // strip time from date
+  DateTime _dayOnly(DateTime d) => DateTime(d.year, d.month, d.day);
+
   bool _validateDates() {
     setState(() {
       fromDateError = fromDate == null ? "Please select start date" : null;
       tillDateError = tillDate == null ? "Please select end date" : null;
     });
 
-    if (fromDate == null || tillDate ==  null) return false;
-    if (fromDate!.isBefore(DateTime.now())) {
+    if (fromDate == null || tillDate == null) return false;
+    if (fromDate!.isBefore(DateTime.now().subtract(const Duration(days: 1)))) {
       setState(() => fromDateError = "Start date cannot be in the past");
+      return false;
+    }
+    // max three days allowed
+    if (tillDate!.difference(fromDate!).inDays > 3) {
+      setState(() => tillDateError = "leave cannot be more than 3 days");
       return false;
     }
     if (tillDate!.isBefore(fromDate!)) {
@@ -67,6 +77,44 @@ class _LeaveApplicationFormScreenState
       return false;
     }
     return true;
+  }
+
+  // find clashing pending/approved leave
+  Future<String?> _findOverlap(DbService db) async {
+    final snap = await db.dbref
+        .collection("ins_admins").doc(widget.student.insAdminId)
+        .collection("institutes").doc(widget.student.instituteId)
+        .collection("leave_applications")
+        .where("student_id", isEqualTo: widget.student.id.toString())
+        .get();
+
+    final newStart = _dayOnly(fromDate!);
+    final newEnd = _dayOnly(tillDate!);
+    final fmt = DateFormat('dd-MMM-yyyy');
+
+    for (final doc in snap.docs) {
+      // skip the edited application
+      if (widget.isEditing && doc.id == widget.existingLeave!.id) continue;
+
+      final data = doc.data();
+      final status = data['status'];
+      // rejected leaves never block
+      if (status != 'pending' && status != 'approved') continue;
+
+      final s = data['start_date'];
+      final e = data['end_date'];
+      if (s is! Timestamp || e is! Timestamp) continue;
+
+      final start = _dayOnly(s.toDate());
+      final end = _dayOnly(e.toDate());
+
+      // date ranges intersect check
+      if (!newStart.isAfter(end) && !newEnd.isBefore(start)) {
+        return "You already have a $status leave from "
+            "${fmt.format(start)} to ${fmt.format(end)}";
+      }
+    }
+    return null;
   }
 
   Future<void> _pickDate({required bool isFrom}) async {
@@ -78,6 +126,7 @@ class _LeaveApplicationFormScreenState
     );
     if (picked != null) {
       setState(() {
+        overlapError = null; // dates changed, recheck
         if (isFrom) {
           fromDate = picked;
           fromDateError = null;
@@ -101,10 +150,40 @@ class _LeaveApplicationFormScreenState
       return;
     }
 
-    setState(() => saving = true);
+    setState(() {
+      saving = true;
+      overlapError = null;
+    });
     final dbService = Provider.of<DbService>(context, listen: false);
 
     try {
+      // block overlapping leave applications
+      String? clash;
+      try {
+        clash = await _findOverlap(dbService);
+      } catch (e) {
+        debugPrint("overlap check error: $e");
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Could not verify existing leaves, try again"),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+
+      if (clash != null) {
+        if (mounted) {
+          setState(() => overlapError = clash);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(clash), backgroundColor: Colors.red),
+          );
+        }
+        return;
+      }
+
       if (widget.isEditing) {
         final existing = widget.existingLeave!;
         final updated = LeaveApplication(
@@ -117,8 +196,7 @@ class _LeaveApplicationFormScreenState
           appliedDate: existing.appliedDate,
           std_name: existing.std_name,
           std_id: existing.std_id,
-        )..id = existing.id; // preserve doc id — adjust if your model
-        // exposes `id` differently (e.g. via constructor)
+        )..id = existing.id; // keep original doc id
         await dbService.updateStudentLeaveApplication(context, updated);
       } else {
         final newLeave = LeaveApplication(
@@ -202,7 +280,7 @@ class _LeaveApplicationFormScreenState
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   decoration: BoxDecoration(
                     border: Border.all(
-                        color: fromDateError != null
+                        color: (fromDateError != null || overlapError != null)
                             ? Colors.red
                             : Colors.grey[300]!),
                     borderRadius: BorderRadius.circular(8),
@@ -244,7 +322,7 @@ class _LeaveApplicationFormScreenState
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   decoration: BoxDecoration(
                     border: Border.all(
-                        color: tillDateError != null
+                        color: (tillDateError != null || overlapError != null)
                             ? Colors.red
                             : Colors.grey[300]!),
                     borderRadius: BorderRadius.circular(8),
@@ -270,6 +348,33 @@ class _LeaveApplicationFormScreenState
                 Text(tillDateError!,
                     style: const TextStyle(color: Colors.red, fontSize: 12)),
               ],
+
+              // clashing leave message
+              // if (overlapError != null) ...[
+              //   const SizedBox(height: 12),
+              //   Container(
+              //     width: double.infinity,
+              //     padding: const EdgeInsets.all(10),
+              //     decoration: BoxDecoration(
+              //       color: Colors.red.withOpacity(0.08),
+              //       borderRadius: BorderRadius.circular(8),
+              //       border: Border.all(color: Colors.red.withOpacity(0.4)),
+              //     ),
+              //     child: Row(
+              //       crossAxisAlignment: CrossAxisAlignment.start,
+              //       children: [
+              //         const Icon(Icons.error_outline, color: Colors.red, size: 18),
+              //         const SizedBox(width: 8),
+              //         Expanded(
+              //           child: Text(
+              //             overlapError!,
+              //             style: const TextStyle(color: Colors.red, fontSize: 12),
+              //           ),
+              //         ),
+              //       ],
+              //     ),
+              //   ),
+              // ],
               const SizedBox(height: 20),
 
               Text("Reason",

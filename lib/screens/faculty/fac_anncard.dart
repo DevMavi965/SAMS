@@ -7,15 +7,15 @@ import 'package:smas3/models/announcement_model.dart';
 
 import '../../services/db_service.dart';
 
-class InsAdminAnnCard extends StatefulWidget {
+class FacAnnCard extends StatefulWidget {
   final Announcement adminAnnouncement;
-  const InsAdminAnnCard({super.key, required this.adminAnnouncement});
+  const FacAnnCard({super.key, required this.adminAnnouncement});
 
   @override
-  State<InsAdminAnnCard> createState() => _InsAdminAnnCardState();
+  State<FacAnnCard> createState() => _FacAnnCardState();
 }
 
-class _InsAdminAnnCardState extends State<InsAdminAnnCard> {
+class _FacAnnCardState extends State<FacAnnCard> {
   _AnnStyle get _style {
     switch (widget.adminAnnouncement.an_type) {
       case "urgent":
@@ -268,7 +268,7 @@ class _InsAdminAnnCardState extends State<InsAdminAnnCard> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                           RMFuncts.getSentenceCase( ann.an_title),
+                            RMFuncts.getSentenceCase( ann.an_title),
                             style: const TextStyle(
                               fontWeight: FontWeight.w600,
                               fontSize: 16,
@@ -329,9 +329,7 @@ class _InsAdminAnnCardState extends State<InsAdminAnnCard> {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    IconButton(onPressed: (){
-                      _confirmDelete(context);
-                    }, icon: Icon(Icons.delete_outline,color: Colors.red,))
+
                   ],
                 ),
                 const SizedBox(height: 10),

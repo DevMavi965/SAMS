@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:provider/provider.dart';
+import 'package:smas3/maxins/rm_functions.dart';
 import 'package:smas3/models/holidayModel.dart';
 import 'package:smas3/screens/management/create_update/Daily_schedule.dart';
 
@@ -65,7 +66,7 @@ class _TimetableMngState extends State<TimetableMng> {
         backgroundColor: primaryColor,
       ),
       body: loadingHolidays
-          ? const Center(child: CircularProgressIndicator())
+          ? RMFuncts.loadingAnimation(context)
           : RefreshIndicator(
         onRefresh: () =>
             getHolidays(widget.insAdmin.id!, widget.institute.id!),

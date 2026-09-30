@@ -1958,11 +1958,24 @@ class DbService with ChangeNotifier{
     }
   }
   //lazmi::: Run once a lecture's end time has passed: any enrolled student with NO attendance record at all is written in as "absent". Safe to call more than once -- students who already have a record (present/late/absent) are left untouched.
-  finalizeLectureAttendance(BuildContext? context, LectureModel lectureModel) async {
+  Future<bool> finalizeLectureAttendance(
+      BuildContext? context,
+      LectureModel lectureModel, {
+        Set<String> onLeaveIds = const {}, // approved-leave students for this lecture's date
+      }) async {
+    void snack(String msg) {
+      if (context != null && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+      }
+    }
+
     try {
       final dox = await indexDoc.doc(lectureModel.id).get();
-      if (!dox.exists) return;
-      if (dox.data()?['attendance_finalized'] == true) return; // already done
+      if (!dox.exists) return false;
+      if (dox.data()?['attendance_finalized'] == true) {
+        snack("Attendance is already finalized");
+        return true;
+      }
 
       final insAdminId = dox.get("ins_admin_id");
       final instituteId = dox.get("institute_id");
@@ -1971,7 +1984,6 @@ class DbService with ChangeNotifier{
       final semesterId = dox.get("semester_id");
       final courseId = dox.get("course_id");
 
-      // Fast, single-collection roster lookup -- see class-level note.
       final rosterSnap = await indexDoc
           .where("role", isEqualTo: "student")
           .where("ins_admin_id", isEqualTo: insAdminId)
@@ -1981,30 +1993,56 @@ class DbService with ChangeNotifier{
           .where("semester_id", isEqualTo: semesterId)
           .get();
       final rosterIds = rosterSnap.docs.map((d) => d.id).toList();
-      if (rosterIds.isEmpty) return;
+      if (rosterIds.isEmpty) {
+        snack("No students found for this lecture");
+        return false;
+      }
 
       final currentAttendance = lectureModel.attendance ?? [];
       final bySid = {for (var a in currentAttendance) a.sid: a};
+      final now = TimeOfDay.fromDateTime(DateTime.now());
 
       bool changed = false;
       final finalAttendance = <Attendance>[];
 
       for (final sid in rosterIds) {
         final existing = bySid[sid];
+
+        // 1) approved leave already recorded: keep it
+        if (existing?.status == 'leave') {
+          finalAttendance.add(existing!);
+          continue;
+        }
+
+        // 2) on approved leave but auto-mark never wrote a record: write it now
+        if (existing == null && onLeaveIds.contains(sid)) {
+          changed = true;
+          finalAttendance.add(Attendance(
+            sid: sid,
+            checkin: now,
+            checkout: now,
+            mid_point: true,
+            method: 'auto',
+            status: 'leave',
+          ));
+          continue;
+        }
+
+        // 3) fully completed present/late record: keep it
         final complete = existing != null &&
             existing.mid_point == true &&
             existing.checkin != null &&
             existing.checkout != null;
-
         if (complete) {
           finalAttendance.add(existing);
           continue;
         }
 
+        // 4) everything else becomes absent
         changed = true;
         finalAttendance.add(Attendance(
           sid: sid,
-          checkin: existing?.checkin, // keep for the audit trail if they at least checked in
+          checkin: existing?.checkin,
           checkout: null,
           mid_point: existing?.mid_point,
           method: existing?.method ?? 'auto',
@@ -2012,8 +2050,7 @@ class DbService with ChangeNotifier{
         ));
       }
 
-      // Keep any records for students the roster query didn't return
-      // (e.g. since transferred out) rather than silently dropping them.
+      // keep records of students the roster query didn't return
       final rosterIdSet = rosterIds.toSet();
       for (final a in currentAttendance) {
         if (!rosterIdSet.contains(a.sid)) finalAttendance.add(a);
@@ -2028,35 +2065,26 @@ class DbService with ChangeNotifier{
           .collection("courses").doc(courseId)
           .collection("lectures").doc(lectureModel.id);
 
-      if (!changed) {
-        // Nothing flipped, but stamp finalized so future calls short-circuit.
-        await indexDoc.doc(lectureModel.id).update({"attendance_finalized": true});
-        return;
-      }
-
-      final attendanceMaps =
-      finalAttendance.map((a) => a.toMap(onDate: lectureModel.dated)).toList();
-
+      // one batch, both docs always get the flag
       final batch = FirebaseFirestore.instance.batch();
       batch.update(lectureRef, {
-        "attendance": attendanceMaps,
+        if (changed)
+          "attendance": finalAttendance
+              .map((a) => a.toMap(onDate: lectureModel.dated))
+              .toList(),
         "attendance_finalized": true,
       });
-      batch.update(indexDoc.doc(lectureModel.id), {
-        "attendance_finalized": true,
-      });
+      batch.update(indexDoc.doc(lectureModel.id), {"attendance_finalized": true});
       await batch.commit();
 
       lectureModel.attendance = finalAttendance;
       notifyListeners();
-
-      if (context != null && context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Attendance finalized for ${lectureModel.course}")),
-        );
-      }
+      snack("Attendance finalized for ${lectureModel.course}");
+      return true;
     } catch (e) {
       print(e.toString());
+      snack(e.toString());
+      return false;
     }
   }
   markAbsentForMissedCheckout(
@@ -2109,6 +2137,79 @@ class DbService with ChangeNotifier{
       print(e.toString());
     }
   }
+
+
+  studentMarkLeave(
+      BuildContext context,
+      LectureModel lectureModel,
+      String studentId,
+      String method, {
+        bool silent = false, // true = no loader, no snackbars (used for auto-marking)
+      }) async {
+    if (!silent) {
+      loading = true;
+      notifyListeners();
+    }
+    try {
+      final existing =
+      lectureModel.attendance?.firstWhereOrNull((e) => e.sid == studentId);
+      if (existing != null) {
+        if (!silent && context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("student already checked in")),
+          );
+        }
+        return;
+      }
+
+      final newRecord = Attendance(
+        sid: studentId,
+        checkin: TimeOfDay.fromDateTime(DateTime.now()),
+        checkout: TimeOfDay.fromDateTime(DateTime.now()),
+        mid_point: true,
+        method: method,
+        status: "leave", // must match _statusBadge / getOnLeave
+      );
+
+      final currentAttendance = lectureModel.attendance ?? [];
+      final attendanceMaps = [
+        ...currentAttendance.map((a) => a.toMap(onDate: lectureModel.dated)),
+        newRecord.toMap(onDate: lectureModel.dated),
+      ];
+
+      final dox = await indexDoc.doc(lectureModel.id).get();
+      await dbref
+          .collection("ins_admins").doc(dox.get("ins_admin_id"))
+          .collection("institutes").doc(dox.get("institute_id"))
+          .collection("departments").doc(dox.get("department_id"))
+          .collection("sessions").doc(dox.get("session_id"))
+          .collection("semesters").doc(dox.get("semester_id"))
+          .collection("courses").doc(dox.get("course_id"))
+          .collection("lectures").doc(lectureModel.id)
+          .update({"attendance": attendanceMaps});
+
+      lectureModel.attendance = [...currentAttendance, newRecord];
+
+      if (!silent && context.mounted) {
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   const SnackBar(content: Text("attendance marked successfully")),
+        // );
+      }
+    } catch (e) {
+      print(e.toString());
+      if (!silent && context.mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(e.toString())));
+      }
+    } finally {
+      if (!silent) {
+        loading = false;
+        notifyListeners();
+      }
+    }
+  }
+
+
 //faculty-only methods
   checkInGroup(BuildContext context, LectureModel lectureModel, List<String> studentIds, String method) async {
     loading = true;

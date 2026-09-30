@@ -59,7 +59,7 @@ Widget DepartmentCard({
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    department.name,
+                    RMFuncts.getSentenceCase(department.name),
                     style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -70,7 +70,7 @@ Widget DepartmentCard({
                       const SizedBox(width: 5),
                       Expanded(
                         child: Text(
-                          department.hod_name,
+                          RMFuncts.getSentenceCase(department.hod_name),
                           style: TextStyle(color: Colors.grey.shade700, fontSize: 13.5),
                           overflow: TextOverflow.ellipsis,
                         ),

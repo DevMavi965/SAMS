@@ -264,7 +264,7 @@ class _TimetableSelState extends State<TimetableSel> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text("Holidays",style: TextStyle(fontSize: 20,fontWeight: FontWeight.bold),),
+                Text("Holidays",style: TextStyle(fontSize: 20,fontWeight: FontWeight.w600),),
                 ElevatedButton.icon(style: ButtonStyle(
                   backgroundColor: MaterialStateProperty.all(Theme.of(context).primaryColor),
                 ),onPressed: (){

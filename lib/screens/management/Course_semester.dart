@@ -46,7 +46,7 @@ class _CourseSemesterState extends State<CourseSemester> {
           .snapshots(),
           builder: (context,snapshot){
             if(snapshot.connectionState==ConnectionState.waiting){
-              return Center(child: CircularProgressIndicator(),);
+              return RMFuncts.loadingAnimation(context);
             }else if(snapshot.hasError){
               return Center(child: Text(snapshot.error.toString()),);
             }else if(!snapshot.hasData){

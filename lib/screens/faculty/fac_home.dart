@@ -13,6 +13,7 @@ import 'package:smas3/models/lecture.dart';
 import 'package:smas3/services/geo_location_service.dart';
 import 'package:smas3/widgets/fac_widgets/fac_class_card.dart';
 import 'package:smas3/widgets/fac_widgets/fac_home_grid.dart';
+import 'package:smas3/widgets/fac_widgets/fac_upcomingClassCard.dart';
 import 'package:smas3/widgets/student_widgets/upcoming_class_card.dart';
 
 import '../../models/department.dart';
@@ -303,7 +304,7 @@ class _FacHomeTabState extends State<FacHomeTab> {
                         Fluttertoast.showToast(msg:"only accessible in allocated time-slot",);
                       }
                     },
-                    child: UpcomingClassCard( lectureModel:snapshot.data![index],));
+                    child: FacUpcomingClassCard( lectureModel:snapshot.data![index],));
               },
             );
           },
