@@ -47,7 +47,7 @@ class _InsAdminHomeState extends State<InsAdminHome> {
           crossAxisSpacing: 15,
           mainAxisSpacing: 15,
           shrinkWrap: true,
-          childAspectRatio: 1.4,
+          childAspectRatio: 1.1,
           physics: NeverScrollableScrollPhysics(),
           children: [
             // Department Management
@@ -93,11 +93,11 @@ class _InsAdminHomeState extends State<InsAdminHome> {
                       ),
                       SizedBox(height: 5,),
                       Row(children: [
-                        Text("Departments",style: TextStyle(fontSize: 14,fontWeight: FontWeight.w500),)
+                        Flexible(child: Text("Departments",style: TextStyle(fontSize: 14,fontWeight: FontWeight.w500),))
                       ],),
                       SizedBox(height: 5,),
                       Row(children: [
-                        Text("departmental operations",style: TextStyle(color: Colors.grey),)
+                        Flexible(child: Text("departmental operations",maxLines: 1,overflow: TextOverflow.ellipsis,style: TextStyle(color: Colors.grey),))
                       ],)
                     ],
                   ),
@@ -151,7 +151,7 @@ class _InsAdminHomeState extends State<InsAdminHome> {
                       ],),
                       SizedBox(height: 5,),
                       Row(children: [
-                        Text("faculty operations",style: TextStyle(color: Colors.grey),)
+                        Flexible(child: Text("faculty operations",maxLines: 1,overflow: TextOverflow.ellipsis,style: TextStyle(color: Colors.grey),))
                       ],)
                     ],
                   ),
@@ -206,7 +206,7 @@ class _InsAdminHomeState extends State<InsAdminHome> {
                       SizedBox(height: 5,),
                       Flexible(
                         child: Row(children: [
-                          Flexible(child: Text("batches & semester",style: TextStyle(color: Colors.grey),))
+                          Flexible(child: Text("batches & semester",maxLines: 1,overflow: TextOverflow.ellipsis,style: TextStyle(color: Colors.grey),))
                         ],),
                       )
                     ],
@@ -261,7 +261,7 @@ class _InsAdminHomeState extends State<InsAdminHome> {
                       ],),
                       SizedBox(height: 5,),
                       Row(children: [
-                        Text("students operations",style: TextStyle(color: Colors.grey),)
+                        Flexible(child: Text("students operations",maxLines: 1,overflow: TextOverflow.ellipsis,style: TextStyle(color: Colors.grey),))
                       ],)
                     ],
                   ),
@@ -315,7 +315,7 @@ class _InsAdminHomeState extends State<InsAdminHome> {
                       ],),
                       SizedBox(height: 5,),
                       Row(children: [
-                        Text("per semester",style: TextStyle(color: Colors.grey),)
+                        Flexible(child: Text("per semester",maxLines: 1,overflow: TextOverflow.ellipsis,style: TextStyle(color: Colors.grey),))
                       ],)
                     ],
                   ),
@@ -369,7 +369,7 @@ class _InsAdminHomeState extends State<InsAdminHome> {
                       ],),
                       SizedBox(height: 5,),
                       Row(children: [
-                        Text("schedule lectures",style: TextStyle(color: Colors.grey),)
+                        Flexible(child: Text("schedule lectures",maxLines: 1,overflow: TextOverflow.ellipsis,style: TextStyle(color: Colors.grey),))
                       ],)
                     ],
                   ),
@@ -423,7 +423,7 @@ class _InsAdminHomeState extends State<InsAdminHome> {
                       ],),
                       SizedBox(height: 5,),
                       Row(children: [
-                        Text("pending leave requests",style: TextStyle(color: Colors.grey),)
+                        Flexible(child: Text("pending leave requests",maxLines: 1,overflow: TextOverflow.ellipsis,style: TextStyle(color: Colors.grey),))
                       ],)
                     ],
                   ),
@@ -477,7 +477,7 @@ class _InsAdminHomeState extends State<InsAdminHome> {
                       ],),
                       SizedBox(height: 5,),
                       Row(children: [
-                        Text("schedule lectures",style: TextStyle(color: Colors.grey),)
+                        Flexible(child: Text("schedule lectures",maxLines: 1,overflow: TextOverflow.ellipsis,style: TextStyle(color: Colors.grey),))
                       ],)
                     ],
                   ),

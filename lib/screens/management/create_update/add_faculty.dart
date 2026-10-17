@@ -80,7 +80,7 @@ class _AddFacultyScreenState extends State<AddFacultyScreen> {
         ),
         child: Form(
           key:fkey,
-          child: Column(
+          child: ListView(
             children: [
               SizedBox(height: 20,),
               TextFormField(

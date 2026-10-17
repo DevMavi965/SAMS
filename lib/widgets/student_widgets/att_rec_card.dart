@@ -42,7 +42,7 @@ class AttRecCard extends StatelessWidget {
           label: "Absent",
         ),
         _RecTile(
-          icon: PhosphorIconsBold.airplaneTakeoff,
+          icon:PhosphorIconsBold.calendarCheck,
           color: Colors.blue,
           count: leave_days,
           total: total,

@@ -425,9 +425,9 @@ class _DistributionPie extends StatelessWidget {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 14),
+                  const SizedBox(width: 29),
                   Expanded(
-                    flex: 5,
+                    flex:3,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -447,7 +447,7 @@ class _DistributionPie extends StatelessWidget {
                                 const SizedBox(width: 6),
                                 Expanded(
                                   child: Text(
-                                    deptNames[entries[i].key] ?? "Unknown",
+                                    RMFuncts.getFirstLetters(deptNames[entries[i].key]!) ?? "Unknown",
                                     style: const TextStyle(fontSize: 12),
                                     overflow: TextOverflow.ellipsis,
                                   ),
@@ -569,7 +569,7 @@ class _LTCPieState extends State<LTCPie> {
         ].where((e) => e.value > 0).toList();
 
         return Container(
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.all(25),
           decoration: _cardDecoration(),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -605,7 +605,7 @@ class _LTCPieState extends State<LTCPie> {
               ),
               const SizedBox(width: 14),
               Expanded(
-                flex: 5,
+                flex: 2,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [

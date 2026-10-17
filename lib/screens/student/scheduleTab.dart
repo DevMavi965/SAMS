@@ -33,7 +33,8 @@ class Scheduletab extends StatefulWidget {
     required this.institute,
     required this.department,
     required this.session,
-    required this.semester, required this.student,
+    required this.semester,
+    required this.student,
   });
 
   @override
@@ -46,16 +47,15 @@ class _ScheduletabState extends State<Scheduletab> {
   int _selected = _defaultSelectedDay();
   late Future<List<LectureModel>> _weekLecturesFuture;
 
-  // Weekends default to the upcoming Monday (index 0), not Friday — see
-  // _computeStartOfWeek below for why.
+  // weekends default to Monday
   static int _defaultSelectedDay() {
     final todayWeekday = DateTime.now().weekday; // Mon=1..Sun=7
     return (todayWeekday >= 1 && todayWeekday <= 5) ? todayWeekday - 1 : 0;
   }
 
-  
   late final DateTime _startOfWeek = _computeStartOfWeek();
 
+  // weekends show next week
   static DateTime _computeStartOfWeek() {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
@@ -107,9 +107,7 @@ class _ScheduletabState extends State<Scheduletab> {
       final startOfWeek = _startOfWeek;
       final endOfWeek = startOfWeek.add(const Duration(days: 7)); // exclusive
 
-      // One lectures query per course, scoped server-side to this week and
-      // run in parallel, rather than pulling every lecture ever and
-      // filtering client-side.
+      // per-course week queries, parallel
       final lectureSnapshots = await Future.wait(courseIdx.docs.map((courseDoc) {
         return db.dbref
             .collection("ins_admins")
@@ -140,16 +138,25 @@ class _ScheduletabState extends State<Scheduletab> {
     }
   }
 
+  // lecture starts after student joined
+  bool _isAfterEnrollment(LectureModel lecture) {
+    final joined = widget.student.created_at;
+    if (joined == null) return true;
+    return !_combine(lecture.dated, lecture.start_time).isBefore(joined);
+  }
+
   List<LectureModel> _lecturesForDay(List<LectureModel> weekLectures, int dayIndex) {
     final dayDate = _startOfWeek.add(Duration(days: dayIndex));
     final matching = weekLectures
         .where((l) => DateUtils.isSameDay(l.dated, dayDate))
+    // hide lectures before joining
+        .where(_isAfterEnrollment)
         .toList()
       ..sort((a, b) =>
           _combine(a.dated, a.start_time).compareTo(_combine(b.dated, b.start_time)));
     return matching;
   }
-//progress
+
   @override
   Widget build(BuildContext context) {
     return Center(
@@ -262,7 +269,11 @@ class _ScheduletabState extends State<Scheduletab> {
                 return Column(
                   children: [
                     for (final lecture in dayLectures)
-                      UpcomingClassCard(lectureModel: lecture,studentId: widget.student.id,),
+                      UpcomingClassCard(
+                        lectureModel: lecture,
+                        studentId: widget.student.id,
+                        enrolledAt: widget.student.created_at,
+                      ),
                   ],
                 );
               },

@@ -51,7 +51,7 @@ class PersonalInfo extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text("Email",style: TextStyle(color: Colors.grey),),
-                          Text(student.email),
+                          Text(student.email,overflow: TextOverflow.ellipsis,maxLines: 1,style: TextStyle(fontSize: 12),),
                         ],
                       )
                     ],

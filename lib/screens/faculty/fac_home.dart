@@ -220,7 +220,7 @@ class _FacHomeTabState extends State<FacHomeTab> {
 
         // _MarkAttendanceCard(context),
         SizedBox(height: 25,),
-       //progress
+       //
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -319,7 +319,7 @@ class _FacHomeTabState extends State<FacHomeTab> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text("${widget.lecturer.deprt}-This Week",style: TextStyle(fontSize: 17,fontWeight: FontWeight.w400),),
+                Text("${RMFuncts.getSentenceCase(widget.lecturer.deprt)}-This Week",style: TextStyle(fontSize: 17,fontWeight: FontWeight.w400),),
                 SizedBox(height: 25,),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -488,6 +488,27 @@ class _FacHomeTabState extends State<FacHomeTab> {
                         ),
                         Text("Absent",style: TextStyle(color: Colors.grey),)
                       ],
+                    )),
+                    Expanded(child: Column(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        // Icon(PhosphorIconsBold.airplaneTakeoff,color: Colors.blue,size: 30,),
+                        Icon(PhosphorIconsBold.calendarCheck,color: Colors.blue,size: 30,),
+                        FutureBuilder(
+                          future: _weeklyStatsFuture,
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState == ConnectionState.waiting) {
+                              return Text("Loading...");
+                            } else if (snapshot.hasError) {
+                              return Text("Error: ${snapshot.error}");
+                            } else if (!snapshot.hasData || snapshot.data == null) {
+                              return Text("0");
+                            }
+                            return Text(snapshot.data!['leave_count'].toString(),style: TextStyle(fontWeight: FontWeight.w600,));
+                          },
+                        ),
+                        Text("Leave",style: TextStyle(color: Colors.grey),)
+                      ],
                     ))
                   ],
                 )
@@ -552,6 +573,7 @@ class _FacHomeTabState extends State<FacHomeTab> {
       int conductedLectures = 0;
       int presentCount = 0; // present + late, i.e. "attended"
       int lateCount = 0;
+      int leaveCount = 0;
       int absentCount = 0;
 
       for (final lectureDoc in lectureSnaps) {
@@ -574,15 +596,17 @@ class _FacHomeTabState extends State<FacHomeTab> {
             .where((a) => a.status == "late" && a.checkout != null)
             .length;
         final absent = attendanceList.where((a) => a.status == "absent").length;
+        final leave = attendanceList.where((a) => a.status == "leave").length;
 
         presentCount += present + late; // present tile shows present+late combined
         lateCount += late;
         absentCount += absent;
+        leaveCount += leave;
       }
 
       final totalMarks = presentCount + absentCount; // presentCount already includes late
       final avgAttendance = totalMarks > 0 ? (presentCount / totalMarks) : 0.0;
-      final totalLectures = docs.length;
+      final totalLectures = docs.length-leaveCount;
       final percentageConducted = totalLectures > 0 ? (conductedLectures / totalLectures) * 100 : 0;
 
       return {
@@ -593,6 +617,7 @@ class _FacHomeTabState extends State<FacHomeTab> {
         "present_count": presentCount,
         "late_count": lateCount,
         "absent_count": absentCount,
+        "leave_count": leaveCount,
       };
     } catch (e) {
       print(e.toString());
@@ -604,6 +629,7 @@ class _FacHomeTabState extends State<FacHomeTab> {
         "present_count": 0,
         "late_count": 0,
         "absent_count": 0,
+        "leave_count": 0,
       };
     }
   }

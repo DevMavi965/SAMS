@@ -254,7 +254,7 @@ class FacCourseWiseList extends StatelessWidget {
                                 backgroundColor: color.withOpacity(0.12),
                                 child: Text(initial, style: TextStyle(color: color, fontWeight: FontWeight.w700)),
                               ),
-                              title: Text(s["name"], style: const TextStyle(fontWeight: FontWeight.w500)),
+                              title: Text(RMFuncts.getSentenceCase(s["name"]), style: const TextStyle(fontWeight: FontWeight.w500)),
                               subtitle: (s["email"] as String).isNotEmpty ? Text(s["email"]) : null,
                             );
                           },

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:smas3/maxins/rm_functions.dart';
 import 'package:smas3/models/fac_model.dart';
 import 'package:smas3/models/ins_admin.dart';
 import 'package:smas3/models/institute.dart';
@@ -69,7 +70,7 @@ class _InsAdmin_ProfileCardState extends State<InsAdmin_ProfileCard> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(widget.insAdmin.name,style: TextStyle(color: Colors.white,fontWeight: FontWeight.bold,fontSize: 18),),
+                  Text(RMFuncts.getSentenceCase(widget.insAdmin.name),style: TextStyle(color: Colors.white,fontWeight: FontWeight.bold,fontSize: 18),),
                   Text(widget.institute.name,style: TextStyle(color: Colors.white,fontWeight: FontWeight.w400,fontSize: 14),),
                 ],
 

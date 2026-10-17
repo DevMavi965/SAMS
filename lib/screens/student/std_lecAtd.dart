@@ -296,6 +296,28 @@ class _LectureAttendanceSectionState extends State<LectureAttendanceSection> {
       }
     }
   }
+  handleBiometricAuthMidpoint() async {
+    setState(() {
+      isAuthenticating = true;
+    });
+    var result = await biometricService.authenticateUser();
+    setState(() {
+      isAuthenticating = false;
+      authenticated = result.$1;
+    });
+    if (authenticated) {
+      await _db.studentMidPoint(
+          context, _lecture, widget.student.id!);
+      if (mounted) {
+        Fluttertoast.showToast(msg: " successfully marked attendance with fingerprint");
+      }
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(result.$2)));
+      }
+    }
+  }
 
   handleBiometricAuthCheckOut() async {
     setState(() {
@@ -532,7 +554,7 @@ class _LectureAttendanceSectionState extends State<LectureAttendanceSection> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text("Checked in at ${DateFormat.jm().format(checkinAt!)}"),
+            Text("Checked in at ${DateFormat.jm().format(checkinAt)}"),
             const SizedBox(height: 4),
             Text(
               remaining.isNegative
@@ -543,9 +565,25 @@ class _LectureAttendanceSectionState extends State<LectureAttendanceSection> {
                 fontWeight: FontWeight.w600,
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 10),//fingerprint attendance
             _ActionButton(
-              icon: CupertinoIcons.checkmark_alt_circle_fill,
+              icon: Icons.fingerprint,
+              label: "Mark Midpoint",
+              busy: _busy || remaining.isNegative,
+              onTap: () async {
+                bool isInside = await GeofenceService.validateGeofence(
+                  context: context,
+                  targetLatitude: widget.institute.location['lat'],
+                  targetLongitude: widget.institute.location['long'],
+                );
+                if (isInside) {
+                  _run(() => handleBiometricAuthMidpoint());
+                }
+              },
+            ),
+            const SizedBox(height: 10),//for facial attendance
+            _ActionButton(
+              icon: Icons.face,
               label: "Mark Midpoint",
               busy: _busy || remaining.isNegative,
               onTap: () async {

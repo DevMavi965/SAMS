@@ -32,7 +32,7 @@ class AttendView extends StatefulWidget {
 
   @override
   State<AttendView> createState() => _AttendViewState();
-}
+}//overview
 
 class _AttendViewState extends State<AttendView> {
   List<Student> students = [];
@@ -123,7 +123,7 @@ class _AttendViewState extends State<AttendView> {
           color: Colors.green.withOpacity(0.1),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: Colors.green.withOpacity(0.4)),
-        ),
+        ),//loading
         child: const Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -237,7 +237,7 @@ class _AttendViewState extends State<AttendView> {
           ),),
         ),
         body:Provider.of<DbService>(context,listen: false).loading?
-        RMFuncts.loadingAnimation2(context):
+        RMFuncts.loadingAnimation(context):
         StreamBuilder(stream: Provider.of<DbService>(context,listen: false).dbref
             .collection("ins_admins").doc(widget.insAdminId)
             .collection("institutes").doc(widget.instituteId)
@@ -966,7 +966,7 @@ class _PresentAbsentSummary extends StatelessWidget {
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
-                          "${(ratio * 100).round()}% present",
+                          "${(ratio * 100).round()}% Attendance",
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w700,

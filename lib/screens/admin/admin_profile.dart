@@ -72,7 +72,7 @@ class _AdminProfileState extends State<AdminProfile> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(widget._admin.permissions![i].split("_").join(" "),),
-                                    Text("Manage ${widget._admin.permissions![i].split("_").join(" ")} operations",style: TextStyle(color: Colors.grey),),
+                                    Text("Manage ${widget._admin.permissions![i].split("_").join(" ")} operations",style: TextStyle(color: Colors.grey,fontSize: 10),),
                                   ],
                                 ),
 

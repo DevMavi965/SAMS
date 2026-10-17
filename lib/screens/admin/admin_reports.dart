@@ -170,11 +170,15 @@ class _AdminReportsState extends State<AdminReports> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text("Attendance Analytics",
-                                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-                              _ViewToggle(
-                                semesterView: _semesterView,
-                                onChanged: (v) => setState(() => _semesterView = v),
+                               Flexible(
+                                 child: Text("Attendance Analytics",
+                                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                               ),
+                              Flexible(
+                                child: _ViewToggle(
+                                  semesterView: _semesterView,
+                                  onChanged: (v) => setState(() => _semesterView = v),
+                                ),
                               ),
                             ],
                           ),
@@ -255,7 +259,7 @@ class _AdminReportsState extends State<AdminReports> {
         value: "${overallPercent.round()}%",
         highlight: true,
       ),
-    ];
+    ];//attendance analytics
 
     final perRow = width >= 900 ? 5 : (width >= 700 ? 3 : 2);
 

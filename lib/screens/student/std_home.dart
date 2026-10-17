@@ -119,7 +119,7 @@ class StdHome extends StatefulWidget {
   @override
   State<StdHome> createState() => _StdHomeState();
 }
-
+//calendar
 class _StdHomeState extends State<StdHome> {
   // live stats stream
   StreamController<_StudentStats>? _statsController;
@@ -394,6 +394,14 @@ class _StdHomeState extends State<StdHome> {
         notifDate, _notifId("bofore-end", lecture));
   }
 
+  // lecture starts after student joined
+  bool _isAfterEnrollment(LectureModel lecture) {
+    final joined = widget.student.created_at;
+    if (joined == null) return true;
+    final start = _combineDateAndTime(lecture.dated, lecture.start_time);
+    return !start.isBefore(joined);
+  }
+
   // lecture falls in approved leave
   bool _isOnApprovedLeave(LectureModel lecture) {
     final d = lecture.dated;
@@ -418,8 +426,11 @@ class _StdHomeState extends State<StdHome> {
     return (lecture.id.hashCode ^ type.hashCode) & 0x7FFFFFFF % 100000;
   }
 
-  _StudentStats _buildStats(List<LectureModel> allLectures, String studentId) {
+  _StudentStats _buildStats(List<LectureModel> everyLecture, String studentId) {
     final now = DateTime.now();
+
+    // only lectures after joining
+    final allLectures = everyLecture.where(_isAfterEnrollment).toList();
 
     final todaysLectures = allLectures.where((l) => DateUtils.isSameDay(l.dated, now)).toList();
 
@@ -522,6 +533,7 @@ class _StdHomeState extends State<StdHome> {
             lectureModel: lecture,
             studentId: studentId,
             onLeave: onLeave,
+            enrolledAt: widget.student.created_at,
           ),
         ),
         // no attendance screen on leave
@@ -585,11 +597,14 @@ class _StdHomeState extends State<StdHome> {
               ),
               const SizedBox(height: 25),
 
+              // attended over lectures since joining
               OverAllAttCard(
-                thisMonth: stats.thisMonth.total > 0 ? stats.thisMonth.attended.toDouble() : 0.0,
-                lastMonth: stats.lastMonthPercentage,
-                totalDays: stats.thisMonth.total > 0 ? stats.thisMonth.total.toDouble() : 1.0,
-                leaveDays: stats.thisMonth.leave,
+                attended: stats.presentDays + stats.lateDays,
+                total: stats.presentDays + stats.lateDays + stats.absentDays,
+                leaveDays: stats.leaveDays,
+                thisMonthPercent: stats.thisMonth.percentage,
+                thisMonthTotal: stats.thisMonth.total,
+                lastMonthPercent: stats.lastMonthPercentage,
               ),
               const SizedBox(height: 20),
 
@@ -757,6 +772,13 @@ class _TodayAttendanceCard extends StatelessWidget {
     final attendedCount = counted
         .where((l) => _StdHomeState._isAttended(statusOf(l) ?? 'absent'))
         .length;
+    final leaveCount = todaysLectures.length - counted.length;
+
+    // label when all on leave
+    final label = counted.isEmpty
+        ? "On leave"
+        : "($attendedCount/${counted.length})"
+        "${leaveCount > 0 ? '  +$leaveCount leave' : ''}";
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.start,
@@ -764,7 +786,7 @@ class _TodayAttendanceCard extends StatelessWidget {
         Expanded(
           child: Row(children: [for (final lecture in todaysLectures) _statusIcon(lecture)]),
         ),
-        Text("($attendedCount/${counted.length})", style: const TextStyle(color: Colors.white)),
+        Text(label, style: const TextStyle(color: Colors.white)),
       ],
     );
   }
@@ -772,12 +794,10 @@ class _TodayAttendanceCard extends StatelessWidget {
   Widget _statusIcon(LectureModel lecture) {
     final rawStatus = statusOf(lecture);
     final IconData icon;
-    if (rawStatus == null) {
-      icon = Icons.circle_outlined;
-    } else if (rawStatus == 'present' || rawStatus == 'late') {
+    if (rawStatus == 'present' || rawStatus == 'late') {
       icon = Icons.check_circle_outline;
     } else if (rawStatus == 'leave') {
-      icon = PhosphorIconsBold.airplaneTakeoff;
+      icon = PhosphorIconsBold.calendarCheck;
     } else {
       icon = Icons.cancel_outlined;
     }

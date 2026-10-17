@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:provider/provider.dart';
+import 'package:smas3/maxins/rm_functions.dart';
 import 'package:smas3/models/department.dart';
 import 'package:smas3/models/fac_model.dart';
 import 'package:smas3/models/ins_admin.dart';
@@ -109,7 +110,7 @@ class _FacDeshboardState extends State<FacDeshboard> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        body:isLoading?Center(child: CircularProgressIndicator(),): Container(
+        body:isLoading?RMFuncts.loadingAnimation(context): Container(
             margin: EdgeInsets.symmetric(
               vertical: 25,
               horizontal: 15,

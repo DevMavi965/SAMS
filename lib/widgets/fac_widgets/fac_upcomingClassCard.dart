@@ -145,7 +145,7 @@ class _FacUpcomingClassCardState extends State<FacUpcomingClassCard> {
                     count: _count('leave'),
                     label: "On Leave",
                     color: Colors.amber.shade700,
-                    icon: PhosphorIconsBold.airplaneTakeoff,
+                    icon: PhosphorIconsBold.calendarCheck,
                   ),
                 ],
               ),

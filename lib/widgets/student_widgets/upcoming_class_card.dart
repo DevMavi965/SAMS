@@ -5,9 +5,10 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:smas3/maxins/rm_functions.dart';
 import 'package:smas3/models/lecture.dart';
 
-enum _LectureState { upcoming, ongoing, completed, notConducted, onLeave }
+enum _LectureState { beforeJoin, upcoming, ongoing, ended, onLeave }
 
 DateTime _combine(DateTime date, TimeOfDay time) {
   return DateTime(date.year, date.month, date.day, time.hour, time.minute);
@@ -34,12 +35,14 @@ class UpcomingClassCard extends StatefulWidget {
   final LectureModel lectureModel;
   final String? studentId;
   final bool onLeave; // approved leave covers lecture
+  final DateTime? enrolledAt; // student joined at
 
   const UpcomingClassCard({
     super.key,
     required this.lectureModel,
     this.studentId,
     this.onLeave = false,
+    this.enrolledAt,
   });
 
   @override
@@ -52,7 +55,7 @@ class _UpcomingClassCardState extends State<UpcomingClassCard> {
   @override
   void initState() {
     super.initState();
-    // refresh status every 30s
+    // refresh phase every 30s
     _timer = Timer.periodic(const Duration(seconds: 30), (_) {
       if (mounted) setState(() {});
     });
@@ -69,27 +72,7 @@ class _UpcomingClassCardState extends State<UpcomingClassCard> {
   DateTime get _end =>
       _combine(widget.lectureModel.dated, widget.lectureModel.end_time);
 
-  // any student attended lecture
-  bool get _classWasConducted {
-    final attendance = widget.lectureModel.attendance ?? [];
-    return attendance.any((a) => a.status == 'present' || a.status == 'late');
-  }
-
-  _LectureState get _state {
-    // leave overrides time-based states
-    if (widget.onLeave || _attendanceStatus == 'leave') {
-      return _LectureState.onLeave;
-    }
-
-    final now = DateTime.now();
-    if (now.isBefore(_start)) return _LectureState.upcoming;
-    if (!now.isAfter(_end)) return _LectureState.ongoing;
-
-    if (_attendanceStatus != null) return _LectureState.completed;
-
-    return _classWasConducted ? _LectureState.completed : _LectureState.notConducted;
-  }
-
+  // this student's own record status
   String? get _attendanceStatus {
     final studentId = widget.studentId;
     if (studentId == null) return null;
@@ -98,28 +81,40 @@ class _UpcomingClassCardState extends State<UpcomingClassCard> {
     return record?.status;
   }
 
+  _LectureState get _state {
+    // lecture before student joined
+    final joined = widget.enrolledAt;
+    if (joined != null && _start.isBefore(joined)) return _LectureState.beforeJoin;
+
+    // leave overrides everything else
+    if (widget.onLeave || _attendanceStatus == 'leave') return _LectureState.onLeave;
+
+    final now = DateTime.now();
+    if (now.isBefore(_start)) return _LectureState.upcoming;
+    if (!now.isAfter(_end)) return _LectureState.ongoing;
+    return _LectureState.ended;
+  }
+
   _StatusInfo _statusInfo(BuildContext context) {
     switch (_state) {
+      case _LectureState.beforeJoin:
+        return const _StatusInfo("Before joining", Colors.grey, CupertinoIcons.minus_circle);
       case _LectureState.upcoming:
         return const _StatusInfo("Upcoming", Colors.blue, CupertinoIcons.clock);
       case _LectureState.ongoing:
         return const _StatusInfo("Ongoing", Colors.orange, CupertinoIcons.play_circle_fill);
       case _LectureState.onLeave:
-        return const _StatusInfo("On Leave", Colors.blue, PhosphorIconsBold.airplaneTakeoff);
-      case _LectureState.notConducted:
-        return const _StatusInfo("Not conducted", Colors.grey, CupertinoIcons.minus_circle);
-      case _LectureState.completed:
+        return const _StatusInfo("On Leave", Colors.blue, PhosphorIconsBold.calendarCheck);
+      case _LectureState.ended:
         switch (_attendanceStatus) {
           case 'present':
             return _StatusInfo(
                 "Present", Theme.of(context).primaryColor, CupertinoIcons.check_mark_circled_solid);
           case 'late':
             return const _StatusInfo("Late", Colors.brown, CupertinoIcons.clock_fill);
-          case 'absent':
-            return const _StatusInfo("Absent", Colors.red, CupertinoIcons.xmark_circle_fill);
           default:
-          // conducted but no record
-            return const _StatusInfo("Not marked", Colors.grey, CupertinoIcons.question_circle);
+          // ended without attending
+            return const _StatusInfo("Absent", Colors.red, CupertinoIcons.xmark_circle_fill);
         }
     }
   }
@@ -161,7 +156,7 @@ class _UpcomingClassCardState extends State<UpcomingClassCard> {
                         children: [
                           Expanded(
                             child: Text(
-                              lectureModel.course,
+                              RMFuncts.getSentenceCase(lectureModel.course),
                               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                               overflow: TextOverflow.ellipsis,
                             ),
